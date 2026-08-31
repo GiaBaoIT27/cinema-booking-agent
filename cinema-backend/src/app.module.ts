@@ -5,6 +5,8 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { DistributorsModule } from './modules/distributors/distributors.module.js';
 import { MoviesModule } from './modules/movies/movies.module.js';
+import { GenresModule } from './modules/genres/genres.module.js';
+import { LocationsModule } from './modules/locations/locations.module.js';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { MoviesModule } from './modules/movies/movies.module.js';
     }),
     DistributorsModule,
     MoviesModule,
+    GenresModule,
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
