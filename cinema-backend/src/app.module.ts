@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
 import { DistributorsModule } from './modules/distributors/distributors.module.js';
 import { MoviesModule } from './modules/movies/movies.module.js';
 import { GenresModule } from './modules/genres/genres.module.js';
 import { LocationsModule } from './modules/locations/locations.module.js';
+import { RbacModule } from './modules/rbac/rbac.module.js';
 
 @Module({
   imports: [
@@ -29,8 +28,7 @@ import { LocationsModule } from './modules/locations/locations.module.js';
     MoviesModule,
     GenresModule,
     LocationsModule,
+    RbacModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

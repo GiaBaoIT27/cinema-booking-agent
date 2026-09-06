@@ -6,7 +6,7 @@ gemini-code-1788082001269.json
 
 cinema-backend/src/modules/auth
 cinema-backend/src/modules/users
-cinema-backend/src/modules/movies
 cinema-backend/src/modules/genres
+cinema-backend/src/modules/rbac
 
 dist
