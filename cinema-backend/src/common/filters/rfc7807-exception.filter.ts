@@ -42,11 +42,21 @@ export class Rfc7807ExceptionFilter implements ExceptionFilter {
         message = 'Dữ liệu đầu vào không hợp lệ';
         errors = exceptionResponse.message || [];
       } else {
-        errorCode = exceptionResponse.errorCode || 'HTTP_EXCEPTION';
-        message =
+        // Ưu tiên lấy errorCode nghiệp vụ từ Service truyền ra, nếu không có mới dùng fallback
+        errorCode =
+          typeof exceptionResponse === 'object' && exceptionResponse.errorCode
+            ? exceptionResponse.errorCode
+            : 'HTTP_EXCEPTION';
+
+        // Bóc tách message an toàn (tránh trường hợp exceptionResponse là object hay chuỗi thô)
+        const rawMessage =
           typeof exceptionResponse === 'object'
             ? exceptionResponse.message
             : exceptionResponse;
+
+        message = Array.isArray(rawMessage)
+          ? rawMessage.join(', ')
+          : rawMessage;
       }
     }
     // 2. Xử lý lỗi từ Tầng Cơ sở dữ liệu (PostgreSQL / TypeORM)
