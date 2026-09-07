@@ -9,11 +9,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 
 // Import các Module chính của ứng dụng
+import { AuthModule } from './modules/auth/auth.module.js';
 import { DistributorsModule } from './modules/distributors/distributors.module.js';
 import { MoviesModule } from './modules/movies/movies.module.js';
 import { GenresModule } from './modules/genres/genres.module.js';
 import { LocationsModule } from './modules/locations/locations.module.js';
 import { RbacModule } from './modules/rbac/rbac.module.js';
+import { UsersModule } from './modules/users/users.module.js';
+import { CinemasModule } from './modules/cinemas/cinemas.module.js';
 
 // Import cấu hình tập trung
 import { validateEnv } from './common/config/env.validation.js';
@@ -48,11 +51,14 @@ import { PermissionsGuard } from './common/guards/permissions.guard.js';
         synchronize: configService.get<boolean>('database.synchronize'),
       }),
     }),
+    AuthModule,
+    RbacModule,
+    UsersModule,
+    CinemasModule,
     DistributorsModule,
     MoviesModule,
     GenresModule,
     LocationsModule,
-    RbacModule,
   ],
   providers: [
     // 1. Kích hoạt JwtAuthGuard chạy toàn cục (Global Guard) trước tiên

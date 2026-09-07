@@ -1,11 +1,17 @@
 import { plainToInstance } from 'class-transformer';
-import { IsNotEmpty, IsString, validateSync } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  validateSync,
+} from 'class-validator';
 
 class EnvironmentVariables {
   @IsString()
-  @IsNotEmpty({
-    message: 'Biến môi trường JWT_ACCESS_SECRET bắt buộc phải cấu hình!',
-  })
+  // @IsNotEmpty({
+  //   message: 'Biến môi trường JWT_ACCESS_SECRET bắt buộc phải cấu hình!',
+  // })
+  @IsOptional()
   JWT_ACCESS_SECRET: string;
 }
 

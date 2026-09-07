@@ -12,9 +12,11 @@ export class HeaderValidationMiddleware implements NestMiddleware {
 
     // Bắt buộc tất cả các request phải chấp nhận phản hồi dạng JSON
     if (!acceptHeader || !acceptHeader.includes('application/json')) {
-      throw new NotAcceptableException(
-        'API chỉ hỗ trợ định dạng phản hồi application/json. Vui lòng bổ sung Header Accept.',
-      );
+      throw new NotAcceptableException({
+        message:
+          'API chỉ hỗ trợ định dạng phản hồi application/json. Vui lòng bổ sung Header Accept.',
+        errorCode: 'INVALID_ACCEPT_HEADER',
+      });
     }
 
     next();
