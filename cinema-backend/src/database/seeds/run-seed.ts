@@ -3,6 +3,9 @@ import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../app.module.js';
 import { RoleSeeder } from './2-role.seed.js';
+import { DistributorSeeder } from './5-distributor.seed.js';
+import { PromotionSeeder } from './6-promotion.seed.js';
+import { LocationSeeder } from './4-location.seed.js';
 
 async function runSeed() {
   console.log('[CLI] Khởi tạo kết nối hệ thống phục vụ Seeding...');
@@ -15,9 +18,21 @@ async function runSeed() {
   try {
     const dataSource = app.get(DataSource);
 
-    // Thực thi Seeder
+    // 1. Thực thi Seeder Role
     const roleSeeder = new RoleSeeder();
     await roleSeeder.run(dataSource);
+
+    // 2. Thực thi Seeder Promotion
+    const promotionSeeder = new PromotionSeeder();
+    await promotionSeeder.run(dataSource);
+
+    // 3. Thực thi Seeder Distributor
+    const distributorSeeder = new DistributorSeeder();
+    await distributorSeeder.run(dataSource);
+
+    // 4. Thực thi Seeder Distributor
+    const locationSeeder = new LocationSeeder();
+    await locationSeeder.run(dataSource);
 
     console.log('[CLI] Quá trình Seeding hoàn thành!');
   } catch (error) {

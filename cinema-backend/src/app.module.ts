@@ -29,6 +29,7 @@ import redisConfig from './config/redis.config.js';
 import { HeaderValidationMiddleware } from './common/middleware/header-validation.middleware.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from './common/guards/permissions.guard.js';
+import { PromotionsModule } from './modules/promotions/promotions.module.js';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard.js';
     MoviesModule,
     GenresModule,
     LocationsModule,
+    PromotionsModule,
   ],
   providers: [
     // 1. Kích hoạt JwtAuthGuard chạy toàn cục (Global Guard) trước tiên

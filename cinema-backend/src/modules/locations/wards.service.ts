@@ -1,14 +1,16 @@
 import {
-  ConflictException,
   Injectable,
+  Inject,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreateWardDto } from './dto/create-ward.dto.js';
-import { FilterWardDto } from './dto/filter-ward.dto.js';
-import { Province } from './entities/province.entity.js';
+import { Repository, QueryFailedError } from 'typeorm';
+// import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Ward } from './entities/ward.entity.js';
+import { Province } from './entities/province.entity.js';
+import { GetWardsQueryDto } from './dto/query-wards.dto.js';
+import { CreateWardDto } from './dto/create-ward.dto.js';
 
 @Injectable()
 export class WardsService {
@@ -17,88 +19,130 @@ export class WardsService {
     private readonly wardRepository: Repository<Ward>,
     @InjectRepository(Province)
     private readonly provinceRepository: Repository<Province>,
+    // @Inject(CACHE_MANAGER)
+    // private readonly cacheManager: Cache,
   ) {}
 
-  async create(createDto: CreateWardDto): Promise<Ward> {
-    const province = await this.provinceRepository.findOne({
-      where: { id: createDto.provinceId },
-    });
+  // 1. GET api/v1/wards
+  async findAll(queryDto: GetWardsQueryDto) {
+    const { provinceId, type, keyword, page, limit } = queryDto;
+    const skip = (page - 1) * limit;
 
-    if (!province) {
-      throw new NotFoundException('Không tìm thấy Tỉnh/Thành phố tương ứng');
+    // QueryBuilder join với bảng provinces
+    const qb = this.wardRepository
+      .createQueryBuilder('w')
+      .innerJoinAndSelect('w.province', 'p');
+
+    if (provinceId) {
+      qb.andWhere('w.provinceId = :provinceId', { provinceId });
     }
 
+    if (type) {
+      qb.andWhere('w.type = :type', { type });
+    }
+
+    if (keyword) {
+      const safeKeyword = `%${keyword.trim().replace(/[%_\\]/g, '\\$&')}%`;
+      qb.andWhere('(w.code ILIKE :safeKeyword OR w.name ILIKE :safeKeyword)', {
+        safeKeyword,
+      });
+    }
+
+    const [wards, totalElements] = await qb
+      .orderBy('w.id', 'ASC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    // Mapping đúng chuẩn Response Schema
+    return {
+      data: wards.map((w) => ({
+        id: Number(w.id),
+        provinceId: Number(w.provinceId),
+        provinceName: w.province?.name,
+        code: w.code,
+        name: w.name,
+        type: w.type,
+        createdAt: w.createdAt,
+      })),
+      meta: {
+        pagination: {
+          page,
+          limit,
+          totalElements,
+          totalPages: Math.ceil(totalElements / limit) || 1,
+        },
+      },
+    };
+  }
+
+  // 2. POST api/v1/wards
+  async create(createDto: CreateWardDto) {
+    const { provinceId, code, name, type } = createDto;
+
+    // 1. Kiểm tra tồn tại Tỉnh/Thành phố (Foreign Key Validation)
+    const provinceExists = await this.provinceRepository.findOne({
+      where: { id: provinceId.toString() },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!provinceExists) {
+      throw new NotFoundException({
+        errorCode: 'PROVINCE_NOT_FOUND',
+        message: `Không tìm thấy Tỉnh/Thành phố với ID ${provinceId}`,
+      });
+    }
+
+    // 2. Kiểm tra duy nhất code Xã/Phường
     const existingCode = await this.wardRepository.findOne({
-      where: { code: createDto.code },
+      where: { code },
+      select: {
+        id: true,
+      },
     });
 
     if (existingCode) {
-      throw new ConflictException('Mã Xã/Phường này đã tồn tại');
+      throw new ConflictException({
+        errorCode: 'WARD_CODE_ALREADY_EXISTS',
+        message: `Mã Xã/Phường '${code}' đã tồn tại trên hệ thống`,
+      });
     }
 
-    const ward = this.wardRepository.create(createDto);
-    return await this.wardRepository.save(ward);
-  }
+    // 3. Thực thi Ghi DB
+    try {
+      const ward = this.wardRepository.create({
+        provinceId: provinceId.toString(),
+        code,
+        name,
+        type,
+      });
 
-  async findByProvince(
-    provinceId: string,
-    filterDto: Omit<FilterWardDto, 'provinceId'>,
-  ): Promise<Ward[]> {
-    const { type, search } = filterDto;
-    const query = this.wardRepository
-      .createQueryBuilder('ward')
-      .where('ward.provinceId = :provinceId', { provinceId });
+      const saved = await this.wardRepository.save(ward);
 
-    if (type) {
-      query.andWhere('ward.type = :type', { type });
+      // 4. Clear Cache Redis liên quan đến Xã/Phường
+      // await this.clearWardCache();
+
+      return {
+        id: Number(saved.id),
+        provinceId: Number(saved.provinceId),
+        code: saved.code,
+        name: saved.name,
+        type: saved.type,
+        createdAt: saved.createdAt,
+      };
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error as any).code === '23505'
+      ) {
+        throw new ConflictException({
+          errorCode: 'WARD_CODE_ALREADY_EXISTS',
+          message: `Mã Xã/Phường '${code}' đã tồn tại trên hệ thống`,
+        });
+      }
+      throw error;
     }
-
-    if (search) {
-      query.andWhere(
-        '(LOWER(ward.name) LIKE LOWER(:search) OR ward.code LIKE :search)',
-        { search: `%${search}%` },
-      );
-    }
-
-    query.orderBy('ward.name', 'ASC');
-    return await query.getMany();
-  }
-
-  async findAll(filterDto: FilterWardDto) {
-    const { page = 1, limit = 10, provinceId, type, search } = filterDto;
-    const skip = (page - 1) * limit;
-
-    const query = this.wardRepository
-      .createQueryBuilder('ward')
-      .leftJoinAndSelect('ward.province', 'province');
-
-    if (provinceId) {
-      query.andWhere('ward.provinceId = :provinceId', { provinceId });
-    }
-
-    if (type) {
-      query.andWhere('ward.type = :type', { type });
-    }
-
-    if (search) {
-      query.andWhere(
-        '(LOWER(ward.name) LIKE LOWER(:search) OR ward.code LIKE :search)',
-        { search: `%${search}%` },
-      );
-    }
-
-    query.orderBy('ward.id', 'ASC').skip(skip).take(limit);
-
-    const [items, total] = await query.getManyAndCount();
-
-    return {
-      data: items,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
   }
 }
