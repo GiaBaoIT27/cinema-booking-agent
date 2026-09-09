@@ -40,17 +40,17 @@ export class FnbController {
   // 2. GET ap1/v1/fnb-items/:id
   @Get(':id')
   @Public()
-  async getFnbItemById(@Param('id', ParseIntPipe) id: number) {
+  getFnbItemById(@Param('id', ParseIntPipe) id: number) {
     return this.fnbService.findOne(id);
   }
 
   // 3. POST api/v1/fnb-items
   @Post()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
-  //   @RequirePermissions('fnb:create')
+  @RequirePermissions('fnb:create')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('file')) // Nhận file đính kèm với key là 'file'
-  async createFnbItem(
+  createFnbItem(
     @Body() createDto: CreateFnbItemDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
@@ -60,10 +60,10 @@ export class FnbController {
   // 4. PUT api/v1/fnb-items
   @Put(':id')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
-  //   @RequirePermissions('fnb:update')
+  @RequirePermissions('fnb:update')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('file'))
-  async updateFnbItem(
+  updateFnbItem(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateFnbItemDto,
     @UploadedFile() file?: Express.Multer.File,
@@ -74,9 +74,9 @@ export class FnbController {
   //5. PATCH api/v1/fnb-items
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
-  //   @RequirePermissions('fnb:update')
+  @RequirePermissions('fnb:update')
   @HttpCode(HttpStatus.OK)
-  async updateFnbItemStatus(
+  updateFnbItemStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateStatusDto: UpdateFnbItemStatusDto,
   ) {

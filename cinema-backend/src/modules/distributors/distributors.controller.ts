@@ -71,7 +71,7 @@ export class DistributorsController {
   }
 
   @Get(':id/movies')
-  // @RequirePermissions('movie:view')
+  @RequirePermissions('movie:view')
   getDistributorMovies(
     @Param('id', ParseIntPipe) id: number,
     @Query() query: GetDistributorMoviesQueryDto,

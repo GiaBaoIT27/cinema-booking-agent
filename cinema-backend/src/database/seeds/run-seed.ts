@@ -1,12 +1,14 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
-import { AppModule } from '../../app.module.js';
+import { AppModule } from '#src/app.module.js';
 import { RoleSeeder } from './2-role.seed.js';
 import { DistributorSeeder } from './5-distributor.seed.js';
 import { PromotionSeeder } from './6-promotion.seed.js';
 import { LocationSeeder } from './4-location.seed.js';
 import { FnbItemSeeder } from './7-fnb-item.seed.js';
+import { SeatTypeSeeder } from './8-seat-type.seed.js';
+import { GenreSeeder } from './9-genre.seed.js';
 
 async function runSeed() {
   console.log('[CLI] Khởi tạo kết nối hệ thống phục vụ Seeding...');
@@ -38,6 +40,14 @@ async function runSeed() {
     // 5. Thực thi Seeder Fnb
     const fnbItemSeeder = new FnbItemSeeder();
     await fnbItemSeeder.run(dataSource);
+
+    // 6. Thực thi Seeder cấu hình Loại Ghế
+    const seatTypeSeeder = new SeatTypeSeeder();
+    await seatTypeSeeder.run(dataSource);
+
+    // 7. Thực thi Seeder danh mục Thể loại phim
+    const genreSeeder = new GenreSeeder();
+    await genreSeeder.run(dataSource); // Kích hoạt chạy seed genre tại đây
 
     console.log('[CLI] Quá trình Seeding hoàn thành!');
   } catch (error) {

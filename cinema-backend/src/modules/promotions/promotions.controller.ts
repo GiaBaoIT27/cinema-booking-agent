@@ -25,7 +25,6 @@ import { UpdatePromotionStatusDto } from './dto/update-promotion-status.dto.js';
 import { ValidatePromotionDto } from './dto/validate-promotion.dto.js';
 
 @Controller('/promotions')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PromotionsController {
   constructor(private readonly promotionsService: PromotionsService) {}
 
@@ -38,6 +37,7 @@ export class PromotionsController {
 
   // 1. GET /api/v1/promotions
   @Get()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:view')
   findAllForAdmin(@Query() query: GetPromotionsQueryDto) {
     return this.promotionsService.findAllForAdmin(query);
@@ -52,6 +52,7 @@ export class PromotionsController {
 
   // 4. POST /api/v1/promotions
   @Post()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:create')
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createDto: CreatePromotionDto) {
@@ -59,6 +60,7 @@ export class PromotionsController {
   }
   // 5. PUT /api/v1/promotions/:id
   @Put(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:update')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -69,6 +71,7 @@ export class PromotionsController {
 
   // 6. PATCH /api/v1/promotions/:id/status
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:update')
   updateStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -79,6 +82,7 @@ export class PromotionsController {
 
   // 7. POST /api/v1/promotions/validate
   @Post('validate')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:apply')
   @HttpCode(HttpStatus.OK)
   validateAndCalculate(@Body() validateDto: ValidatePromotionDto) {

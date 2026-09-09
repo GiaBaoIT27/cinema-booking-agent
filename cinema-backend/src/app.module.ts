@@ -32,6 +32,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard.js';
 import { PromotionsModule } from './modules/promotions/promotions.module.js';
 import { FnbModule } from './modules/fnb/fnb.module.js';
 import { UploadModule } from './modules/upload/upload.module.js';
+import { SeatTypeModule } from './modules/seat-types/seat-types.module.js';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { UploadModule } from './modules/upload/upload.module.js';
     PromotionsModule,
     FnbModule,
     UploadModule,
+    SeatTypeModule,
   ],
   providers: [
     // 1. Kích hoạt JwtAuthGuard chạy toàn cục (Global Guard) trước tiên

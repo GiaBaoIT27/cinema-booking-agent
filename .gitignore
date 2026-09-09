@@ -11,6 +11,7 @@ cinema-backend/src/app.module.ts
 cinema-backend/src/modules/cinemas
 
 
+
 cinema-backend/src/common/redis/
 
 cinema-backend/src/database/
