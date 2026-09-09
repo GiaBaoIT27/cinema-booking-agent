@@ -8,11 +8,21 @@ import {
 
 class EnvironmentVariables {
   @IsString()
-  // @IsNotEmpty({
-  //   message: 'Biến môi trường JWT_ACCESS_SECRET bắt buộc phải cấu hình!',
-  // })
   @IsOptional()
   JWT_ACCESS_SECRET: string;
+
+  // --- THÊM CẤU HÌNH CLOUDINARY VÀO ĐÂY ---
+  @IsString()
+  @IsNotEmpty({ message: 'Biến môi trường CLOUDINARY_CLOUD_NAME là bắt buộc!' })
+  CLOUDINARY_CLOUD_NAME: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Biến môi trường CLOUDINARY_API_KEY là bắt buộc!' })
+  CLOUDINARY_API_KEY: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Biến môi trường CLOUDINARY_API_SECRET là bắt buộc!' })
+  CLOUDINARY_API_SECRET: string;
 }
 
 export function validateEnv(config: Record<string, any>) {

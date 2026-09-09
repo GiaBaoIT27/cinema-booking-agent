@@ -6,6 +6,7 @@ import { RoleSeeder } from './2-role.seed.js';
 import { DistributorSeeder } from './5-distributor.seed.js';
 import { PromotionSeeder } from './6-promotion.seed.js';
 import { LocationSeeder } from './4-location.seed.js';
+import { FnbItemSeeder } from './7-fnb-item.seed.js';
 
 async function runSeed() {
   console.log('[CLI] Khởi tạo kết nối hệ thống phục vụ Seeding...');
@@ -30,9 +31,13 @@ async function runSeed() {
     const distributorSeeder = new DistributorSeeder();
     await distributorSeeder.run(dataSource);
 
-    // 4. Thực thi Seeder Distributor
+    // 4. Thực thi Seeder Location
     const locationSeeder = new LocationSeeder();
     await locationSeeder.run(dataSource);
+
+    // 5. Thực thi Seeder Fnb
+    const fnbItemSeeder = new FnbItemSeeder();
+    await fnbItemSeeder.run(dataSource);
 
     console.log('[CLI] Quá trình Seeding hoàn thành!');
   } catch (error) {

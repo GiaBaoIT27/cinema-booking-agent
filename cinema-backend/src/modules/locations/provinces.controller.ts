@@ -1,9 +1,7 @@
 import {
   Controller,
   Get,
-  Put,
   Post,
-  Patch,
   Body,
   Param,
   ParseIntPipe,
@@ -35,7 +33,7 @@ export class ProvincesController {
   // 2. POST api/v1/provinces
   @Post()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
-  // @RequirePermissions('province:create')
+  @RequirePermissions('province:create')
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createDto: CreateProvinceDto) {
     return this.provincesService.create(createDto);

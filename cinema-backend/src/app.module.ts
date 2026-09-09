@@ -30,11 +30,14 @@ import { HeaderValidationMiddleware } from './common/middleware/header-validatio
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from './common/guards/permissions.guard.js';
 import { PromotionsModule } from './modules/promotions/promotions.module.js';
+import { FnbModule } from './modules/fnb/fnb.module.js';
+import { UploadModule } from './modules/upload/upload.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
       validate: validateEnv,
       load: [appConfig, databaseConfig, jwtConfig, redisConfig],
     }),
@@ -61,6 +64,8 @@ import { PromotionsModule } from './modules/promotions/promotions.module.js';
     GenresModule,
     LocationsModule,
     PromotionsModule,
+    FnbModule,
+    UploadModule,
   ],
   providers: [
     // 1. Kích hoạt JwtAuthGuard chạy toàn cục (Global Guard) trước tiên

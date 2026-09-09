@@ -31,7 +31,7 @@ export class WardsController {
   // 2. POST api/v1/wards
   @Post()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
-  // @RequirePermissions('ward:create')
+  @RequirePermissions('ward:create')
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createDto: CreateWardDto) {
     return this.wardsService.create(createDto);

@@ -10,6 +10,8 @@ cinema-backend/src/modules/rbac
 cinema-backend/src/app.module.ts
 cinema-backend/src/modules/cinemas
 
+cinema-backend/src/modules/upload
+
 
 cinema-backend/src/common/redis/
 
