@@ -6,11 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryFailedError } from 'typeorm';
-// import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Ward } from './entities/ward.entity.js';
 import { Province } from './entities/province.entity.js';
 import { GetWardsQueryDto } from './dto/query-wards.dto.js';
 import { CreateWardDto } from './dto/create-ward.dto.js';
+import { RedisService } from '#src/common/redis/redis.service.js';
+import {
+  LOCATION_REDIS_KEYS,
+  LOCATION_CACHE_TTL,
+} from './constants/location-redis.constant.js';
 
 @Injectable()
 export class WardsService {
@@ -19,61 +23,68 @@ export class WardsService {
     private readonly wardRepository: Repository<Ward>,
     @InjectRepository(Province)
     private readonly provinceRepository: Repository<Province>,
-    // @Inject(CACHE_MANAGER)
-    // private readonly cacheManager: Cache,
+    private readonly redisService: RedisService,
   ) {}
 
   // 1. GET api/v1/wards
   async findAll(queryDto: GetWardsQueryDto) {
     const { provinceId, type, keyword, page, limit } = queryDto;
-    const skip = (page - 1) * limit;
+    const queryStr = `pId=${provinceId || 'all'}:type=${type || 'all'}:kw=${keyword || 'none'}:p=${page}:l=${limit}`;
+    const cacheKey = LOCATION_REDIS_KEYS.WARDS_LIST(queryStr);
 
-    // QueryBuilder join với bảng provinces
-    const qb = this.wardRepository
-      .createQueryBuilder('w')
-      .innerJoinAndSelect('w.province', 'p');
+    return this.redisService.getOrSet(
+      cacheKey,
+      async () => {
+        const skip = (page - 1) * limit;
 
-    if (provinceId) {
-      qb.andWhere('w.provinceId = :provinceId', { provinceId });
-    }
+        const qb = this.wardRepository
+          .createQueryBuilder('w')
+          .innerJoinAndSelect('w.province', 'p');
 
-    if (type) {
-      qb.andWhere('w.type = :type', { type });
-    }
+        if (provinceId) {
+          qb.andWhere('w.provinceId = :provinceId', { provinceId });
+        }
 
-    if (keyword) {
-      const safeKeyword = `%${keyword.trim().replace(/[%_\\]/g, '\\$&')}%`;
-      qb.andWhere('(w.code ILIKE :safeKeyword OR w.name ILIKE :safeKeyword)', {
-        safeKeyword,
-      });
-    }
+        if (type) {
+          qb.andWhere('w.type = :type', { type });
+        }
 
-    const [wards, totalElements] = await qb
-      .orderBy('w.id', 'ASC')
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+        if (keyword) {
+          const safeKeyword = `%${keyword.trim().replace(/[%_\\]/g, '\\$&')}%`;
+          qb.andWhere(
+            '(w.code ILIKE :safeKeyword OR w.name ILIKE :safeKeyword)',
+            { safeKeyword },
+          );
+        }
 
-    // Mapping đúng chuẩn Response Schema
-    return {
-      data: wards.map((w) => ({
-        id: Number(w.id),
-        provinceId: Number(w.provinceId),
-        provinceName: w.province?.name,
-        code: w.code,
-        name: w.name,
-        type: w.type,
-        createdAt: w.createdAt,
-      })),
-      meta: {
-        pagination: {
-          page,
-          limit,
-          totalElements,
-          totalPages: Math.ceil(totalElements / limit) || 1,
-        },
+        const [wards, totalElements] = await qb
+          .orderBy('w.id', 'ASC')
+          .skip(skip)
+          .take(limit)
+          .getManyAndCount();
+
+        return {
+          data: wards.map((w) => ({
+            id: Number(w.id),
+            provinceId: Number(w.provinceId),
+            provinceName: w.province?.name,
+            code: w.code,
+            name: w.name,
+            type: w.type,
+            createdAt: w.createdAt,
+          })),
+          meta: {
+            pagination: {
+              page,
+              limit,
+              totalElements,
+              totalPages: Math.ceil(totalElements / limit) || 1,
+            },
+          },
+        };
       },
-    };
+      LOCATION_CACHE_TTL,
+    );
   }
 
   // 2. POST api/v1/wards
@@ -122,7 +133,7 @@ export class WardsService {
       const saved = await this.wardRepository.save(ward);
 
       // 4. Clear Cache Redis liên quan đến Xã/Phường
-      // await this.clearWardCache();
+      await this.redisService.delByPattern(LOCATION_REDIS_KEYS.PATTERN_ALL);
 
       return {
         id: Number(saved.id),

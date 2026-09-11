@@ -14,6 +14,11 @@ import { CreateGenreDto } from './dto/create-genre.dto.js';
 import { GetGenresQueryDto } from './dto/query-genres.dto.js';
 import { UpdateGenreDto } from './dto/update-genre.dto.js';
 import { GetGenreMoviesQueryDto } from './dto/query-genre-movies.dto.js';
+import { RedisService } from '#src/common/redis/redis.service.js';
+import {
+  GENRE_REDIS_KEYS,
+  GENRE_CACHE_TTL,
+} from './constants/genre-redis.constant.js';
 
 @Injectable()
 export class GenresService {
@@ -21,86 +26,83 @@ export class GenresService {
     @InjectRepository(Genre)
     private readonly genreRepository: Repository<Genre>,
     private readonly dataSource: DataSource,
+    private readonly redisService: RedisService,
   ) {}
 
   // GET api/v1/genres
   async findAll(queryDto: GetGenresQueryDto) {
     const { keyword, page, limit } = queryDto;
-    // const cacheKey = `genres:kw=${keyword || 'null'}:p=${page}:l=${limit}`;
+    const queryStr = `kw=${keyword || 'null'}:p=${page}:l=${limit}`;
+    const cacheKey = GENRE_REDIS_KEYS.LIST(queryStr);
 
-    // 1. Kiểm tra Cache Redis
-    // try {
-    //   const cachedData = await this.cacheManager.get(cacheKey);
-    //   if (cachedData) {
-    //     return cachedData;
-    //   }
-    // } catch (error) {
-    //   this.logger.error(`[Redis Error] Read fail: ${cacheKey}`, error.stack);
-    // }
+    return this.redisService.getOrSet(
+      cacheKey,
+      async () => {
+        const queryBuilder = this.genreRepository.createQueryBuilder('genre');
 
-    // 2. Truy vấn Database (Cache Miss)
-    const queryBuilder = this.genreRepository.createQueryBuilder('genre');
+        if (keyword) {
+          queryBuilder.where(
+            'genre.code ILIKE :keyword OR genre.name ILIKE :keyword',
+            { keyword: `%${keyword}%` },
+          );
+        }
 
-    if (keyword) {
-      queryBuilder.where(
-        'genre.code ILIKE :keyword OR genre.name ILIKE :keyword',
-        { keyword: `%${keyword}%` },
-      );
-    }
+        queryBuilder
+          .orderBy('genre.name', 'ASC')
+          .skip((page - 1) * limit)
+          .take(limit);
 
-    queryBuilder
-      .orderBy('genre.name', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit);
+        const [items, totalElements] = await queryBuilder.getManyAndCount();
+        const totalPages = Math.ceil(totalElements / limit);
 
-    const [items, totalElements] = await queryBuilder.getManyAndCount();
-    const totalPages = Math.ceil(totalElements / limit);
-
-    const result = {
-      items,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        totalElements,
-        totalPages,
+        return {
+          items,
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            totalElements,
+            totalPages,
+          },
+        };
       },
-    };
-
-    // 3. Lưu Cache Redis (TTL 24h)
-    // try {
-    //   await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
-    // } catch (error) {
-    //   this.logger.error(`[Redis Error] Write fail: ${cacheKey}`, error.stack);
-    // }
-
-    return result;
+      GENRE_CACHE_TTL,
+    );
   }
 
   // GET api/v1/genres/:id
   async findOne(id: number) {
-    // 1. Truy vấn thông tin chi tiết thể loại phim
-    const genre = await this.genreRepository.findOne({
-      where: { id: id.toString() },
-    });
+    const cacheKey = GENRE_REDIS_KEYS.DETAIL(id);
 
-    if (!genre) {
+    const result = await this.redisService.getOrSet(
+      cacheKey,
+      async () => {
+        const genre = await this.genreRepository.findOne({
+          where: { id: id.toString() },
+        });
+
+        if (!genre) return null;
+
+        const [{ count }] = await this.dataSource.query(
+          `SELECT COUNT(*)::int as count FROM movie_genres WHERE genre_id = $1`,
+          [id],
+        );
+
+        return {
+          ...genre,
+          totalAssociatedMovies: count,
+        };
+      },
+      GENRE_CACHE_TTL,
+    );
+
+    if (!result) {
       throw new NotFoundException({
         errorCode: 'GENRE_NOT_FOUND',
         message: `Thể loại phim với ID ${id} không tồn tại trên hệ thống`,
       });
     }
 
-    // 2. Thống kê số lượng phim thuộc thể loại này từ bảng movie_genres
-    const [{ count }] = await this.dataSource.query(
-      `SELECT COUNT(*)::int as count FROM movie_genres WHERE genre_id = $1`,
-      [id],
-    );
-
-    // 3. Trả về thông tin chi tiết kèm tổng số phim liên quan
-    return {
-      ...genre,
-      totalAssociatedMovies: count,
-    };
+    return result;
   }
 
   // POST api/v1/genres
@@ -149,8 +151,8 @@ export class GenresService {
     const newGenre = this.genreRepository.create(createDto);
     const savedGenre = await this.genreRepository.save(newGenre);
 
-    // 5. Evict Toàn bộ Pattern Cache genres:*
-    // await this.clearGenreCachePattern();
+    // 5. Evict toàn bộ Cache liên quan đến Genres
+    await this.redisService.delByPattern(GENRE_REDIS_KEYS.PATTERN_ALL);
 
     return savedGenre;
   }
@@ -212,8 +214,8 @@ export class GenresService {
     Object.assign(existingGenre, updateDto);
     const updatedGenre = await this.genreRepository.save(existingGenre);
 
-    // 6. Evict Toàn bộ Pattern Cache genres:*
-    // await this.clearGenreCachePattern();
+    // 6. Evict toàn bộ Cache liên quan đến Genres
+    await this.redisService.delByPattern(GENRE_REDIS_KEYS.PATTERN_ALL);
 
     return updatedGenre;
   }
@@ -247,8 +249,8 @@ export class GenresService {
     // 3. Thực thi Xóa trong DB
     await this.genreRepository.delete(id);
 
-    // 4. Evict Toàn bộ Pattern Cache genres:*
-    // await this.clearGenreCachePattern();
+    // 4. Evict toàn bộ Cache liên quan đến Genres
+    await this.redisService.delByPattern(GENRE_REDIS_KEYS.PATTERN_ALL);
 
     // 5. Trả về thông tin ID vừa xóa thành công
     return {
@@ -258,81 +260,71 @@ export class GenresService {
 
   // GET api/v1/genres/:id/movies
   async findMoviesByGenre(genreId: number, queryDto: GetGenreMoviesQueryDto) {
-    // 1. Kiểm tra tồn tại Thể loại phim (404 Not Found)
-    const genre = await this.genreRepository.findOne({
-      where: { id: genreId.toString() },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-      },
-    });
+    const { status, page = 1, limit = 10 } = queryDto;
+    const queryStr = `status=${status || 'all'}:p=${page}:l=${limit}`;
+    const cacheKey = GENRE_REDIS_KEYS.MOVIES(genreId, queryStr);
 
-    if (!genre) {
+    const result = await this.redisService.getOrSet(
+      cacheKey,
+      async () => {
+        const genre = await this.genreRepository.findOne({
+          where: { id: genreId.toString() },
+          select: { id: true, code: true, name: true },
+        });
+
+        if (!genre) return null;
+
+        const offset = (page - 1) * limit;
+
+        // 1. Khởi tạo QueryBuilder từ Entity Movie
+        const queryBuilder = this.dataSource
+          .getRepository(Movie)
+          .createQueryBuilder('movie')
+          // Thực hiện INNER JOIN với bảng quan hệ N-N (movies <-> movie_genres <-> genres)
+          .innerJoin('movie.genres', 'genre', 'genre.id = :genreId', {
+            genreId,
+          });
+
+        // 2. Thêm điều kiện lọc theo status nếu có truyền vào
+        if (status) {
+          queryBuilder.andWhere('movie.status = :status', { status });
+        }
+        // 3. Thực hiện đếm tổng số bản ghi và lấy danh sách phim cùng lúc (Giảm số lần gọi DB)
+        const [movies, total] = await queryBuilder
+          .select([
+            'movie.id',
+            'movie.title',
+            'movie.durationMinutes',
+            'movie.releaseDate',
+            'movie.ageRating',
+            'movie.status',
+            'movie.posterUrl',
+          ])
+          .orderBy('movie.releaseDate', 'DESC')
+          .skip(offset)
+          .take(limit)
+          .getManyAndCount();
+
+        return {
+          data: movies,
+          pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / limit),
+          },
+        };
+      },
+      GENRE_CACHE_TTL,
+    );
+
+    if (!result) {
       throw new NotFoundException({
         errorCode: 'GENRE_NOT_FOUND',
         message: `Thể loại phim với ID ${genreId} không tồn tại trên hệ thống`,
       });
     }
 
-    const { status, page = 1, limit = 10 } = queryDto;
-    const offset = (page - 1) * limit;
-
-    // 1. Khởi tạo QueryBuilder từ Entity Movie
-    const queryBuilder = this.dataSource
-      .getRepository(Movie)
-      .createQueryBuilder('movie')
-      // Thực hiện INNER JOIN với bảng quan hệ N-N (movies <-> movie_genres <-> genres)
-      .innerJoin('movie.genres', 'genre', 'genre.id = :genreId', { genreId });
-
-    // 2. Thêm điều kiện lọc theo status nếu có truyền vào
-    if (status) {
-      queryBuilder.andWhere('movie.status = :status', { status });
-    }
-
-    // 3. Thực hiện đếm tổng số bản ghi và lấy danh sách phim cùng lúc (Giảm số lần gọi DB)
-    const [movies, total] = await queryBuilder
-      .select([
-        'movie.id',
-        'movie.title',
-        'movie.durationMinutes',
-        'movie.releaseDate',
-        'movie.ageRating',
-        'movie.status',
-        'movie.posterUrl',
-      ])
-      .orderBy('movie.releaseDate', 'DESC')
-      .skip(offset)
-      .take(limit)
-      .getManyAndCount();
-
-    // 4. Trả về kết quả theo cấu trúc phân trang
-    return {
-      data: movies,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return result;
   }
-
-  // Helper xóa cache theo pattern genres:*
-  // private async clearGenreCachePattern(): Promise<void> {
-  //   try {
-  //     const store = (this.cacheManager as any).store;
-  //     if (typeof store.keys === 'function') {
-  //       const keys: string[] = await store.keys('genres:*');
-  //       if (keys && keys.length > 0) {
-  //         await Promise.all(keys.map((key) => this.cacheManager.del(key)));
-  //       }
-  //     }
-  //   } catch (error) {
-  //     this.logger.error(
-  //       '[Redis Error] Evict genres:* pattern failed',
-  //       error.stack,
-  //     );
-  //   }
-  // }
 }

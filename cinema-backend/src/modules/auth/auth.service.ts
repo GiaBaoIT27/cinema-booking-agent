@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
@@ -14,6 +15,9 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from '../users/enums/user-status.enum.js';
 import { MembershipTier } from '../users/enums/membership-tier.enum.js';
+import { TokenRevocationService } from './services/token-revocation.service.js';
+import { AUTH_REDIS_KEYS } from './constants/auth-redis.constant.js';
+import { RedisService } from '#src/common/redis/redis.service.js';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +26,8 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    // Inject thêm RedisService hoặc UserRepository của bạn vào đây
+    private readonly redisService: RedisService,
+    private readonly tokenRevocationService: TokenRevocationService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -125,6 +130,11 @@ export class AuthService {
     const roles = ['CUSTOMER']; // Thường lấy từ user.roles
     const permissions = ['movies:read']; // Thường lấy từ logic kết nối Role-Permission
 
+    // Tạo jti (JWT ID) duy nhất cho mỗi Access Token để hỗ trợ Blacklist khi Logout
+    const accessJti = randomUUID();
+    const refreshJti = randomUUID();
+    const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 ngày
+
     // 5. Khởi tạo Cặp Tokens
     const payload = {
       sub: user.id,
@@ -132,6 +142,7 @@ export class AuthService {
       roles: roles,
       permissions: permissions,
       // cineplexId: user.cineplexId
+      jti: accessJti,
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -141,8 +152,9 @@ export class AuthService {
         ('30m' as any),
     });
 
+    // 2. Tạo Refresh Token (7 ngày)
     const refreshToken = await this.jwtService.signAsync(
-      { sub: user.id },
+      { sub: user.id, jti: refreshJti },
       {
         secret: this.configService.get<string>('jwt.refreshSecret'),
         expiresIn:
@@ -151,8 +163,9 @@ export class AuthService {
       },
     );
 
-    // Logic doanh nghiệp: Lưu refresh_token vào Redis với TTL tương ứng thời gian sống token
-    // await this.redisService.set(`ref_token:${mockUser.id}`, tokens.refreshToken, ttl);
+    // 3. Lưu Refresh Token (hoặc JTI của nó) vào Redis
+    const redisKey = AUTH_REDIS_KEYS.REFRESH_TOKEN(user.id, refreshJti);
+    await this.redisService.set(redisKey, refreshToken, REFRESH_TTL_SECONDS);
 
     // 6. Trả về đúng cấu trúc data cần bọc
     return {
@@ -169,5 +182,32 @@ export class AuthService {
         roles: roles,
       },
     };
+  }
+
+  // Đăng xuất 1 phiên làm việc bằng cách đưa JTI của Token vào Blacklist
+  async logout(accessToken: string): Promise<void> {
+    try {
+      const decoded = await this.jwtService.verifyAsync(accessToken, {
+        secret: this.configService.get<string>('jwt.accessSecret'),
+      });
+
+      if (decoded?.jti && decoded?.exp) {
+        await this.tokenRevocationService.blacklistToken(
+          decoded.jti,
+          decoded.exp,
+        );
+      }
+    } catch {
+      throw new UnauthorizedException({
+        errorCode: 'INVALID_TOKEN',
+        message: 'Token không hợp lệ hoặc đã hết hạn.',
+      });
+    }
+  }
+
+  // Khóa tài khoản và thu hồi TẤT CẢ Token hiện có của User
+  async blockUser(userId: string): Promise<void> {
+    await this.userRepository.update(userId, { status: UserStatus.BLOCKED });
+    await this.tokenRevocationService.revokeAllUserTokens(userId);
   }
 }

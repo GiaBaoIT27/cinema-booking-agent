@@ -8,8 +8,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, QueryFailedError, Repository } from 'typeorm';
-// import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { QueryFailedError, Repository } from 'typeorm';
 import { Cache } from 'cache-manager';
 import { Province } from './entities/province.entity.js';
 import { Ward } from './entities/ward.entity.js';
@@ -17,92 +16,72 @@ import { ProvinceType } from './enums/province-type.enum.js';
 import { GetProvincesQueryDto } from './dto/query-province.dto.js';
 import { GetProvinceWardsQueryDto } from './dto/query-province-wards.dto.js';
 import { CreateProvinceDto } from './dto/create-province.dto.js';
+import { RedisService } from '#src/common/redis/redis.service.js';
+import {
+  LOCATION_REDIS_KEYS,
+  LOCATION_CACHE_TTL,
+} from './constants/location-redis.constant.js';
 
 @Injectable()
 export class ProvincesService {
-  // private readonly PROVINCE_CACHE_TTL = 86400 * 1000; // 24 giờ (ms)
-
   constructor(
     @InjectRepository(Province)
     private readonly provinceRepository: Repository<Province>,
     @InjectRepository(Ward)
     private readonly wardRepository: Repository<Ward>,
-    // @Inject(CACHE_MANAGER)
-    // private readonly cacheManager: Cache,
+    private readonly redisService: RedisService,
   ) {}
-
-  /**
-   * Helper xóa tất cả Redis Keys thuộc Pattern provinces:*
-   */
-  // private async clearProvinceCache(): Promise<void> {
-  //   const store = this.cacheManager.store as any;
-  //   if (typeof store.keys === 'function') {
-  //     const keys: string[] = await store.keys('provinces:*');
-  //     if (keys.length > 0) {
-  //       await Promise.all(keys.map((key) => this.cacheManager.del(key)));
-  //     }
-  //   } else {
-  //     await this.cacheManager.reset();
-  //   }
-  // }
 
   // 1. GET api/v1/provinces
   async findAll(queryDto: GetProvincesQueryDto) {
     const { type, keyword, page, limit } = queryDto;
-    const skip = (page - 1) * limit;
+    const queryStr = `type=${type || 'all'}:kw=${keyword || 'none'}:p=${page}:l=${limit}`;
+    const cacheKey = LOCATION_REDIS_KEYS.PROVINCES_LIST(queryStr);
 
-    // 1. Tạo Cache Key
-    const cacheKey = `provinces:type=${type || 'null'}:kw=${keyword || 'null'}:p=${page}:l=${limit}`;
+    return this.redisService.getOrSet(
+      cacheKey,
+      async () => {
+        const skip = (page - 1) * limit;
+        const qb = this.provinceRepository.createQueryBuilder('p');
 
-    // // 2. Kiểm tra Redis Cache
-    // const cachedData = await this.cacheManager.get<any>(cacheKey);
-    // if (cachedData) {
-    //   return cachedData;
-    // }
+        if (type) {
+          qb.andWhere('p.type = :type', { type });
+        }
 
-    // 3. Query Database (Cache Miss)
-    const qb = this.provinceRepository.createQueryBuilder('p');
+        if (keyword) {
+          const safeKeyword = `%${keyword.trim().replace(/[%_\\]/g, '\\$&')}%`;
+          qb.andWhere(
+            '(p.code ILIKE :safeKeyword OR p.name ILIKE :safeKeyword)',
+            { safeKeyword },
+          );
+        }
 
-    if (type) {
-      qb.andWhere('p.type = :type', { type });
-    }
+        const [provinces, totalElements] = await qb
+          .orderBy('p.code', 'ASC')
+          .skip(skip)
+          .take(limit)
+          .getManyAndCount();
 
-    if (keyword) {
-      const safeKeyword = `%${keyword.trim().replace(/[%_\\]/g, '\\$&')}%`;
-      qb.andWhere('(p.code ILIKE :safeKeyword OR p.name ILIKE :safeKeyword)', {
-        safeKeyword,
-      });
-    }
-
-    const [provinces, totalElements] = await qb
-      .orderBy('p.code', 'ASC')
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
-
-    // 4. Transform response
-    const result = {
-      data: provinces.map((p) => ({
-        id: Number(p.id),
-        code: p.code,
-        name: p.name,
-        type: p.type,
-        createdAt: p.createdAt,
-      })),
-      meta: {
-        pagination: {
-          page,
-          limit,
-          totalElements,
-          totalPages: Math.ceil(totalElements / limit) || 1,
-        },
+        return {
+          data: provinces.map((p) => ({
+            id: Number(p.id),
+            code: p.code,
+            name: p.name,
+            type: p.type,
+            createdAt: p.createdAt,
+          })),
+          meta: {
+            pagination: {
+              page,
+              limit,
+              totalElements,
+              totalPages: Math.ceil(totalElements / limit) || 1,
+            },
+          },
+        };
       },
-    };
-
-    // 5. Ghi Cache Redis với TTL 24 tiếng
-    // await this.cacheManager.set(cacheKey, result, this.PROVINCE_CACHE_TTL);
-
-    return result;
+      LOCATION_CACHE_TTL,
+    );
   }
 
   // 2. POST api/v1/provinces
@@ -157,8 +136,8 @@ export class ProvincesService {
 
       const saved = await this.provinceRepository.save(province);
 
-      // 5. Cache Eviction (Xóa toàn bộ Cache liên quan đến provinces)
-      // await this.clearProvinceCache();
+      // 5. Invalidate toàn bộ Cache liên quan địa giới hành chính
+      await this.redisService.delByPattern(LOCATION_REDIS_KEYS.PATTERN_ALL);
 
       return {
         id: Number(saved.id),

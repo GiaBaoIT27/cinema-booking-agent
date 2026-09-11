@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -8,69 +7,45 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, DataSource } from 'typeorm';
-// import { CACHE_MANAGER } from '@nestjs/cache-manager';
-// import { Cache } from 'cache-manager';
 import { SeatType } from './entities/seat-type.entity.js';
 import { CreateSeatTypeDto } from './dto/create-seat-type.dto.js';
 import { UpdateSeatTypeDto } from './dto/update-seat-type.dto.js';
+import { RedisService } from '#src/common/redis/redis.service.js';
+import {
+  SEAT_TYPE_REDIS_KEYS,
+  SEAT_TYPE_CACHE_TTL,
+} from './constants/seat-type-redis.constant.js';
 
 @Injectable()
 export class SeatTypeService {
   private readonly logger = new Logger(SeatTypeService.name);
-  //   private readonly CACHE_KEY = 'seat_types:all';
-  //   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 giờ
 
   constructor(
     @InjectRepository(SeatType)
     private readonly seatTypeRepository: Repository<SeatType>,
     private readonly dataSource: DataSource,
-    // @Inject(CACHE_MANAGER)
-    // private readonly cacheManager: Cache,
+    private readonly redisService: RedisService,
   ) {}
 
   // GET api/v1/seat-types
   async findAll(): Promise<SeatType[]> {
-    // 1. Kiểm tra Cache Redis
-    // try {
-    //   const cachedData = await this.cacheManager.get<SeatType[]>(
-    //     this.CACHE_KEY,
-    //   );
-    //   if (cachedData) {
-    //     return cachedData;
-    //   }
-    // } catch (error) {
-    //   this.logger.error(
-    //     `[Redis Error] Read fail: ${this.CACHE_KEY}`,
-    //     error.stack,
-    //   );
-    // }
-
-    // 2. Truy vấn Database (Cache Miss)
-    const seatTypes = await this.seatTypeRepository.find({
-      order: {
-        displayOrder: 'ASC',
-        id: 'ASC',
-      },
-    });
-
-    // // 3. Lưu dữ liệu vào Cache
-    // try {
-    //   await this.cacheManager.set(this.CACHE_KEY, seatTypes, this.CACHE_TTL);
-    // } catch (error) {
-    //   this.logger.error(
-    //     `[Redis Error] Write fail: ${this.CACHE_KEY}`,
-    //     error.stack,
-    //   );
-    // }
-
-    return seatTypes;
+    return this.redisService.getOrSet(
+      SEAT_TYPE_REDIS_KEYS.ALL,
+      () =>
+        this.seatTypeRepository.find({
+          order: { displayOrder: 'ASC', id: 'ASC' },
+        }),
+      SEAT_TYPE_CACHE_TTL,
+    );
   }
 
   // GET api/v1/seat-types/:id
   async findOne(id: number): Promise<SeatType> {
-    const seatType = await this.seatTypeRepository.findOne({
-      where: { id: id.toString() },
-    });
+    const seatType = await this.redisService.getOrSet(
+      SEAT_TYPE_REDIS_KEYS.DETAIL(id),
+      () => this.seatTypeRepository.findOne({ where: { id: id.toString() } }),
+      SEAT_TYPE_CACHE_TTL,
+    );
 
     if (!seatType) {
       throw new NotFoundException({
@@ -119,16 +94,8 @@ export class SeatTypeService {
     const newSeatType = this.seatTypeRepository.create(createDto);
     const savedSeatType = await this.seatTypeRepository.save(newSeatType);
 
-    // // 5. Invalidate Cache Redis Key seat_types:all
-    // try {
-    //   await this.cacheManager.del(this.CACHE_KEY);
-    // } catch (error) {
-    //   this.logger.error(
-    //     `[Redis Error] Xóa cache thất bại: ${this.CACHE_KEY}`,
-    //     error.stack,
-    //   );
-    // }
-
+    // 5. Invalidate Cache danh sách khi có dữ liệu mới
+    await this.redisService.del(SEAT_TYPE_REDIS_KEYS.ALL);
     return savedSeatType;
   }
 
@@ -181,15 +148,11 @@ export class SeatTypeService {
     const updatedSeatType =
       await this.seatTypeRepository.save(existingSeatType);
 
-    // 6. Invalidate Cache Redis Key seat_types:all
-    // try {
-    //   await this.cacheManager.del(this.CACHE_KEY);
-    // } catch (error) {
-    //   this.logger.error(
-    //     `[Redis Error] Xóa cache thất bại: ${this.CACHE_KEY}`,
-    //     error.stack,
-    //   );
-    // }
+    // 6. Invalidate cả Cache danh sách lẫn Cache chi tiết
+    await this.redisService.del([
+      SEAT_TYPE_REDIS_KEYS.ALL,
+      SEAT_TYPE_REDIS_KEYS.DETAIL(id),
+    ]);
 
     return updatedSeatType;
   }
@@ -224,15 +187,11 @@ export class SeatTypeService {
     // 3. Thực thi Xóa trong DB
     await this.seatTypeRepository.delete(id);
 
-    // 4. Invalidate Cache Redis Key seat_types:all
-    // try {
-    //   await this.cacheManager.del(this.CACHE_KEY);
-    // } catch (error) {
-    //   this.logger.error(
-    //     `[Redis Error] Xóa cache thất bại: ${this.CACHE_KEY}`,
-    //     error.stack,
-    //   );
-    // }
+    // 4. Invalidate cả Cache danh sách lẫn Cache chi tiết
+    await this.redisService.del([
+      SEAT_TYPE_REDIS_KEYS.ALL,
+      SEAT_TYPE_REDIS_KEYS.DETAIL(id),
+    ]);
 
     // 5. Trả về Response theo đúng schema đặc tả
     return {

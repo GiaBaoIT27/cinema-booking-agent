@@ -135,9 +135,10 @@ export class PromotionsService {
     });
 
     if (!promotion) {
-      throw new NotFoundException(
-        `Không tìm thấy chương trình khuyến mãi với ID ${id}`,
-      );
+      throw new NotFoundException({
+        errorCode: 'PROMOTION_NOT_FOUND',
+        message: `Không tìm thấy chương trình khuyến mãi với ID ${id}`,
+      });
     }
 
     // Tính toán số lượt còn lại (remainingUsage)

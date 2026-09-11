@@ -33,6 +33,7 @@ import { PromotionsModule } from './modules/promotions/promotions.module.js';
 import { FnbModule } from './modules/fnb/fnb.module.js';
 import { UploadModule } from './modules/upload/upload.module.js';
 import { SeatTypeModule } from './modules/seat-types/seat-types.module.js';
+import { BookingsModule } from './modules/bookings/bookings.module.js';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { SeatTypeModule } from './modules/seat-types/seat-types.module.js';
     FnbModule,
     UploadModule,
     SeatTypeModule,
+    BookingsModule,
   ],
   providers: [
     // 1. Kích hoạt JwtAuthGuard chạy toàn cục (Global Guard) trước tiên

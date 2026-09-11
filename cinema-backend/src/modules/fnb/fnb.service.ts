@@ -7,8 +7,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
-// import { CACHE_MANAGER } from '@nestjs/cache-manager';
-// import { Cache } from 'cache-manager';
 import { UploadService } from '../upload/upload.service.js';
 import { FnbItemType } from './enums/fnb-item-type.enum.js';
 import { FnbCategory } from './enums/fnb-category.enum.js';
@@ -17,6 +15,11 @@ import { GetFnbItemsDto } from './dto/query-fnb-items.dto.js';
 import { CreateFnbItemDto } from './dto/create-fnb-item.dto.js';
 import { UpdateFnbItemDto } from './dto/update-fnb-item.dto.js';
 import { UpdateFnbItemStatusDto } from './dto/update-fnb-item-status.dto.js';
+import { RedisService } from '#src/common/redis/redis.service.js';
+import {
+  FNB_REDIS_KEYS,
+  FNB_CACHE_TTL,
+} from './constants/fnb-redis.constant.js';
 
 export interface PaginatedFnbResponse {
   items: FnbItem[];
@@ -31,76 +34,70 @@ export interface PaginatedFnbResponse {
 @Injectable()
 export class FnbService {
   private readonly logger = new Logger(FnbService.name);
-  private readonly CACHE_TTL = 12 * 60 * 60 * 1000; // 12h
 
   constructor(
     @InjectRepository(FnbItem)
     private readonly fnbRepository: Repository<FnbItem>,
-    // @Inject(CACHE_MANAGER)
-    // private readonly cacheManager: Cache,
     private readonly uploadService: UploadService,
+    private readonly redisService: RedisService,
   ) {}
 
   // GET api/v1/fnb-items
   async findAll(queryDto: GetFnbItemsDto): Promise<PaginatedFnbResponse> {
     const { category, type, isActive, keyword, page, limit } = queryDto;
 
-    // const cacheKey = `fnb_items:category=${category ?? 'all'}:type=${type ?? 'all'}:active=${isActive ?? 'all'}:kw=${keyword ?? 'none'}:p=${page}:l=${limit}`;
+    const queryStr = `cat=${category ?? 'all'}:type=${type ?? 'all'}:act=${isActive ?? 'all'}:kw=${keyword ?? 'none'}:p=${page}:l=${limit}`;
+    const cacheKey = FNB_REDIS_KEYS.LIST(queryStr);
 
-    // try {
-    //   const cachedData =
-    //     await this.cacheManager.get<PaginatedFnbResponse>(cacheKey);
-    //   if (cachedData) {
-    //     return cachedData;
-    //   }
-    // } catch (error) {
-    //   this.logger.error(`[Redis Error] Read fail: ${cacheKey}`, error.stack);
-    // }
+    return this.redisService.getOrSet(
+      cacheKey,
+      async () => {
+        const query = this.fnbRepository.createQueryBuilder('fnb');
 
-    const query = this.fnbRepository.createQueryBuilder('fnb');
+        if (category) query.andWhere('fnb.category = :category', { category });
+        if (type) query.andWhere('fnb.type = :type', { type });
+        if (isActive !== undefined)
+          query.andWhere('fnb.is_active = :isActive', { isActive });
+        if (keyword) {
+          query.andWhere(
+            '(fnb.sku ILIKE :keyword OR fnb.name ILIKE :keyword)',
+            {
+              keyword: `%${keyword}%`,
+            },
+          );
+        }
 
-    if (category) query.andWhere('fnb.category = :category', { category });
-    if (type) query.andWhere('fnb.type = :type', { type });
-    if (isActive !== undefined)
-      query.andWhere('fnb.is_active = :isActive', { isActive });
-    if (keyword) {
-      query.andWhere('(fnb.sku ILIKE :keyword OR fnb.name ILIKE :keyword)', {
-        keyword: `%${keyword}%`,
-      });
-    }
+        query
+          .orderBy('fnb.category', 'ASC')
+          .addOrderBy('fnb.name', 'ASC')
+          .skip((page - 1) * limit)
+          .take(limit);
 
-    query
-      .orderBy('fnb.category', 'ASC')
-      .addOrderBy('fnb.name', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit);
+        const [items, totalElements] = await query.getManyAndCount();
 
-    const [items, totalElements] = await query.getManyAndCount();
-
-    const result: PaginatedFnbResponse = {
-      items,
-      pagination: {
-        page,
-        limit,
-        totalElements,
-        totalPages: Math.ceil(totalElements / limit),
+        return {
+          items,
+          pagination: {
+            page,
+            limit,
+            totalElements,
+            totalPages: Math.ceil(totalElements / limit),
+          },
+        };
       },
-    };
-
-    // try {
-    //   await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
-    // } catch (error) {
-    //   this.logger.error(`[Redis Error] Write fail: ${cacheKey}`, error.stack);
-    // }
-
-    return result;
+      FNB_CACHE_TTL,
+    );
   }
 
   // GET api/v1/fnb-items/:id
   async findOne(id: number): Promise<FnbItem> {
-    const item = await this.fnbRepository.findOne({
-      where: { id: id.toString() },
-    });
+    const cacheKey = FNB_REDIS_KEYS.DETAIL(id);
+
+    const item = await this.redisService.getOrSet(
+      cacheKey,
+      () => this.fnbRepository.findOne({ where: { id: id.toString() } }),
+      FNB_CACHE_TTL,
+    );
 
     if (!item) {
       throw new NotFoundException({
@@ -187,35 +184,11 @@ export class FnbService {
 
     const savedItem = await this.fnbRepository.save(newItem);
 
-    // 5. Invalidate toàn bộ Cache dạng fnb_items:*
-    // await this.clearFnbCachePattern();
+    // Xóa toàn bộ Cache liên quan đến F&B
+    await this.redisService.delByPattern(FNB_REDIS_KEYS.PATTERN_ALL);
 
     return savedItem;
   }
-
-  /**
-   * Helper xóa toàn bộ cache khớp pattern 'fnb_items:*'
-   */
-  //   private async clearFnbCachePattern(): Promise<void> {
-  //     try {
-  //       const store = this.cacheManager.store as any;
-  //       if (typeof store.keys === 'function') {
-  //         const keys: string[] = await store.keys('fnb_items:*');
-  //         if (keys && keys.length > 0) {
-  //           if (typeof store.mdel === 'function') {
-  //             await store.mdel(...keys);
-  //           } else {
-  //             await Promise.all(keys.map((key) => this.cacheManager.del(key)));
-  //           }
-  //         }
-  //       }
-  //     } catch (error) {
-  //       this.logger.error(
-  //         '[Redis Invalidation Error] Không thể xóa cache pattern fnb_items:*',
-  //         error.stack,
-  //       );
-  //     }
-  //   }
 
   // PUT api/v1/fnb-items
   async update(
@@ -304,8 +277,8 @@ export class FnbService {
 
     const updatedItem = await this.fnbRepository.save(existingItem);
 
-    // 6. Invalidate toàn bộ Cache dạng fnb_items:*
-    // await this.clearFnbCachePattern();
+    // 6. Xóa toàn bộ Cache danh sách và chi tiết F&B
+    await this.redisService.delByPattern(FNB_REDIS_KEYS.PATTERN_ALL);
 
     return updatedItem;
   }
@@ -327,8 +300,8 @@ export class FnbService {
     existingItem.isActive = updateStatusDto.isActive;
     const updatedItem = await this.fnbRepository.save(existingItem);
 
-    // 3. Invalidate toàn bộ Cache dạng fnb_items:*
-    // await this.clearFnbCachePattern();
+    // 3. Xóa toàn bộ Cache danh sách và chi tiết F&B
+    await this.redisService.delByPattern(FNB_REDIS_KEYS.PATTERN_ALL);
 
     // 4. Trả về đúng Data Schema đặc tả yêu cầu
     return {
