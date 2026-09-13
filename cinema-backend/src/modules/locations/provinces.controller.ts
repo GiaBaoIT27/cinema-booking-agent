@@ -25,6 +25,7 @@ export class ProvincesController {
 
   // 1. GET api/v1/provinces
   @Get()
+  @HttpCode(HttpStatus.OK)
   @Public()
   findAll(@Query() query: GetProvincesQueryDto) {
     return this.provincesService.findAll(query);
@@ -32,15 +33,16 @@ export class ProvincesController {
 
   // 2. POST api/v1/provinces
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('province:create')
-  @HttpCode(HttpStatus.CREATED)
   create(@Body() createDto: CreateProvinceDto) {
     return this.provincesService.create(createDto);
   }
 
   // 3. GET api/v1/provinces/:province_id/wards
   @Get(':province_id/wards')
+  @HttpCode(HttpStatus.OK)
   @Public()
   getProvinceWards(
     @Param('province_id', ParseIntPipe) provinceId: number,

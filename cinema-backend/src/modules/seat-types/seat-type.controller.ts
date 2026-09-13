@@ -27,14 +27,15 @@ export class SeatTypeController {
 
   // 1. GET api/v1/seat-types
   @Get()
-  @Public()
   @HttpCode(HttpStatus.OK)
+  @Public()
   getAllSeatTypes() {
     return this.seatTypeService.findAll();
   }
 
   // 2. GET api/v1/seat-types/:id
   @Get(':id')
+  @HttpCode(HttpStatus.OK)
   @Public()
   getSeatTypeById(@Param('id', ParseIntPipe) id: number) {
     return this.seatTypeService.findOne(id);
@@ -42,18 +43,18 @@ export class SeatTypeController {
 
   // 3. POST api/v1/seat-types
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('seat_type:create')
-  @HttpCode(HttpStatus.CREATED)
   createSeatType(@Body() createDto: CreateSeatTypeDto) {
     return this.seatTypeService.create(createDto);
   }
 
   // 4. PUT api/v1/seat-types
   @Put(':id')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('seat_type:update')
-  @HttpCode(HttpStatus.OK)
   updateSeatType(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateSeatTypeDto,
@@ -63,9 +64,9 @@ export class SeatTypeController {
 
   // 5. DELETE api/v1/seat-types/:id
   @Delete(':id')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('seat_type:delete')
-  @HttpCode(HttpStatus.OK)
   deleteSeatType(@Param('id', ParseIntPipe) id: number) {
     return this.seatTypeService.remove(id);
   }

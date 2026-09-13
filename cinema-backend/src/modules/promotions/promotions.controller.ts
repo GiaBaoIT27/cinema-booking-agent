@@ -30,13 +30,15 @@ export class PromotionsController {
 
   // 2. GET /api/v1/promotions/public
   @Get('public')
-  @Public() // Decorator bỏ qua kiểm tra JWT Auth Guard
+  @HttpCode(HttpStatus.OK)
+  @Public()
   findPublicActive(@Query() query: GetPublicPromotionsQueryDto) {
     return this.promotionsService.findPublicActive(query);
   }
 
   // 1. GET /api/v1/promotions
   @Get()
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:view')
   findAllForAdmin(@Query() query: GetPromotionsQueryDto) {
@@ -45,6 +47,7 @@ export class PromotionsController {
 
   // 3. GET /api/v1/promotions/:id
   @Get(':id')
+  @HttpCode(HttpStatus.OK)
   @Public()
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.promotionsService.findOne(id);
@@ -52,14 +55,15 @@ export class PromotionsController {
 
   // 4. POST /api/v1/promotions
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:create')
-  @HttpCode(HttpStatus.CREATED)
   create(@Body() createDto: CreatePromotionDto) {
     return this.promotionsService.create(createDto);
   }
   // 5. PUT /api/v1/promotions/:id
   @Put(':id')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:update')
   update(
@@ -71,6 +75,7 @@ export class PromotionsController {
 
   // 6. PATCH /api/v1/promotions/:id/status
   @Patch(':id/status')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:update')
   updateStatus(
@@ -82,9 +87,9 @@ export class PromotionsController {
 
   // 7. POST /api/v1/promotions/validate
   @Post('validate')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:apply')
-  @HttpCode(HttpStatus.OK)
   validateAndCalculate(@Body() validateDto: ValidatePromotionDto) {
     return this.promotionsService.validateAndCalculate(validateDto);
   }

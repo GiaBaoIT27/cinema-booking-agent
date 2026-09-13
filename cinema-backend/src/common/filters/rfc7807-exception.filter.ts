@@ -56,34 +56,44 @@ export class Rfc7807ExceptionFilter implements ExceptionFilter {
 
         message = Array.isArray(rawMessage)
           ? rawMessage.join(', ')
-          : rawMessage;
+          : String(rawMessage);
       }
     }
     // 2. Xử lý lỗi từ Tầng Cơ sở dữ liệu (PostgreSQL / TypeORM)
-    else if (exception.code === '23505') {
-      status = HttpStatus.CONFLICT;
-      errorCode = 'DATA_ALREADY_EXISTS';
-      message = 'Dữ liệu bị trùng lặp trong hệ thống';
+    else if (
+      exception &&
+      (exception.code === '23505' || exception.code === '23503')
+    ) {
+      if (exception.code === '23505') {
+        status = HttpStatus.CONFLICT;
+        errorCode = 'DATA_ALREADY_EXISTS';
+        message = 'Dữ liệu bị trùng lặp trong hệ thống';
 
-      const detail = exception.detail || '';
-      const match = detail.match(/\((.*?)\)=\((.*?)\)/); // Trích xuất (tên_trường)=(giá_trị)
-      if (match && match[1] && match[2]) {
-        errors.push({
-          field: match[1],
-          message: `Giá trị '${match[2]}' đã tồn tại và không thể sử dụng lại.`,
-        });
+        const detail = exception.detail || '';
+        const match = detail.match(/\((.*?)\)=\((.*?)\)/);
+        if (match && match[1] && match[2]) {
+          errors.push({
+            field: match[1],
+            message: `Giá trị '${match[2]}' đã tồn tại và không thể sử dụng lại.`,
+          });
+        } else {
+          status = HttpStatus.BAD_REQUEST;
+          errorCode = 'FOREIGN_KEY_VIOLATION';
+          message = 'Dữ liệu liên kết không tồn tại hoặc đang được sử dụng';
+        }
       }
-    } else if (exception.code === '23503') {
-      status = HttpStatus.BAD_REQUEST;
-      errorCode = 'FOREIGN_KEY_VIOLATION';
-      message = 'Dữ liệu liên kết không tồn tại hoặc đang được sử dụng';
     }
     // 3. Các lỗi không xác định khác (Lỗi runtime, crash code...)
     else {
-      // Ghi log lỗi hệ thống kèm Stack Trace để Developer vào kiểm tra
+      const errorMsg =
+        exception instanceof Error ? exception.message : String(exception);
+      const errorStack = exception instanceof Error ? exception.stack : '';
+
+      message = 'Đã có lỗi hệ thống xảy ra'; // Giữ thông điệp chung chung bảo mật cho client
+
       this.logger.error(
-        `[${requestId}] Unhandled Exception: ${exception.message}`,
-        exception.stack,
+        `[${requestId}] Unhandled Exception: ${errorMsg}`,
+        errorStack,
       );
     }
 

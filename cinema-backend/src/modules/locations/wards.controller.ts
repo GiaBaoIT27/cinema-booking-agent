@@ -23,6 +23,7 @@ export class WardsController {
 
   // 1. GET api/v1/wards
   @Get()
+  @HttpCode(HttpStatus.OK)
   @Public()
   findAll(@Query() query: GetWardsQueryDto) {
     return this.wardsService.findAll(query);
@@ -30,9 +31,9 @@ export class WardsController {
 
   // 2. POST api/v1/wards
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('ward:create')
-  @HttpCode(HttpStatus.CREATED)
   create(@Body() createDto: CreateWardDto) {
     return this.wardsService.create(createDto);
   }

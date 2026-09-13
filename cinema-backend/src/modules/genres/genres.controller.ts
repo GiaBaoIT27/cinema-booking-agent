@@ -30,34 +30,34 @@ export class GenresController {
 
   // 1. GET api/v1/genres
   @Get()
-  @Public()
   @HttpCode(HttpStatus.OK)
+  @Public()
   getAllGenres(@Query() queryDto: GetGenresQueryDto) {
     return this.genreService.findAll(queryDto);
   }
 
   // 2. GET api/v1/genres/:id
   @Get(':id')
-  @Public()
   @HttpCode(HttpStatus.OK)
+  @Public()
   getGenreById(@Param('id', ParseIntPipe) id: number) {
     return this.genreService.findOne(id);
   }
 
   // 3. POST api/v1/genres
   @Post()
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  // @RequirePermissions('genre:create')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('genre:create')
   createGenre(@Body() createDto: CreateGenreDto) {
     return this.genreService.create(createDto);
   }
 
   // 4. PUT api/v1/genres/:id
   @Put(':id')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('genre:update')
-  @HttpCode(HttpStatus.OK)
   updateGenre(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateGenreDto,
@@ -67,9 +67,9 @@ export class GenresController {
 
   // 5. DELETE api/v1/genres/:id
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  // @RequirePermissions('genre:delete')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('genre:delete')
   deleteGenre(@Param('id', ParseIntPipe) id: number) {
     return this.genreService.remove(id);
   }

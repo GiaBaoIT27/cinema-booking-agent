@@ -30,6 +30,8 @@ export class DistributorsController {
 
   // 1. Get /api/v1/distributors
   @Get()
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('distributor:view')
   findAll(@Query() query: GetDistributorsQueryDto) {
     return this.distributorsService.findAll(query);
@@ -37,21 +39,26 @@ export class DistributorsController {
 
   //2. POST /api/v1/distributors
   @Post()
-  @RequirePermissions('distributor:create')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('distributor:create')
   create(@Body() createDto: CreateDistributorDto) {
     return this.distributorsService.create(createDto);
   }
 
-  // //3. GET /api/v1/distributors
-  // @Get(':id')
-  // @RequirePermissions('distributor:view')
-  // findOne(@Param('id', ParseIntPipe) id: number) {
-  //   return this.distributorsService.findOne(id);
-  // }
+  //3. GET /api/v1/distributors
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('distributor:view')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.distributorsService.findOne(id);
+  }
 
   // 4. PUT /api/v1/distributors/:id
   @Put(':id')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('distributor:update')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -62,6 +69,8 @@ export class DistributorsController {
 
   // 5. PATCH /api/v1/distributors/:id/status
   @Patch(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('distributor:update')
   updateStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -71,6 +80,8 @@ export class DistributorsController {
   }
 
   @Get(':id/movies')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('movie:view')
   getDistributorMovies(
     @Param('id', ParseIntPipe) id: number,

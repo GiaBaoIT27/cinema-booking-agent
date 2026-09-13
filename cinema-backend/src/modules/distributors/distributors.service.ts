@@ -176,67 +176,67 @@ export class DistributorsService {
     }
   }
 
-  // //GET /api/v1/distributors/:id
-  // async findOne(id: number) {
-  //   // 1. Tìm thông tin NPH theo ID
-  //   const distributor = await this.distributorRepository.findOne({
-  //     where: { id: id.toString() },
-  //   });
+  //GET /api/v1/distributors/:id
+  async findOne(id: number) {
+    // 1. Tìm thông tin NPH theo ID
+    const distributor = await this.distributorRepository.findOne({
+      where: { id: id.toString() },
+    });
 
-  //   if (!distributor) {
-  //     throw new NotFoundException({
-  //       errorCode: 'DISTRIBUTOR_NOT_FOUND',
-  //       message: `Không tìm thấy nhà phát hành với ID ${id}`,
-  //     });
-  //   }
+    if (!distributor) {
+      throw new NotFoundException({
+        errorCode: 'DISTRIBUTOR_NOT_FOUND',
+        message: `Không tìm thấy nhà phát hành với ID ${id}`,
+      });
+    }
 
-  //   // 2. Thống kê tổng số phim thuộc NPH
-  //   const movieCountResult = await this.distributorRepository.manager
-  //     .createQueryBuilder()
-  //     .select('COUNT(m.id)', 'count')
-  //     .from('movies', 'm')
-  //     .where('m.distributor_id = :id', { id })
-  //     .getRawOne();
+    // 2. Thống kê tổng số phim thuộc NPH
+    const movieCountResult = await this.distributorRepository.manager
+      .createQueryBuilder()
+      .select('COUNT(m.id)', 'count')
+      .from('movies', 'm')
+      .where('m.distributor_id = :id', { id })
+      .getRawOne();
 
-  //   const totalDistributedMovies = Number(movieCountResult?.count || 0);
+    const totalDistributedMovies = Number(movieCountResult?.count || 0);
 
-  //   // 3. Lấy kỳ đối soát tài chính gần nhất
-  //   const lastSettlement = await this.distributorRepository.manager
-  //     .createQueryBuilder()
-  //     .select('s.start_date', 'startDate')
-  //     .addSelect('s.end_date', 'endDate')
-  //     .from('financial_settlements', 's')
-  //     .where('s.distributor_id = :id', { id })
-  //     .andWhere("s.status = 'COMPLETED'")
-  //     .orderBy('s.end_date', 'DESC')
-  //     .getRawOne();
+    // 3. Lấy kỳ đối soát tài chính gần nhất
+    const lastSettlement = await this.distributorRepository.manager
+      .createQueryBuilder()
+      .select('s.start_date', 'startDate')
+      .addSelect('s.end_date', 'endDate')
+      .from('financial_settlements', 's')
+      .where('s.distributor_id = :id', { id })
+      .andWhere("s.status = 'COMPLETED'")
+      .orderBy('s.end_date', 'DESC')
+      .getRawOne();
 
-  //   let lastSettlementPeriod: string | null = null;
-  //   if (lastSettlement?.startDate && lastSettlement?.endDate) {
-  //     const formatDate = (date: Date | string) =>
-  //       new Date(date).toISOString().split('T')[0];
-  //     lastSettlementPeriod = `${formatDate(lastSettlement.startDate)} đến ${formatDate(lastSettlement.endDate)}`;
-  //   }
+    let lastSettlementPeriod: string | null = null;
+    if (lastSettlement?.startDate && lastSettlement?.endDate) {
+      const formatDate = (date: Date | string) =>
+        new Date(date).toISOString().split('T')[0];
+      lastSettlementPeriod = `${formatDate(lastSettlement.startDate)} đến ${formatDate(lastSettlement.endDate)}`;
+    }
 
-  //   return {
-  //     id: Number(distributor.id),
-  //     name: distributor.name,
-  //     taxCode: distributor.taxCode,
-  //     address: distributor.address,
-  //     contactPerson: distributor.contactPerson,
-  //     contactEmail: distributor.contactEmail,
-  //     contactPhone: distributor.contactPhone,
-  //     bankAccountNumber: distributor.bankAccountNumber,
-  //     bankName: distributor.bankName,
-  //     status: distributor.status,
-  //     summaryStats: {
-  //       totalDistributedMovies,
-  //       lastSettlementPeriod,
-  //     },
-  //     createdAt: distributor.createdAt,
-  //     updatedAt: distributor.updatedAt,
-  //   };
-  // }
+    return {
+      id: Number(distributor.id),
+      name: distributor.name,
+      taxCode: distributor.taxCode,
+      address: distributor.address,
+      contactPerson: distributor.contactPerson,
+      contactEmail: distributor.contactEmail,
+      contactPhone: distributor.contactPhone,
+      bankAccountNumber: distributor.bankAccountNumber,
+      bankName: distributor.bankName,
+      status: distributor.status,
+      summaryStats: {
+        totalDistributedMovies,
+        lastSettlementPeriod,
+      },
+      createdAt: distributor.createdAt,
+      updatedAt: distributor.updatedAt,
+    };
+  }
 
   //PUT /api/v1/distributors
   async update(id: number, updateDto: UpdateDistributorDto) {

@@ -8,12 +8,11 @@ cinema-backend/src/modules/users
 cinema-backend/src/modules/rbac
 cinema-backend/src/app.module.ts
 cinema-backend/src/modules/cinemas
+cinema-backend/src/modules/bookings
+
+cinema-backend/src/modules/showtimes
 
 
-
-cinema-backend/src/common/redis/
-
-cinema-backend/src/database/
 
 .txt
 dist

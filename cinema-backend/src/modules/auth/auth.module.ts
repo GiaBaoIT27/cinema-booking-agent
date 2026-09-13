@@ -8,6 +8,8 @@ import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { User } from '../users/entities/user.entity.js';
+import { RedisModule } from '#src/common/redis/redis.module.js';
+import { TokenRevocationService } from './services/token-revocation.service.js';
 
 @Module({
   imports: [
@@ -15,9 +17,10 @@ import { User } from '../users/entities/user.entity.js';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({}),
     ConfigModule,
+    RedisModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, TokenRevocationService],
   exports: [PassportModule, JwtStrategy, AuthService, TypeOrmModule],
 })
 export class AuthModule {}

@@ -3,10 +3,11 @@ import {
   NestModule,
   MiddlewareConsumer,
   RequestMethod,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 // Import các Module chính của ứng dụng
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -34,6 +35,8 @@ import { FnbModule } from './modules/fnb/fnb.module.js';
 import { UploadModule } from './modules/upload/upload.module.js';
 import { SeatTypeModule } from './modules/seat-types/seat-types.module.js';
 import { BookingsModule } from './modules/bookings/bookings.module.js';
+import { ShowtimesModule } from './modules/showtimes/showtimes.module.js';
+import { RedisModule } from './common/redis/redis.module.js';
 
 @Module({
   imports: [
@@ -60,7 +63,7 @@ import { BookingsModule } from './modules/bookings/bookings.module.js';
     AuthModule,
     RbacModule,
     UsersModule,
-    CinemasModule,
+    // CinemasModule,
     DistributorsModule,
     MoviesModule,
     GenresModule,
@@ -70,6 +73,8 @@ import { BookingsModule } from './modules/bookings/bookings.module.js';
     UploadModule,
     SeatTypeModule,
     BookingsModule,
+    ShowtimesModule,
+    RedisModule,
   ],
   providers: [
     // 1. Kích hoạt JwtAuthGuard chạy toàn cục (Global Guard) trước tiên
@@ -82,6 +87,11 @@ import { BookingsModule } from './modules/bookings/bookings.module.js';
       provide: APP_GUARD,
       useClass: PermissionsGuard,
     },
+    // 3. Kích hoạt Tự động Validate & Format đầu ra toàn cục (Global Interceptor
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: ClassSerializerInterceptor,
+    // },
   ],
 })
 export class AppModule implements NestModule {
