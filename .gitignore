@@ -4,8 +4,6 @@ venv
 
 gemini-code-1788082001269.json
 
-cinema-backend/src/modules/users
-cinema-backend/src/modules/rbac
 cinema-backend/src/app.module.ts
 cinema-backend/src/modules/cinemas
 cinema-backend/src/modules/bookings
