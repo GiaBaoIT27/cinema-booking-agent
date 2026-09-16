@@ -3,11 +3,10 @@ import {
   NestModule,
   MiddlewareConsumer,
   RequestMethod,
-  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 
 // Import các Module chính của ứng dụng
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -63,7 +62,7 @@ import { RedisModule } from './common/redis/redis.module.js';
     AuthModule,
     RbacModule,
     UsersModule,
-    // CinemasModule,
+    CinemasModule,
     DistributorsModule,
     MoviesModule,
     GenresModule,
@@ -87,11 +86,6 @@ import { RedisModule } from './common/redis/redis.module.js';
       provide: APP_GUARD,
       useClass: PermissionsGuard,
     },
-    // 3. Kích hoạt Tự động Validate & Format đầu ra toàn cục (Global Interceptor
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: ClassSerializerInterceptor,
-    // },
   ],
 })
 export class AppModule implements NestModule {

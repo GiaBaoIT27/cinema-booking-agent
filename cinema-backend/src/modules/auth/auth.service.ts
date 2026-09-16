@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   ForbiddenException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -11,7 +12,10 @@ import { ConfigService } from '@nestjs/config';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { User } from '../users/entities/user.entity.js';
-import { Repository } from 'typeorm';
+import { Role } from '../rbac/entities/role.entity.js';
+import { UserRole } from '../rbac/entities/user-role.entity.js';
+import { RoleCode } from '../rbac/enums/role.enum.js';
+import { Repository, DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from '../users/enums/user-status.enum.js';
 import { MembershipTier } from '../users/enums/membership-tier.enum.js';
@@ -24,6 +28,11 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
+    @InjectRepository(UserRole)
+    private readonly userRoleRepository: Repository<UserRole>,
+    private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
@@ -33,7 +42,7 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { fullName, email, phoneNumber, password, dateOfBirth } = registerDto;
 
-    // 1. Kiểm tra duy nhất Email (Uniqueness Checks)
+    // 1. Kiểm tra duy nhất Email
     const emailExists = await this.userRepository.findOne({ where: { email } });
     if (emailExists) {
       throw new ConflictException({
@@ -53,25 +62,53 @@ export class AuthService {
       });
     }
 
-    // 3. Thực hiện Hash mật khẩu bằng Bcrypt với Cost Factor 12
+    // 3. Thực hiện Hash mật khẩu bằng Bcrypt
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // 4. Khởi tạo bản ghi và thực hiện ghi vào DB (Đảm bảo bỏ password_hash khỏi output trả về)
-    const newUser = this.userRepository.create({
-      fullName,
-      email,
-      phoneNumber,
-      passwordHash: hashedPassword,
-      dateOfBirth: new Date(dateOfBirth),
-      status: UserStatus.ACTIVE,
-      membershipTier: MembershipTier.MEMBER,
-      loyaltyPoints: 0,
+    // 4. Lấy Role mặc định CUSTOMER từ Database
+    const customerRole = await this.roleRepository.findOne({
+      where: { code: RoleCode.CUSTOMER || 'CUSTOMER' },
     });
 
-    const savedUser = await this.userRepository.save(newUser);
+    if (!customerRole) {
+      throw new InternalServerErrorException({
+        message: 'Không tìm thấy vai trò mặc định CUSTOMER trong hệ thống.',
+        errorCode: 'DEFAULT_ROLE_NOT_FOUND',
+      });
+    }
 
-    // 5. Trả về cấu trúc dữ liệu sạch (Đã ẩn password_hash)
+    // 5. Thực thi Lưu User & UserRole trong 1 Transaction (Đảm bảo tính nguyên tố)
+    const savedUser = await this.dataSource.transaction(
+      async (entityManager) => {
+        // 5.1 Khởi tạo & Lưu User
+        const newUser = entityManager.create(User, {
+          fullName,
+          email,
+          phoneNumber,
+          passwordHash: hashedPassword,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          status: UserStatus.ACTIVE,
+          membershipTier: MembershipTier.MEMBER,
+          loyaltyPoints: 0,
+        });
+
+        const userResult = await entityManager.save(User, newUser);
+
+        // 5.2 Tạo liên kết User <-> Role CUSTOMER trong bảng user_roles
+        const newUserRole = entityManager.create(UserRole, {
+          user: userResult,
+          role: customerRole,
+          cineplexId: null, // Khách hàng cá nhân không thuộc cụm rạp cụ thể nào
+        });
+
+        await entityManager.save(UserRole, newUserRole);
+
+        return userResult;
+      },
+    );
+
+    // 6. Trả về cấu trúc dữ liệu sạch
     return {
       id: savedUser.id,
       fullName: savedUser.fullName,
@@ -81,6 +118,7 @@ export class AuthService {
       membershipTier: savedUser.membershipTier,
       loyaltyPoints: savedUser.loyaltyPoints,
       status: savedUser.status,
+      roles: [customerRole.code],
       createdAt: savedUser.createdAt,
     };
   }
@@ -106,7 +144,7 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new UnauthorizedException({
         message: 'Tài khoản hoặc mật khẩu không chính xác.',
-        errorCode: 'INVALID_CREDENTIALS', // Trả về mã lỗi chung như bạn đặc tả
+        errorCode: 'INVALID_CREDENTIALS',
       });
     }
 
@@ -125,10 +163,47 @@ export class AuthService {
         errorCode: 'ACCOUNT_UNVERIFIED',
       });
     }
+    const userWithRoles = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: {
+        userRoles: {
+          role: {
+            rolePermissions: {
+              permission: true,
+            },
+          },
+        },
+      },
+    });
+    const roles: string[] = [];
+    const permissionsSet = new Set<string>();
+    let cineplexId: string | null = null;
 
-    // 4. Trích xuất Roles & Permissions (Giả định load dữ liệu quan hệ từ RbacModule)
-    const roles = ['CUSTOMER']; // Thường lấy từ user.roles
-    const permissions = ['movies:read']; // Thường lấy từ logic kết nối Role-Permission
+    if (userWithRoles && userWithRoles.userRoles?.length > 0) {
+      userWithRoles.userRoles.forEach((ur) => {
+        if (ur.role) {
+          roles.push(ur.role.code);
+
+          // Lấy cineplexId nếu có (Dành cho Quản lý / Nhân viên cụm rạp)
+          if (ur.cineplexId) {
+            cineplexId = ur.cineplexId;
+          }
+
+          // Lặp qua các permission của role này
+          if (ur.role.rolePermissions) {
+            ur.role.rolePermissions.forEach((rp: any) => {
+              if (rp.permission) {
+                permissionsSet.add(rp.permission.code);
+              }
+            });
+          }
+        }
+      });
+    } else {
+      // Fallback mặc định nếu tài khoản chưa được gán role nào trong DB
+      roles.push('CUSTOMER');
+    }
+    const permissions = Array.from(permissionsSet);
 
     // Tạo jti (JWT ID) duy nhất cho mỗi Access Token để hỗ trợ Blacklist khi Logout
     const accessJti = randomUUID();
@@ -141,7 +216,7 @@ export class AuthService {
       email: user.email,
       roles: roles,
       permissions: permissions,
-      // cineplexId: user.cineplexId
+      cineplexId: cineplexId,
       jti: accessJti,
     };
 
@@ -180,6 +255,8 @@ export class AuthService {
         phoneNumber: user.phoneNumber,
         membershipTier: user.membershipTier,
         roles: roles,
+        permissions: permissions,
+        cineplexId: cineplexId,
       },
     };
   }

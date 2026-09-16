@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '#src/app.module.js';
 import { PermissionSeeder } from './1-permission.seed.js';
 import { RoleSeeder } from './2-role.seed.js';
+import { UserSeeder } from './3-user.seed.js';
 import { DistributorSeeder } from './5-distributor.seed.js';
 import { PromotionSeeder } from './6-promotion.seed.js';
 import { LocationSeeder } from './4-location.seed.js';
@@ -11,6 +12,9 @@ import { FnbItemSeeder } from './7-fnb-item.seed.js';
 import { SeatTypeSeeder } from './8-seat-type.seed.js';
 import { GenreSeeder } from './9-genre.seed.js';
 import { RolePermissionSeeder } from './10-role-permissions.seed.js';
+import { CineplexSeeder } from './11-cineplexe.seed.js';
+import { AuditoriumSeeder } from './12-auditorium.seeder.js';
+import { SeatSeeder } from './13-seats.seed.js';
 
 async function runSeed() {
   console.log('[CLI] Khởi tạo kết nối hệ thống phục vụ Seeding...');
@@ -58,6 +62,22 @@ async function runSeed() {
     // 9. Thực thi Seeder danh mục quyền hạn
     const rolePermissionSeeder = new RolePermissionSeeder();
     await rolePermissionSeeder.run(dataSource);
+
+    // 10. Thực thi Seeder người dùng
+    const userSeeder = new UserSeeder();
+    await userSeeder.run(dataSource);
+
+    // 11. Thực thi Seeder cụm rạp
+    const cineplexeSeeder = new CineplexSeeder();
+    await cineplexeSeeder.run(dataSource);
+
+    // 12. Thực thi Seeder phòng chiếu
+    const auditoriumSeeder = new AuditoriumSeeder();
+    await auditoriumSeeder.run(dataSource);
+
+    // 13. Thực thi Seeder ghế
+    const seatSeeder = new SeatSeeder();
+    await seatSeeder.run(dataSource);
 
     console.log('[CLI] Quá trình Seeding hoàn thành!');
   } catch (error) {
