@@ -4,16 +4,21 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import { ApiResponseDto } from '../dto/base-response.dto.js';
+import { API_SUCCESS_MESSAGE_KEY } from '../decorators/api-message.decorator.js';
 
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
   T,
   ApiResponseDto<T>
 > {
+  // Reflector giúp đọc metadata từ decorator (ví dụ: @ApiSuccessMessage)
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -26,6 +31,7 @@ export class TransformInterceptor<T> implements NestInterceptor<
     const ctx = context.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+    const handler = context.getHandler();
 
     // 2. Đồng bộ Request ID: Ưu tiên lấy ID đã có sẵn trong request object (do Middleware hoặc Filter tạo trước đó)
     const requestId =
@@ -35,9 +41,16 @@ export class TransformInterceptor<T> implements NestInterceptor<
 
     (request as any).requestId = requestId;
 
+    // 3. Ưu tiên message tùy chỉnh khai báo bằng decorator @ApiSuccessMessage(),
+    //    sau đó đến request.customMessage, cuối cùng là message mặc định.
+    const decoratorMessage = this.reflector.get<string>(
+      API_SUCCESS_MESSAGE_KEY,
+      handler,
+    );
+
     return next.handle().pipe(
       map((data) => {
-        // 3. Xử lý an toàn: Nếu Controller trả về một Stream tải file (StreamableFile), giữ nguyên không bọc JSON
+        // 4. Xử lý an toàn: Nếu Controller trả về một Stream tải file (StreamableFile), giữ nguyên không bọc JSON
         if (
           data &&
           data.constructor &&
@@ -45,6 +58,18 @@ export class TransformInterceptor<T> implements NestInterceptor<
         ) {
           return data;
         }
+
+        // 5. Xử lý an toàn: Nếu Controller tự bọc envelope (trường success/code/message),
+        //    giữ nguyên để tránh bọc JSON hai lần
+        if (
+          data &&
+          typeof data === 'object' &&
+          'success' in data &&
+          ('code' in data || 'statusCode' in data)
+        ) {
+          return data;
+        }
+
         let responseData = data !== undefined ? data : null;
         let paginationMeta = undefined;
 
@@ -61,10 +86,12 @@ export class TransformInterceptor<T> implements NestInterceptor<
 
         return {
           success: true,
-          statusCode: response.statusCode,
+          code: response.statusCode,
           message:
-            (request as any).customMessage || 'Thao tác thực hiện thành công',
-          data: data !== undefined ? data : null,
+            decoratorMessage ||
+            (request as any).customMessage ||
+            'Thao tác thực hiện thành công',
+          data: responseData,
           meta: {
             timestamp: new Date().toISOString(),
             requestId: requestId,

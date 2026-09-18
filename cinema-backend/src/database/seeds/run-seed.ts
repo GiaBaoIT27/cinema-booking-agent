@@ -15,6 +15,7 @@ import { RolePermissionSeeder } from './10-role-permissions.seed.js';
 import { CineplexSeeder } from './11-cineplexe.seed.js';
 import { AuditoriumSeeder } from './12-auditorium.seeder.js';
 import { SeatSeeder } from './13-seats.seed.js';
+import { MovieSeeder } from './14-movie.seed.js';
 
 async function runSeed() {
   console.log('[CLI] Khởi tạo kết nối hệ thống phục vụ Seeding...');
@@ -78,6 +79,10 @@ async function runSeed() {
     // 13. Thực thi Seeder ghế
     const seatSeeder = new SeatSeeder();
     await seatSeeder.run(dataSource);
+
+    // 14. Thực thi phim ghế
+    const movieSeeder = new MovieSeeder();
+    await movieSeeder.run(dataSource);
 
     console.log('[CLI] Quá trình Seeding hoàn thành!');
   } catch (error) {

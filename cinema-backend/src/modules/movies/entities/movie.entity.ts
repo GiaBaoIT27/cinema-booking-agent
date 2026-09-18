@@ -1,21 +1,24 @@
 import {
-  Check,
-  Column,
   Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
   JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  Check,
 } from 'typeorm';
 import { Distributor } from '#modules/distributors/entities/distributor.entity.js';
-import { MovieAgeRating } from '../enums/movie-age-rating.enum.js';
+import { AgeRating } from '../enums/movie-age-rating.enum.js';
 import { MovieStatus } from '../enums/movie-status.enum.js';
 import { Genre } from '#modules/genres/entities/genre.entity.js';
 
 @Entity('movies')
 @Check(`"duration_minutes" > 0`)
 @Check(`"revenue_share_ratio" >= 0 AND "revenue_share_ratio" <= 100`)
+@Check(`"end_date" >= "release_date"`)
 export class Movie {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
@@ -50,8 +53,8 @@ export class Movie {
   @Column({ name: 'duration_minutes', type: 'int' })
   durationMinutes: number;
 
-  @Column({ type: 'enum', enum: MovieAgeRating, name: 'age_rating' })
-  ageRating: MovieAgeRating;
+  @Column({ type: 'enum', enum: AgeRating, name: 'age_rating' })
+  ageRating: AgeRating;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   country?: string;
@@ -93,6 +96,12 @@ export class Movie {
     default: MovieStatus.UPCOMING,
   })
   status: MovieStatus;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+  updatedAt: Date;
 
   // Bảng trung gian movie_genres được TypeORM tự động ánh xạ
   @ManyToMany(() => Genre, { cascade: true })

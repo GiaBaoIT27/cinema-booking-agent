@@ -3,7 +3,7 @@ import {
   HttpStatus,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { Rfc7807ExceptionFilter } from './common/filters/rfc7807-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
@@ -36,7 +36,7 @@ async function bootstrap() {
     }),
   );
   // Sử dụng interceptor để định dạng response
-  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
   // Sử dụng exception filter để định dạng lỗi
   app.useGlobalFilters(new Rfc7807ExceptionFilter());
 

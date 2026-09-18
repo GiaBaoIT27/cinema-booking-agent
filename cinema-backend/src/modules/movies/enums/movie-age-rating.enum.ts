@@ -1,4 +1,4 @@
-export enum MovieAgeRating {
+export enum AgeRating {
   P = 'P',
   K = 'K',
   T13 = 'T13',

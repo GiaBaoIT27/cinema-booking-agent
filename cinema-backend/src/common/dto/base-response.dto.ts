@@ -12,7 +12,7 @@ export interface ResponseMeta {
 // DTO cho phản hồi thành công
 export class ApiResponseDto<T = any> {
   success: boolean = true;
-  statusCode: number;
+  code: number;
   message: string;
   data?: T;
   meta: ResponseMeta;

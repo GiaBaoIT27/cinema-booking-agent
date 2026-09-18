@@ -1,8 +1,10 @@
-import { ArrayNotEmpty, IsArray, IsString } from 'class-validator';
+import { IsArray, ArrayMinSize, IsInt } from 'class-validator';
 
 export class UpdateMovieGenresDto {
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  genreIds: string[];
+  @IsArray({ message: 'genreIds phải là một mảng' })
+  @ArrayMinSize(1, {
+    message: 'Danh sách thể loại thay thế phải có ít nhất 1 item',
+  })
+  @IsInt({ each: true, message: 'Mỗi genreId phải là số nguyên' })
+  genreIds: number[];
 }
