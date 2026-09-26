@@ -1,16 +1,27 @@
-node_modules
-venv
-.env~
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
 
-gemini-code-1788082001269.json
+.env
+.env.*
+!.env.example
 
-cinema-backend/src/app.module.ts
-cinema-backend/src/modules/cinemas
-cinema-backend/src/modules/bookings
+apps/*/.env
+apps/*/.env.*
+!apps/*/.env.example
 
-cinema-backend/src/modules/showtimes
+venv/
+.venv/
+__pycache__/
+*.py[cod]
 
+.next/
+.expo/
+.turbo/
 
-
-.txt
-dist
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
