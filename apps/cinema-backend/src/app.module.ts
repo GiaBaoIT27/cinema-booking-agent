@@ -27,6 +27,7 @@ import redisConfig from './config/redis.config.js';
 
 // Import Middleware và Guards
 import { HeaderValidationMiddleware } from './common/middleware/header-validation.middleware.js';
+import { RequestContextMiddleware } from './common/middleware/request-context.middleware.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from './common/guards/permissions.guard.js';
 import { PromotionsModule } from './modules/promotions/promotions.module.js';
@@ -96,7 +97,7 @@ export class AppModule implements NestModule {
   // 3. Cấu hình Middleware kiểm tra Accept Header cho mọi Request đi vào hệ thống
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(HeaderValidationMiddleware)
+      .apply(HeaderValidationMiddleware, RequestContextMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

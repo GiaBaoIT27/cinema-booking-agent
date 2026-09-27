@@ -28,8 +28,7 @@ export class Rfc7807ExceptionFilter implements ExceptionFilter {
 
     // Tạo hoặc kế thừa Tracing ID giúp trace log giữa các service
     const requestId =
-      (request.headers['x-request-id'] as string) ||
-      `req-${Math.random().toString(36).substring(2, 15)}`;
+      (request.headers['x-request-id'] as string) || (request as any).requestId;
 
     // 1. Xử lý các lỗi HTTP được ném ra từ NestJS ứng dụng
     if (exception instanceof HttpException) {
@@ -100,9 +99,9 @@ export class Rfc7807ExceptionFilter implements ExceptionFilter {
     // Đóng gói Response Error chuẩn hóa
     const errorResponse: ErrorResponseDto = {
       success: false,
-      statusCode: status,
+      code: status,
       errorCode: errorCode,
-      message: Array.isArray(message) ? message.join(', ') : message,
+      message: message,
       errors: errors.length > 0 ? errors : undefined,
       meta: {
         timestamp: new Date().toISOString(),
