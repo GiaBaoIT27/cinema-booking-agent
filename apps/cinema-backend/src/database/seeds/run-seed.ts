@@ -16,6 +16,9 @@ import { CineplexSeeder } from './11-cineplexe.seed.js';
 import { AuditoriumSeeder } from './12-auditorium.seeder.js';
 import { SeatSeeder } from './13-seats.seed.js';
 import { MovieSeeder } from './14-movie.seed.js';
+import { PriceRuleSeeder } from './15-price-rule.seed.js';
+import { ShowtimeSeeder } from './16-showtime.seed.js';
+import { ShowtimeSeatPriceSeeder } from './17-showtime-seat-price.seed.js';
 
 async function runSeed() {
   console.log('[CLI] Khởi tạo kết nối hệ thống phục vụ Seeding...');
@@ -80,9 +83,20 @@ async function runSeed() {
     const seatSeeder = new SeatSeeder();
     await seatSeeder.run(dataSource);
 
-    // 14. Thực thi phim ghế
+    // 14. Thực thi phim
     const movieSeeder = new MovieSeeder();
     await movieSeeder.run(dataSource);
+
+    // 15. Thực thi giá vé
+    const priceRuleSeeder = new PriceRuleSeeder();
+    await priceRuleSeeder.run(dataSource);
+    // 15. Thực thi Seeder suất chiếu
+    const showtimeSeeder = new ShowtimeSeeder();
+    await showtimeSeeder.run(dataSource);
+
+    // 16. Thực thi Seeder Showtime Seat Prices
+    const showtimeSeatPriceSeeder = new ShowtimeSeatPriceSeeder();
+    await showtimeSeatPriceSeeder.run(dataSource);
 
     console.log('[CLI] Quá trình Seeding hoàn thành!');
   } catch (error) {

@@ -74,14 +74,11 @@ export class TransformInterceptor<T> implements NestInterceptor<
         let paginationMeta = undefined;
 
         // Nếu dữ liệu trả về từ Service/Controller có cấu trúc phân trang dạng { items: [], pagination: {} }
-        if (
-          data &&
-          typeof data === 'object' &&
-          'items' in data &&
-          'pagination' in data
-        ) {
-          responseData = data.items; // Đưa mảng danh sách vào trường data chính
-          paginationMeta = data.pagination; // Tách cục phân trang ra ngoài
+        if (data && typeof data === 'object' && 'pagination' in data) {
+          // Chấp nhận cả việc Controller trả về 'items' hoặc 'data'
+          responseData =
+            'items' in data ? (data as any).items : (data as any).data;
+          paginationMeta = (data as any).pagination;
         }
 
         return {

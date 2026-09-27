@@ -36,6 +36,8 @@ import { SeatTypeModule } from './modules/seat-types/seat-types.module.js';
 import { BookingsModule } from './modules/bookings/bookings.module.js';
 import { ShowtimesModule } from './modules/showtimes/showtimes.module.js';
 import { RedisModule } from './common/redis/redis.module.js';
+import { OrdersModule } from './modules/orders/orders.module.js';
+import { PaymentsModule } from './modules/payments/payments.module.js';
 
 @Module({
   imports: [
@@ -74,6 +76,8 @@ import { RedisModule } from './common/redis/redis.module.js';
     BookingsModule,
     ShowtimesModule,
     RedisModule,
+    OrdersModule,
+    PaymentsModule,
   ],
   providers: [
     // 1. Kích hoạt JwtAuthGuard chạy toàn cục (Global Guard) trước tiên

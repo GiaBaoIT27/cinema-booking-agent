@@ -45,6 +45,15 @@ export class RedisService implements OnApplicationShutdown {
     return this.redisClient.get(key);
   }
 
+  async hgetall(key: string): Promise<Record<string, string>> {
+    try {
+      return await this.redisClient.hgetall(key);
+    } catch (error) {
+      this.logger.error(`[Redis Error] HGETALL fail for key: ${key}`, error);
+      return {}; // Trả về object rỗng an toàn nếu Redis gặp sự cố
+    }
+  }
+
   // Xóa một hoặc nhiều Key
   async del(keys: string | string[]): Promise<number> {
     const keyArray = Array.isArray(keys) ? keys : [keys];

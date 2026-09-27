@@ -34,6 +34,8 @@ import { CreateMovieResponseDto } from './dto/create-movie-response.dto.js';
 import { UpdateMovieDto } from './dto/update-movie.dto.js';
 import { UpdateMovieStatusDto } from './dto/update-movie-status.dto.js';
 import { UpdateMovieGenresDto } from './dto/update-movie-genres.dto.js';
+import { GetMovieShowtimesQueryDto } from './dto/get-movie-showtimes-query.dto.js';
+import { MovieShowtimesResponseDto } from './dto/movie-showtimes-response.dto.js';
 
 import type { MovieMediaFiles } from './interfaces/movie-media.interface.js';
 
@@ -181,5 +183,20 @@ export class MoviesController {
   @RequirePermissions('movie:delete')
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.moviesService.remove(id);
+  }
+
+  @Get(':id/showtimes')
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @ApiSuccessMessage('Lấy danh sách lịch chiếu của phim thành công')
+  async getMovieShowtimes(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() queryDto: GetMovieShowtimesQueryDto,
+  ): Promise<MovieShowtimesResponseDto> {
+    const result = await this.moviesService.getMovieShowtimes(id, queryDto);
+
+    return plainToInstance(MovieShowtimesResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 }

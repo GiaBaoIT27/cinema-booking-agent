@@ -10,9 +10,17 @@ import { In, Repository, DataSource, DeepPartial } from 'typeorm';
 import { Movie } from './entities/movie.entity.js';
 import { Genre } from '#modules/genres/entities/genre.entity.js';
 import { Distributor } from '#modules/distributors/entities/distributor.entity.js';
+import { Showtime } from '../showtimes/entities/showtime.entity.js';
+
 import { MovieStatus } from './enums/movie-status.enum.js';
+import { ShowtimeStatus } from '../showtimes/enums/showtime-status.enum.js';
 import { CreateMovieDto } from './dto/create-movie.dto.js';
 import { GetMoviesQueryDto } from './dto/get-movies-query.dto.js';
+import { GetMovieShowtimesQueryDto } from './dto/get-movie-showtimes-query.dto.js';
+import {
+  MovieShowtimesResponseDto,
+  CinemaShowtimeGroupDto,
+} from './dto/movie-showtimes-response.dto.js';
 
 import { UpdateMovieDto } from './dto/update-movie.dto.js';
 import { UpdateMovieStatusDto } from './dto/update-movie-status.dto.js';
@@ -55,6 +63,8 @@ export class MoviesService {
     private readonly genreRepository: Repository<Genre>,
     @InjectRepository(Distributor)
     private readonly distributorRepository: Repository<Distributor>,
+    @InjectRepository(Showtime)
+    private readonly showtimeRepository: Repository<Showtime>,
     private readonly dataSource: DataSource,
     private readonly redisService: RedisService,
     private readonly uploadService: UploadService,
@@ -431,6 +441,96 @@ export class MoviesService {
       this.redisService.del(MOVIE_REDIS_KEYS.DETAIL(id)),
       this.redisService.delByPattern(MOVIE_REDIS_KEYS.PATTERN_ALL),
     ]);
+  }
+
+  // GET api/v1/movies/:id/showtimes
+  async getMovieShowtimes(
+    id: number,
+    queryDto: GetMovieShowtimesQueryDto,
+  ): Promise<MovieShowtimesResponseDto> {
+    // 1. Kiểm tra ID phim tồn tại và trạng thái hợp lệ (SHOWING hoặc UPCOMING)
+    const movie = await this.movieRepository.findOne({
+      where: { id: id.toString() },
+    });
+
+    if (!movie) {
+      throw new NotFoundException({
+        errorCode: 'MOVIE_NOT_FOUND',
+        message: `Phim với ID ${id} không tồn tại trên hệ thống`,
+      });
+    }
+
+    if (movie.status === MovieStatus.ENDED) {
+      throw new BadRequestException({
+        errorCode: 'MOVIE_NOT_ELIGIBLE_FOR_SHOWTIME',
+        message:
+          'Bộ phim đã kết thúc chiếu (ENDED), không có lịch chiếu khả dụng',
+      });
+    }
+
+    const { cineplexId, date } = queryDto;
+    const targetDate = date ?? new Date().toISOString().split('T')[0];
+    const now = new Date();
+
+    // 2. Truy vấn danh sách suất chiếu còn hiệu lực trong tương lai
+    const queryBuilder = this.showtimeRepository
+      .createQueryBuilder('s')
+      .innerJoinAndSelect('s.auditorium', 'a')
+      .innerJoinAndSelect('a.cineplex', 'c')
+      .where('s.movieId = :movieId', { movieId: id.toString() })
+      .andWhere('s.status IN (:...validStatuses)', {
+        validStatuses: [ShowtimeStatus.SCHEDULED, ShowtimeStatus.OPEN],
+      })
+      .andWhere('s.startTime > :now', { now });
+
+    if (cineplexId) {
+      queryBuilder.andWhere('c.id = :cineplexId', { cineplexId });
+    }
+
+    // Lọc theo khoảng thời gian trong ngày [00:00:00, 23:59:59.999]
+    const startOfDay = new Date(`${targetDate}T00:00:00.000Z`);
+    const endOfDay = new Date(`${targetDate}T23:59:59.999Z`);
+    queryBuilder.andWhere(
+      's.startTime >= :startOfDay AND s.startTime <= :endOfDay',
+      { startOfDay, endOfDay },
+    );
+
+    queryBuilder.orderBy('c.id', 'ASC').addOrderBy('s.startTime', 'ASC');
+
+    const showtimes = await queryBuilder.getMany();
+
+    // 3. Nhóm (Group) dữ liệu theo Rạp/Cụm rạp (Cinemas / Cineplexes)
+    const cinemaMap = new Map<number, CinemaShowtimeGroupDto>();
+
+    for (const showtime of showtimes) {
+      const cineplex = showtime.auditorium?.cineplex;
+      if (!cineplex) continue;
+
+      const cId = Number(cineplex.id);
+
+      if (!cinemaMap.has(cId)) {
+        cinemaMap.set(cId, {
+          cineplexId: cId,
+          cineplexName: cineplex.name,
+          showtimes: [],
+        });
+      }
+
+      cinemaMap.get(cId)!.showtimes.push({
+        showtimeId: Number(showtime.id),
+        auditoriumName: showtime.auditorium.name,
+        projectionType: showtime.projectionType,
+        startTime: showtime.startTime,
+        endTime: showtime.endTime,
+      });
+    }
+
+    // 4. Trả về đúng schema mà TypeScript và Class-Transformer yêu cầu
+    return {
+      movieId: Number(movie.id),
+      movieTitle: movie.title,
+      showtimesByCinema: Array.from(cinemaMap.values()),
+    };
   }
 
   /**
