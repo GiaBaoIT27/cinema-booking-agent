@@ -15,7 +15,7 @@ import { GetFnbItemsDto } from './dto/query-fnb-items.dto.js';
 import { CreateFnbItemDto } from './dto/create-fnb-item.dto.js';
 import { UpdateFnbItemDto } from './dto/update-fnb-item.dto.js';
 import { UpdateFnbItemStatusDto } from './dto/update-fnb-item-status.dto.js';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import {
   FNB_REDIS_KEYS,
   FNB_CACHE_TTL,

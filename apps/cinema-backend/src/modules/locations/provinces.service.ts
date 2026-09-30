@@ -16,7 +16,7 @@ import { ProvinceType } from './enums/province-type.enum.js';
 import { GetProvincesQueryDto } from './dto/query-province.dto.js';
 import { GetProvinceWardsQueryDto } from './dto/query-province-wards.dto.js';
 import { CreateProvinceDto } from './dto/create-province.dto.js';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import {
   LOCATION_REDIS_KEYS,
   LOCATION_CACHE_TTL,

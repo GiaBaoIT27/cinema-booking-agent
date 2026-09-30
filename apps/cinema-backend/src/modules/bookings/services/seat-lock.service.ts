@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import {
   BOOKING_REDIS_KEYS,
   DEFAULT_SEAT_LOCK_TTL_MS,

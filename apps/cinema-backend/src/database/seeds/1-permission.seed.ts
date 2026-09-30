@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Permission } from '../../modules/rbac/entities/permission.entity.js';
+import { Permission } from '#modules/rbac/domain/entities/permission.entity.js';
 
 export class PermissionSeeder {
   async run(dataSource: DataSource): Promise<void> {

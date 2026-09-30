@@ -10,7 +10,7 @@ import { Repository, Not, DataSource } from 'typeorm';
 import { SeatType } from './entities/seat-type.entity.js';
 import { CreateSeatTypeDto } from './dto/create-seat-type.dto.js';
 import { UpdateSeatTypeDto } from './dto/update-seat-type.dto.js';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import {
   SEAT_TYPE_REDIS_KEYS,
   SEAT_TYPE_CACHE_TTL,

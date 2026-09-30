@@ -3,56 +3,83 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
+import { PERMISSION_RESOLVER } from '../interfaces/permission-resolver.interface.js';
+import type { IPermissionResolver } from '../interfaces/permission-resolver.interface.js';
+import { CINEPLEX_SCOPE_KEY } from '../decorators/cineplex-scope.decorator.js';
+import type { CineplexScopeOptions } from '../decorators/cineplex-scope.decorator.js';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    /**
+     * Inject qua token — KHÔNG import trực tiếp RbacFacade để tránh
+     * circular dependency và vi phạm ranh giới module.
+     * RbacModule sẽ provide { token: PERMISSION_RESOLVER, useExisting: RbacFacade }.
+     */
+    @Inject(PERMISSION_RESOLVER)
+    private readonly permissionResolver: IPermissionResolver,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    // 1. Nếu API là @Public(), bỏ qua không cần check quyền
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    // 1. Bỏ qua nếu endpoint là @Public()
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) {
-      return true;
-    }
+    if (isPublic) return true;
 
-    // 2. Lấy danh sách các quyền yêu cầu được định nghĩa tại Controller/Route
+    // 2. Lấy danh sách quyền yêu cầu
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
       PERMISSIONS_KEY,
       [context.getHandler(), context.getClass()],
     );
+    // Không khai báo quyền → mặc định cho phép (chỉ cần đã đăng nhập)
+    if (!requiredPermissions || requiredPermissions.length === 0) return true;
 
-    // Nếu không cấu hình quyền yêu cầu, mặc định cho phép truy cập
-    if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true;
-    }
+    // 3. Lấy user từ request (đã được JwtAuthGuard gán)
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
 
-    // 3. Lấy thông tin user từ request (được JwtAuthGuard gán vào trước đó)
-    const { user } = context.switchToHttp().getRequest();
-
-    if (!user || !user.permissions) {
+    if (!user?.id) {
       throw new ForbiddenException({
         message: 'Bạn không có quyền truy cập vào tài nguyên này.',
-        errorCode: 'FORBIDDEN_RESOURCE',
+        errorCode: 'RBAC_FORBIDDEN',
       });
     }
 
-    // 4. Kiểm tra xem user có sở hữu đầy đủ quyền yêu cầu hay không (Scoped Match)
-    const hasPermission = requiredPermissions.every((permission) =>
-      user.permissions.includes(permission),
+    // 4. Xác định cineplexId nếu endpoint có @CineplexScope()
+    let cineplexId: string | undefined;
+    const scopeOptions = this.reflector.getAllAndOverride<CineplexScopeOptions>(
+      CINEPLEX_SCOPE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (scopeOptions) {
+      const field = scopeOptions.key ?? 'cineplexId';
+      cineplexId = request[scopeOptions.from]?.[field];
+    }
+
+    // 5. Resolve quyền qua IPermissionResolver (RbacFacade implement)
+    //    Nếu có cineplexId → tra quyền theo scope rạp, ngược lại tra toàn hệ thống
+    const userPermissions = await this.permissionResolver.getUserPermissions(
+      user.id,
+      cineplexId,
+    );
+
+    const hasPermission = requiredPermissions.every((p) =>
+      userPermissions.includes(p),
     );
 
     if (!hasPermission) {
       throw new ForbiddenException({
         message:
           'Thao tác bị từ chối. Tài khoản của bạn thiếu quyền hạn cần thiết.',
-        errorCode: 'INSUFFICIENT_PERMISSIONS',
+        errorCode: 'RBAC_INSUFFICIENT_PERMISSIONS',
       });
     }
 

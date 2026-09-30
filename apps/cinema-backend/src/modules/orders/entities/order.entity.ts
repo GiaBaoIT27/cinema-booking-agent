@@ -11,7 +11,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import type { Relation } from 'typeorm';
-import { Showtime } from '#modules/showtimes/entities/showtime.entity.js'; // Thay đổi đường dẫn thực tế của bạn
+import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js'; // Thay đổi đường dẫn thực tế của bạn
 import { User } from '#modules/users/entities/user.entity.js'; // Giả định thực thể User nằm ở đây
 import { Ticket } from './ticket.entity.js';
 import { OrderFnbDetail } from './order-fnb-details.entity.js';

@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
-import { Role } from '../../modules/rbac/entities/role.entity.js';
-import { RoleCode } from '../../modules/rbac/enums/role.enum.js';
+import { Role } from '#modules/rbac/domain/entities/role.entity.js';
+import { RoleCode } from '#modules/rbac/domain/enums/role.enum.js';
 
 export class RoleSeeder {
   async run(dataSource: DataSource): Promise<void> {

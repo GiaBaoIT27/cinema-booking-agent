@@ -12,19 +12,23 @@ import { BookingsModule } from '#modules/bookings/bookings.module.js';
 
 import { OrderController } from './controllers/order.controller.js';
 import { OrderService } from './services/order.service.js';
+import { TicketsController } from './controllers/ticket.controller.js';
+import { TicketsService } from './services/ticket.service.js';
 
 @Module({
   imports: [
-    // Đăng ký entity thuộc phạm vi Orders
-    TypeOrmModule.forFeature([Order, Ticket, OrderSeatDetail, OrderFnbDetail, FnbItem]),
-    // Tái sử dụng PromotionsService để validate & tính giảm giá voucher
+    TypeOrmModule.forFeature([
+      Order,
+      Ticket,
+      OrderSeatDetail,
+      OrderFnbDetail,
+      FnbItem,
+    ]),
     PromotionsModule,
-    // Import BookingsModule để dùng BookingService (validate ghế HOLDING, giải phóng ghế)
-    // Chiều phụ thuộc: OrdersModule -> BookingsModule (một chiều, không vòng tròn)
     BookingsModule,
   ],
-  controllers: [OrderController],
-  providers: [OrderService],
-  exports: [OrderService],
+  controllers: [OrderController, TicketsController],
+  providers: [OrderService, TicketsService],
+  exports: [OrderService, TicketsService],
 })
 export class OrdersModule {}

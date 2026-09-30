@@ -13,7 +13,7 @@ import {
 import type { Relation } from 'typeorm';
 import { Cineplex } from './cineplex.entity.js';
 import { Seat } from './seat.entity.js';
-import { Showtime } from '#modules/showtimes/entities/showtime.entity.js';
+import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js';
 import { AuditoriumStatus } from '../enums/auditorium-status.enum.js';
 import { ScreenType } from '../enums/screen-type.enum.js';
 

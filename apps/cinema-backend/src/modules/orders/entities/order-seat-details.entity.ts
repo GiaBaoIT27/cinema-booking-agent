@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import type { Relation } from 'typeorm';
 import { Order } from './order.entity.js';
-import { Showtime } from '#modules/showtimes/entities/showtime.entity.js';
+import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js';
 import { Seat } from '#modules/cinemas/entities/seat.entity.js';
 import { ColumnNumericTransformer } from '#src/common/transformers/numeric.transformer.js';
 

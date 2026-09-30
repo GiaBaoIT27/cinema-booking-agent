@@ -1,9 +1,9 @@
 import { DataSource } from 'typeorm';
-import { Showtime } from '#modules/showtimes/entities/showtime.entity.js';
+import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js';
 import { SeatType } from '#modules/seat-types/entities/seat-type.entity.js';
-import { PriceRule } from '#modules/showtimes/entities/price-rules.entity.js';
-import { ShowtimeSeatPrice } from '#modules/showtimes/entities/showtime-seat-price.entity.js';
-import { DayType } from '#modules/showtimes/enums/day-type.enum.js';
+import { PriceRule } from '#modules/showtimes/domain/entities/price-rules.entity.js';
+import { ShowtimeSeatPrice } from '#modules/showtimes/domain/entities/showtime-seat-price.entity.js';
+import { DayType } from '#src/modules/showtimes/domain/enums/day-type.enum.js';
 
 export class ShowtimeSeatPriceSeeder {
   async run(dataSource: DataSource): Promise<void> {
@@ -61,9 +61,12 @@ export class ShowtimeSeatPriceSeeder {
         .andWhere('(pr.cineplexId = :cineplexId OR pr.cineplexId IS NULL)', {
           cineplexId: showtime.auditorium?.cineplexId,
         })
-        .andWhere('pr.startTime <= :showtimeStr AND pr.endTime > :showtimeStr', {
-          showtimeStr,
-        })
+        .andWhere(
+          'pr.startTime <= :showtimeStr AND pr.endTime > :showtimeStr',
+          {
+            showtimeStr,
+          },
+        )
         .orderBy('pr.cineplexId IS NULL', 'ASC')
         .addOrderBy('pr.basePrice', 'DESC')
         .getOne();
@@ -81,7 +84,8 @@ export class ShowtimeSeatPriceSeeder {
       // Khởi tạo/Cập nhật giá
       for (const [seatTypeIdStr, seatType] of currentSeatTypes) {
         const finalPrice = Math.round(
-          basePrice * Number(seatType.priceMultiplier ?? 1) + Number(seatType.surchargeAmount ?? 0)
+          basePrice * Number(seatType.priceMultiplier ?? 1) +
+            Number(seatType.surchargeAmount ?? 0),
         );
 
         const existingPrice = await showtimeSeatPriceRepo.findOne({
@@ -99,11 +103,15 @@ export class ShowtimeSeatPriceSeeder {
             isOverridden: false,
           });
           await showtimeSeatPriceRepo.save(newPrice);
-          console.log(`+ Đã tạo bảng giá cho Suất chiếu ${showtime.id} - Loại ghế ${seatType.code}: ${finalPrice}`);
+          console.log(
+            `+ Đã tạo bảng giá cho Suất chiếu ${showtime.id} - Loại ghế ${seatType.code}: ${finalPrice}`,
+          );
         } else if (!existingPrice.isOverridden) {
           existingPrice.finalPrice = finalPrice;
           await showtimeSeatPriceRepo.save(existingPrice);
-          console.log(`~ Đã cập nhật bảng giá cho Suất chiếu ${showtime.id} - Loại ghế ${seatType.code}: ${finalPrice}`);
+          console.log(
+            `~ Đã cập nhật bảng giá cho Suất chiếu ${showtime.id} - Loại ghế ${seatType.code}: ${finalPrice}`,
+          );
         }
       }
     }

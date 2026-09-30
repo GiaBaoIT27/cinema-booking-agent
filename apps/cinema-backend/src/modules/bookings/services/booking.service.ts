@@ -7,15 +7,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Showtime } from '#modules/showtimes/entities/showtime.entity.js';
-import { ShowtimeSeat } from '#modules/showtimes/entities/showtime-seat.entity.js';
-import { ShowtimeSeatPrice } from '#modules/showtimes/entities/showtime-seat-price.entity.js';
+import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js';
+import { ShowtimeSeat } from '#modules/showtimes/domain/entities/showtime-seat.entity.js';
+import { ShowtimeSeatPrice } from '#modules/showtimes/domain/entities/showtime-seat-price.entity.js';
 import { Seat } from '#modules/cinemas/entities/seat.entity.js';
 import { SeatStatus } from '#modules/cinemas/enums/seat-status.enum.js';
-import { ShowtimeStatus } from '#modules/showtimes/enums/showtime-status.enum.js';
-import { ShowtimeSeatStatus } from '#modules/showtimes/enums/showtime-seat-status.js';
+import { ShowtimeStatus } from '#src/modules/showtimes/domain/enums/showtime-status.enum.js';
+import { ShowtimeSeatStatus } from '#src/modules/showtimes/domain/enums/showtime-seat-status.js';
 import { SeatLockService } from './seat-lock.service.js';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import { HoldSeatsDto } from '../dto/hold-seats.dto.js';
 import { ReleaseSeatsDto } from '../dto/release-seats.dto.js';
 import {

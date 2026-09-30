@@ -1,11 +1,11 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt'; // Hoặc import bcryptjs from 'bcryptjs';
 import { User } from '#modules/users/entities/user.entity.js';
-import { Role } from '#modules/rbac/entities/role.entity.js';
-import { UserRole } from '#modules/rbac/entities/user-role.entity.js';
-import { UserStatus } from '#modules/users/enums/user-status.enum.js';
-import { MembershipTier } from '#modules/users/enums/membership-tier.enum.js';
-import { RoleCode } from '#modules/rbac/enums/role.enum.js';
+import { Role } from '#modules/rbac/domain/entities/role.entity.js';
+import { UserRole } from '#modules/rbac/domain/entities/user-role.entity.js';
+import { UserStatus } from '#modules/users/domain/enums/user-status.enum.js';
+import { MembershipTier } from '#modules/users/domain/enums/membership-tier.enum.js';
+import { RoleCode } from '#modules/rbac/domain/enums/role.enum.js';
 
 export class UserSeeder {
   async run(dataSource: DataSource): Promise<void> {

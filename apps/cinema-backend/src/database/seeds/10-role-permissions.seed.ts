@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { Role } from '#modules/rbac/entities/role.entity.js';
-import { Permission } from '#modules/rbac/entities/permission.entity.js';
-import { RolePermission } from '#modules/rbac/entities/role-permission.entity.js';
-import { RoleCode } from '#modules/rbac/enums/role.enum.js';
+import { Role } from '#modules/rbac/domain/entities/role.entity.js';
+import { Permission } from '#modules/rbac/domain/entities/permission.entity.js';
+import { RolePermission } from '#modules/rbac/domain/entities/role-permission.entity.js';
+import { RoleCode } from '#modules/rbac/domain/enums/role.enum.js';
 
 export class RolePermissionSeeder {
   async run(dataSource: DataSource): Promise<void> {

@@ -14,7 +14,7 @@ import { CreateGenreDto } from './dto/create-genre.dto.js';
 import { GetGenresQueryDto } from './dto/query-genres.dto.js';
 import { UpdateGenreDto } from './dto/update-genre.dto.js';
 import { GetGenreMoviesQueryDto } from './dto/query-genre-movies.dto.js';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import {
   GENRE_REDIS_KEYS,
   GENRE_CACHE_TTL,

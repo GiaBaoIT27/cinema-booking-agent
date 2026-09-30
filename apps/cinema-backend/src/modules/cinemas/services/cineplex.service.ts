@@ -9,10 +9,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Not } from 'typeorm';
 import { Cineplex } from '../entities/cineplex.entity.js';
 import { Auditorium } from '../entities/auditorium.entity.js';
-import { Showtime } from '#modules/showtimes/entities/showtime.entity.js';
+import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js';
 import { FnbItem } from '#modules/fnb/entities/fnb-item.entities.js';
 
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import {
   CINEPLEX_REDIS_KEYS,
   CINEPLEX_CACHE_TTL,

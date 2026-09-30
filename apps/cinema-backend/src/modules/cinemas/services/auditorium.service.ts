@@ -12,12 +12,12 @@ import { Repository, Not, DataSource, In, MoreThan } from 'typeorm';
 import { Auditorium } from '../entities/auditorium.entity.js';
 import { Cineplex } from '../entities/cineplex.entity.js';
 import { Seat } from '../entities/seat.entity.js';
-import { Showtime } from '#modules/showtimes/entities/showtime.entity.js';
+import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js';
 import { SeatType } from '#modules/seat-types/entities/seat-type.entity.js';
 import { AuditoriumStatus } from '../enums/auditorium-status.enum.js';
-import { ShowtimeStatus } from '#modules/showtimes/enums/showtime-status.enum.js';
+import { ShowtimeStatus } from '#src/modules/showtimes/domain/enums/showtime-status.enum.js';
 import { ShowtimesCancelledEvent } from '#modules/showtimes/events/showtime-cancelled.event.js';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import {
   GetAuditoriumsQueryDto,
   AuditoriumStatusFilter,

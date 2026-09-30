@@ -1,44 +1,37 @@
 import {
+  MiddlewareConsumer,
   Module,
   NestModule,
-  MiddlewareConsumer,
   RequestMethod,
 } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
 
-// Import các Module chính của ứng dụng
-import { AuthModule } from './modules/auth/auth.module.js';
-import { DistributorsModule } from './modules/distributors/distributors.module.js';
-import { MoviesModule } from './modules/movies/movies.module.js';
-import { GenresModule } from './modules/genres/genres.module.js';
-import { LocationsModule } from './modules/locations/locations.module.js';
-import { RbacModule } from './modules/rbac/rbac.module.js';
-import { UsersModule } from './modules/users/users.module.js';
-import { CinemasModule } from './modules/cinemas/cinemas.module.js';
-
-// Import cấu hình tập trung
-import { validateEnv } from './common/config/env.validation.js';
+// Cấu hình tập trung
 import appConfig from './config/app.config.js';
 import databaseConfig from './config/database.config.js';
 import jwtConfig from './config/jwt.config.js';
 import redisConfig from './config/redis.config.js';
+import mailConfig from './config/mail.config.js';
+import queueConfig from './config/queue.config.js';
+import cloudinaryConfig from './config/cloudinary.config.js';
+import { validateEnv } from './config/env.validation.js';
 
-// Import Middleware và Guards
+// Hạ tầng dùng chung: Redis, EventBus, Queue, Mailer, Storage, Logger — xem core/core.module.ts
+import { CoreModule } from './core/core.module.js';
+
+// Middleware + Guard toàn cục
 import { HeaderValidationMiddleware } from './common/middleware/header-validation.middleware.js';
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from './common/guards/permissions.guard.js';
-import { PromotionsModule } from './modules/promotions/promotions.module.js';
-import { FnbModule } from './modules/fnb/fnb.module.js';
-import { UploadModule } from './modules/upload/upload.module.js';
-import { SeatTypeModule } from './modules/seat-types/seat-types.module.js';
-import { BookingsModule } from './modules/bookings/bookings.module.js';
-import { ShowtimesModule } from './modules/showtimes/showtimes.module.js';
-import { RedisModule } from './common/redis/redis.module.js';
-import { OrdersModule } from './modules/orders/orders.module.js';
-import { PaymentsModule } from './modules/payments/payments.module.js';
+
+// 4 trục nghiệp vụ — app.module.ts chỉ biết đến đây, không biết Users/Movies/Bookings... tồn tại
+import { IdentityModule } from './modules/aggregators/identity.module.js';
+import { CatalogModule } from './modules/aggregators/catalog.module.js';
+import { CinemaCoreModule } from './modules/aggregators/cinema-core.module.js';
+import { SalesModule } from './modules/aggregators/sales.module.js';
 
 @Module({
   imports: [
@@ -46,58 +39,46 @@ import { PaymentsModule } from './modules/payments/payments.module.js';
       isGlobal: true,
       envFilePath: '.env',
       validate: validateEnv,
-      load: [appConfig, databaseConfig, jwtConfig, redisConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        jwtConfig,
+        redisConfig,
+        queueConfig,
+        mailConfig,
+        cloudinaryConfig,
+      ],
     }),
+
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('database.host'),
-        port: configService.get<number>('database.port'),
-        username: configService.get<string>('database.username'),
-        password: configService.get<string>('database.password'),
-        database: configService.get<string>('database.name'),
+        host: config.get<string>('database.host'),
+        port: config.get<number>('database.port'),
+        username: config.get<string>('database.username'),
+        password: config.get<string>('database.password'),
+        database: config.get<string>('database.name'),
         autoLoadEntities: true,
-        synchronize: configService.get<boolean>('database.synchronize'),
+        synchronize: config.get<boolean>('database.synchronize'),
       }),
     }),
-    AuthModule,
-    RbacModule,
-    UsersModule,
-    CinemasModule,
-    DistributorsModule,
-    MoviesModule,
-    GenresModule,
-    LocationsModule,
-    PromotionsModule,
-    FnbModule,
-    UploadModule,
-    SeatTypeModule,
-    BookingsModule,
-    ShowtimesModule,
-    RedisModule,
-    OrdersModule,
-    PaymentsModule,
+
+    CoreModule,
+    IdentityModule,
+    CatalogModule,
+    CinemaCoreModule,
+    SalesModule,
   ],
   providers: [
-    // 1. Kích hoạt JwtAuthGuard chạy toàn cục (Global Guard) trước tiên
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-    // 2. Kích hoạt PermissionsGuard chạy toàn cục ngay sau khi đã xác thực xong User
-    {
-      provide: APP_GUARD,
-      useClass: PermissionsGuard,
-    },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
 export class AppModule implements NestModule {
-  // 3. Cấu hình Middleware kiểm tra Accept Header cho mọi Request đi vào hệ thống
-  configure(consumer: MiddlewareConsumer) {
+  configure(consumer: MiddlewareConsumer): void {
     consumer
-      .apply(HeaderValidationMiddleware, RequestContextMiddleware)
+      .apply(RequestContextMiddleware, HeaderValidationMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

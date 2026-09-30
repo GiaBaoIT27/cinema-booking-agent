@@ -10,10 +10,10 @@ import { In, Repository, DataSource, DeepPartial } from 'typeorm';
 import { Movie } from './entities/movie.entity.js';
 import { Genre } from '#modules/genres/entities/genre.entity.js';
 import { Distributor } from '#modules/distributors/entities/distributor.entity.js';
-import { Showtime } from '../showtimes/entities/showtime.entity.js';
+import { Showtime } from '../showtimes/domain/entities/showtime.entity.js';
 
 import { MovieStatus } from './enums/movie-status.enum.js';
-import { ShowtimeStatus } from '../showtimes/enums/showtime-status.enum.js';
+import { ShowtimeStatus } from '../showtimes/domain/enums/showtime-status.enum.js';
 import { CreateMovieDto } from './dto/create-movie.dto.js';
 import { GetMoviesQueryDto } from './dto/get-movies-query.dto.js';
 import { GetMovieShowtimesQueryDto } from './dto/get-movie-showtimes-query.dto.js';
@@ -25,7 +25,7 @@ import {
 import { UpdateMovieDto } from './dto/update-movie.dto.js';
 import { UpdateMovieStatusDto } from './dto/update-movie-status.dto.js';
 import { UpdateMovieGenresDto } from './dto/update-movie-genres.dto.js';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import { UploadService } from '../upload/upload.service.js';
 import {
   MOVIE_REDIS_KEYS,

@@ -1,9 +1,9 @@
 import { DataSource } from 'typeorm';
-import { Showtime } from '#modules/showtimes/entities/showtime.entity.js'; // Điều chỉnh đường dẫn theo dự án của bạn
+import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js'; // Điều chỉnh đường dẫn theo dự án của bạn
 import { Auditorium } from '#modules/cinemas/entities/auditorium.entity.js';
 import { Movie } from '#modules/movies/entities/movie.entity.js';
-import { ProjectionType } from '#modules/showtimes/enums/projection-type.enum.js';
-import { ShowtimeStatus } from '#modules/showtimes/enums/showtime-status.enum.js';
+import { ProjectionType } from '#src/modules/showtimes/domain/enums/projection-type.enum.js';
+import { ShowtimeStatus } from '#src/modules/showtimes/domain/enums/showtime-status.enum.js';
 import { MovieStatus } from '#modules/movies/enums/movie-status.enum.js';
 
 export class ShowtimeSeeder {

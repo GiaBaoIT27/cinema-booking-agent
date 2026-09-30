@@ -10,7 +10,7 @@ import { Ward } from './entities/ward.entity.js';
 import { Province } from './entities/province.entity.js';
 import { GetWardsQueryDto } from './dto/query-wards.dto.js';
 import { CreateWardDto } from './dto/create-ward.dto.js';
-import { RedisService } from '#src/common/redis/redis.service.js';
+import { RedisService } from '#src/core/redis/redis.service.js';
 import {
   LOCATION_REDIS_KEYS,
   LOCATION_CACHE_TTL,

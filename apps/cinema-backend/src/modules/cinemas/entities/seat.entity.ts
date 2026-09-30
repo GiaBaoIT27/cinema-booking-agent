@@ -13,7 +13,7 @@ import {
 import type { Relation } from 'typeorm';
 import { Auditorium } from './auditorium.entity.js';
 import { SeatType } from '#modules/seat-types/entities/seat-type.entity.js';
-import { ShowtimeSeat } from '../../showtimes/entities/showtime-seat.entity.js';
+import { ShowtimeSeat } from '#modules/showtimes/domain/entities/showtime-seat.entity.js';
 import { SeatStatus } from '../enums/seat-status.enum.js';
 
 @Entity('seats')

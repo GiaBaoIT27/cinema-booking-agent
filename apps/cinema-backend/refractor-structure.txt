@@ -1,0 +1,528 @@
+cinema-backend/
+├── src/
+│   ├── main.ts      # ValidationPipe (422 + format errors[]), Global Filter, Global Interceptor, Swagger, CORS, versioning /api/v1
+│   ├── app.module.ts                          # Chỉ import: ConfigModule, DatabaseModule, CoreModule, 4 aggregator, JobsModule
+│   │
+│   ├── config/                                     # Cấu hình môi trường (registerAs namespace)
+│   │   ├── app.config.ts                           # port, prefix, cors origins, swagger on/off
+│   │   ├── database.config.ts
+│   │   ├── redis.config.ts
+│   │   ├── jwt.config.ts                           # access/refresh secret + TTL
+│   │   ├── queue.config.ts                         # BullMQ connection
+│   │   ├── payment.config.ts                       # VNPay: tmnCode, hashSecret, returnUrl, ipnUrl
+│   │   ├── mail.config.ts
+│   │   ├── cloudinary.config.ts
+│   │   ├── booking.config.ts                       # SEAT_HOLD_TTL_SECONDS, MAX_SEATS_PER_BOOKING
+│   │   └── env.validation.ts                       # Joi/Zod validate biến môi trường lúc boot (chuyển từ shared-kernel sang đây)
+│   │
+│   ├── shared-kernel (tạm thời dự án để tên là common)/                              # CHỈ chứa thứ không thuộc domain nào, không phụ thuộc module nào
+│   │   ├── domain/
+│   │   │   ├── base.entity.ts                      # id(uuid), createdAt, updatedAt, deletedAt
+│   │   │   ├── domain-event.base.ts                # abstract class DomainEvent { occurredAt, eventName }
+│   │   │   └── value-objects/
+│   │   │       ├── money.vo.ts                   # amount + currency, add/subtract/multiply, dùng chung orders/payments/bookings
+│   │   │       └── date-range.vo.ts
+│   │   ├── interfaces/                             # Cổng đảo phụ thuộc: shared-kernel định nghĩa, module khác implement
+│   │   │   ├── permission-resolver.interface.ts    # PERMISSION_RESOLVER + IPermissionResolver (rbac implement)
+│   │   │   └── authenticated-user.interface.ts     # { id, email, roles[] } gắn vào request.user
+│   │   ├── decorators/
+│   │   │   ├── current-user.decorator.ts
+│   │   │   ├── require-permissions.decorator.ts    # @RequirePermissions('movie:create')
+│   │   │   ├── public.decorator.ts                 # @Public() bỏ qua JwtAuthGuard
+│   │   │   ├── api-message.decorator.ts            # @ApiSuccessMessage() + API_SUCCESS_MESSAGE_KEY (interceptor đang import)
+│   │   │   ├── api-paginated-response.decorator.ts # Swagger doc cho response phân trang
+│   │   │   └── cineplex-scope.decorator.ts         # @CineplexScope({ from: 'params', key: 'cineplexId' }) cho Scoped RBAC
+│   │   ├── dto/
+│   │   │   ├── base-response.dto.ts                # ApiResponseDto, ErrorResponseDto, ResponseMeta, PaginationMeta
+│   │   │   ├── pagination.dto.ts                   # page, limit(max 100), keyword, sortBy, sortOrder, get offset()
+│   │   │   └── pagination-response.dto.ts          # interface PaginatedResult<T> { items, pagination } khớp với TransformInterceptor
+│   │   ├── filters/
+│   │   │   └── rfc7807-exception.filter.ts         # Đã sửa nhánh 23503; chỉ đọc request.requestId, không tự sinh
+│   │   ├── guards/
+│   │   │   ├── jwt-auth.guard.ts                   # AuthGuard('jwt') + tôn trọng @Public()
+│   │   │   ├── permissions.guard.ts                # Inject PERMISSION_RESOLVER (không import rbac)
+│   │   │   └── throttler.guard.ts
+│   │   ├── interceptors/
+│   │   │   ├── transform.interceptor.ts
+│   │   │   ├── logging.interceptor.ts
+│   │   │   └── timeout.interceptor.ts
+│   │   ├── middleware/
+│   │   │   ├── request-context.middleware.ts       # Sinh requestId 1 lần, gắn request.requestId + header x-request-id
+│   │   │   └── header-validation.middleware.ts     # Validate Accept header
+│   │   ├── exceptions/
+│   │   │   ├── business.exception.ts               # new BusinessException(ErrorCode.X, message) → filter đọc errorCode
+│   │   │   └── resource-not-found.exception.ts
+│   │   ├── constants/
+│   │   │   ├── error-codes.enum.ts                 # Mã lỗi nghiệp vụ, gom theo prefix: AUTH_*, RBAC_*, BOOKING_*, ORDER_*, PAYMENT_*
+│   │   │   ├── status.enum.ts                      # ACTIVE, INACTIVE, ARCHIVED
+│   │   │   ├── event-names.constant.ts             # Registry tên event toàn hệ thống (xem bảng event ở dưới)
+│   │   │   └── queue-names.constant.ts
+│   │   ├── pipes/
+│   │   │   └── parse-uuid.pipe.ts
+│   │   └── utils/
+│   │       ├── bcrypt.util.ts
+│   │       ├── slug.util.ts
+│   │       ├── date.util.ts                        # Xử lý timezone Asia/Ho_Chi_Minh
+│   │       └── query-builder.util.ts               # Helper áp keyword/sort/paginate cho TypeORM
+│   │
+│   ├── core/                                       # Hạ tầng kỹ thuật dùng chung (không chứa nghiệp vụ)
+│   │   ├── core.module.ts                          # Gom import tất cả module bên dưới
+│   │   ├── redis/
+│   │   │   ├── redis.module.ts                     # @Global, provider REDIS_CLIENT (ioredis)
+│   │   │   └── redis.service.ts                    # get/set/del/setNx/incr/expire wrapper
+│   │   ├── event-bus/
+│   │   │   └── domain-event-bus.module.ts          # @Global, EventEmitterModule.forRoot
+│   │   ├── queue/
+│   │   │   └── queue.module.ts                     # BullModule.forRootAsync
+│   │   ├── mailer/
+│   │   │   ├── mailer.module.ts
+│   │   │   └── mailer.service.ts
+│   │   ├── storage/                                # (chuyển từ module upload sang, vì là hạ tầng)
+│   │   │   ├── storage.module.ts
+│   │   │   ├── cloudinary.provider.ts
+│   │   │   ├── storage.service.ts                  # upload/delete ảnh (poster, banner, avatar)
+│   │   │   ├── storage.controller.ts               # POST /uploads (multipart), guard bằng permission
+│   │   │   └── dto/upload-response.dto.ts
+│   │   └── logger/
+│   │       ├── logger.module.ts
+│   │       └── winston.config.ts
+│   │
+│   ├── database/
+│   │   ├── database.module.ts                      # TypeOrmModule.forRootAsync, autoLoadEntities
+│   │   ├── data-source.ts                          # DataSource cho CLI migration
+│   │   ├── migrations/
+│   │   ├── seeds/
+│   │   │   ├── seed.runner.ts                      # Chạy tuần tự các seed, idempotent (chạy lại không nhân đôi)
+│   │   │   ├── 1-permission.seed.ts
+│   │   │   ├── 2-role.seed.ts
+│   │   │   ├── 3-user.seed.ts                      # Super Admin
+│   │   │   ├── 4-location.seed.ts                  # 63 tỉnh thành
+│   │   │   ├── 5-seat-type.seed.ts                 # STANDARD, VIP, COUPLE, SWEETBOX
+│   │   │   └── 6-genre.seed.ts
+│   │   └── subscribers/
+│   │       └── audit-log.subscriber.ts
+│   │
+│   ├── modules/
+│   │   │
+│   │   ├── aggregators/                            # CHỈ để app.module import gọn. Không export lại module con
+│   │   │   ├── identity.module.ts                  # Users, Rbac, Auth
+│   │   │   ├── catalog.module.ts                   # Movies, Genres, Distributors
+│   │   │   ├── cinema-core.module.ts               # Locations, Cinemas, SeatTypes, Showtimes
+│   │   │   └── sales.module.ts                     # Bookings, Orders, Payments, Promotions, Fnb, Notifications
+│   │   │
+│   │   │ ╔═════════════════════════════════════════════════════════════════╗
+│   │   │ ║  🟦 NHÓM PHỨC TẠP: domain / application / infrastructure /      ║
+│   │   │ ║     presentation / public-api                                   ║
+│   │   │ ╚═════════════════════════════════════════════════════════════════╝
+│   │   │
+│   │   ├── users/                                  # [P] Phụ thuộc: (không)
+│   │   │   ├── domain/
+│   │   │   │   ├── entities/user.entity.ts         # fullName, email, phone, passwordHash, membershipTier, points, status
+│   │   │   │   ├── enums/                          # (dùng status.enum, tier.enum)
+│   │   │   │   │   └── membership-tier.enum.ts     # MEMBER, VIP, VVIP
+│   │   │   │   ├── events/
+│   │   │   │   │   ├── user-registered.event.ts
+│   │   │   │   │   └── user-blocked.event.ts       # auth lắng nghe → thu hồi session Redis
+│   │   │   │   └── repositories/user.repository.interface.ts
+│   │   │   ├── application/
+│   │   │   │   ├── services/users.service.ts
+│   │   │   │   └── dto/
+│   │   │   │       ├── update-profile.dto.ts
+│   │   │   │       ├── create-internal-user.dto.ts # Admin tạo nhân viên/quản lý rạp
+│   │   │   │       ├── update-status.dto.ts
+│   │   │   │       └── query-users.dto.ts          # extends PaginationDto: status, tier
+│   │   │   ├── infrastructure/persistence/typeorm-user.repository.ts
+│   │   │   ├── presentation/controllers/users.controller.ts   # /users, /users/me, /users/:id/status
+│   │   │   ├── public-api/
+│   │   │   │   ├── users.facade.ts                 # findByEmailOrPhone(), findById(), getUserSummary(), addPoints()
+│   │   │   │   ├── dto/user-summary.dto.ts         # id, fullName, email, tier, status (KHÔNG có passwordHash)
+│   │   │   │   ├── dto/user-credentials.dto.ts     # Dành riêng cho auth: có passwordHash, chỉ facade method verifyCredentials mới trả
+│   │   │   │   └── index.ts
+│   │   │   └── users.module.ts
+│   │   │
+│   │   ├── rbac/                                   # [P] Phụ thuộc: users (facade)
+│   │   │   ├── domain/
+│   │   │   │   ├── entities/
+│   │   │   │   │   ├── permission.entity.ts        # code 'resource:action', module
+│   │   │   │   │   ├── role.entity.ts              # code UPPER_SNAKE, isSystem
+│   │   │   │   │   ├── role-permission.entity.ts   # bảng nối tường minh nếu cần cột phụ
+│   │   │   │   │   └── user-role.entity.ts         # userId, roleId, cineplexId (nullable = toàn hệ thống)
+│   │   │   │   ├── events/role-permissions-changed.event.ts   # → xoá cache quyền Redis
+│   │   │   │   └── repositories/
+│   │   │   │       ├── permission.repository.interface.ts
+│   │   │   │       ├── role.repository.interface.ts
+│   │   │   │       └── user-role.repository.interface.ts
+│   │   │   ├── application/
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── permissions.service.ts
+│   │   │   │   │   ├── roles.service.ts
+│   │   │   │   │   ├── user-roles.service.ts
+│   │   │   │   │   └── permission-cache.service.ts # Cache quyền theo user+scope trong Redis, invalidate qua event
+│   │   │   │   ├── event-handlers/on-role-permissions-changed.handler.ts
+│   │   │   │   └── dto/
+│   │   │   │       ├── create-permission.dto.ts
+│   │   │   │       ├── create-role.dto.ts
+│   │   │   │       ├── update-role.dto.ts          # Không cho sửa code
+│   │   │   │       ├── sync-permissions.dto.ts
+│   │   │   │       ├── assign-role.dto.ts          # userId, roleId, cineplexId?
+│   │   │   │       └── query-roles.dto.ts
+│   │   │   ├── infrastructure/persistence/
+│   │   │   │   ├── typeorm-permission.repository.ts
+│   │   │   │   ├── typeorm-role.repository.ts
+│   │   │   │   └── typeorm-user-role.repository.ts
+│   │   │   ├── presentation/controllers/
+│   │   │   │   ├── permissions.controller.ts       # /permissions
+│   │   │   │   ├── roles.controller.ts             # /roles, /roles/:id/permissions
+│   │   │   │   └── user-roles.controller.ts        # /users/:id/roles, /user-roles
+│   │   │   ├── public-api/
+│   │   │   │   ├── rbac.facade.ts                  # implements IPermissionResolver; getUserPermissions(), getUserCineplexScopes()
+│   │   │   │   ├── dto/permission-summary.dto.ts
+│   │   │   │   └── index.ts
+│   │   │   └── rbac.module.ts                      # provide { PERMISSION_RESOLVER, useExisting: RbacFacade }, exports cả hai
+│   │   │
+│   │   ├── auth/                                   # [P] Phụ thuộc: users, rbac (chỉ qua facade)
+│   │   │   ├── application/
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── auth.service.ts             # register, login, refresh, logout
+│   │   │   │   │   ├── token.service.ts            # ký/verify access + refresh
+│   │   │   │   │   └── token-revocation.service.ts # blacklist/thu hồi session trong Redis
+│   │   │   │   ├── event-handlers/on-user-blocked.handler.ts   # Thu hồi toàn bộ session ngay
+│   │   │   │   └── dto/
+│   │   │   │       ├── register.dto.ts
+│   │   │   │       ├── login.dto.ts
+│   │   │   │       ├── refresh-token.dto.ts
+│   │   │   │       └── auth-response.dto.ts
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── strategies/
+│   │   │   │   │   ├── jwt.strategy.ts             # name 'jwt' → JwtAuthGuard ở shared-kernel dùng
+│   │   │   │   │   └── jwt-refresh.strategy.ts
+│   │   │   │   └── redis/auth-redis.constant.ts    # key prefix: auth:refresh:{userId}:{jti}
+│   │   │   ├── presentation/controllers/auth.controller.ts    # /auth/register, /login, /refresh, /logout
+│   │   │   ├── public-api/
+│   │   │   │   ├── auth.facade.ts                  # verifyAccessToken() cho WebSocket gateway dùng
+│   │   │   │   └── index.ts
+│   │   │   └── auth.module.ts
+│   │   │
+│   │   ├── showtimes/                              # [P] Phụ thuộc: movies, cinemas, seat-types (facade)
+│   │   │   ├── domain/
+│   │   │   │   ├── entities/
+│   │   │   │   │   ├── showtime.entity.ts          # movieId, auditoriumId (id mềm), startTime, endTime, status, format(2D/3D/IMAX)
+│   │   │   │   │   └── price-rule.entity.ts        # seatTypeId, dayType, timeSlot, screenType → price
+│   │   │   │   ├── enums/
+│   │   │   │   │   ├── showtime-status.enum.ts     # SCHEDULED, ONGOING, ENDED, CANCELLED
+│   │   │   │   │   └── day-type.enum.ts            # WEEKDAY, WEEKEND, HOLIDAY
+│   │   │   │   ├── events/
+│   │   │   │   │   ├── showtime-created.event.ts
+│   │   │   │   │   └── showtime-cancelled.event.ts # bookings lắng nghe → huỷ booking liên quan
+│   │   │   │   └── repositories/
+│   │   │   │       ├── showtime.repository.interface.ts
+│   │   │   │       └── price-rule.repository.interface.ts
+│   │   │   ├── application/
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── showtimes.service.ts
+│   │   │   │   │   ├── showtime-scheduling.service.ts  # Kiểm tra trùng giờ trong cùng phòng + thời gian dọn phòng
+│   │   │   │   │   └── price-calculation.service.ts    # Tra bảng price_rules theo loại ghế/khung giờ/ngày
+│   │   │   │   └── dto/
+│   │   │   │       ├── create-showtime.dto.ts
+│   │   │   │       ├── bulk-create-showtimes.dto.ts    # Xếp lịch hàng loạt theo tuần
+│   │   │   │       ├── update-showtime.dto.ts
+│   │   │   │       ├── query-showtimes.dto.ts          # movieId, cineplexId, date
+│   │   │   │       ├── create-price-rule.dto.ts
+│   │   │   │       └── showtime-response.dto.ts
+│   │   │   ├── infrastructure/persistence/
+│   │   │   │   ├── typeorm-showtime.repository.ts
+│   │   │   │   └── typeorm-price-rule.repository.ts
+│   │   │   ├── presentation/controllers/
+│   │   │   │   ├── showtimes.controller.ts         # GET /showtimes (public), CRUD (permission showtime:*)
+│   │   │   │   └── price-rules.controller.ts
+│   │   │   ├── public-api/
+│   │   │   │   ├── showtimes.facade.ts             # assertBookable(), getShowtimeDetail(), calculateSeatPrice()
+│   │   │   │   ├── dto/
+│   │   │   │   │   ├── showtime-summary.dto.ts
+│   │   │   │   │   └── seat-price.dto.ts
+│   │   │   │   └── index.ts
+│   │   │   └── showtimes.module.ts
+│   │   │
+│   │   ├── bookings/                               # [P] Phụ thuộc: showtimes, cinemas (facade). Trách nhiệm: GIỮ GHẾ
+│   │   │   ├── domain/
+│   │   │   │   ├── entities/
+│   │   │   │   │   ├── booking.entity.ts           # userId, showtimeId, status, expiresAt
+│   │   │   │   │   └── booking-seat.entity.ts      # bookingId, seatId (id mềm), seatCode (snapshot), seatTypeId
+│   │   │   │   ├── value-objects/
+│   │   │   │   │   └── seat-position.vo.ts         # row + column, kiểm tra ghế liền kề (không để trống 1 ghế lẻ)
+│   │   │   │   ├── enums/
+│   │   │   │   │   ├── booking-status.enum.ts      # HOLDING, CONFIRMED, CANCELLED, EXPIRED
+│   │   │   │   │   └── seat-status.enum.ts         # AVAILABLE, HELD, SOLD
+│   │   │   │   ├── events/
+│   │   │   │   │   ├── seats-held.event.ts         # → gateway push realtime
+│   │   │   │   │   ├── seats-released.event.ts
+│   │   │   │   │   ├── booking-confirmed.event.ts  # Do bookings emit khi orders báo đã thanh toán
+│   │   │   │   │   └── booking-expired.event.ts    # → orders huỷ order PENDING tương ứng
+│   │   │   │   └── repositories/booking.repository.interface.ts
+│   │   │   ├── application/
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── booking.service.ts          # hold / release / confirm / cancel
+│   │   │   │   │   ├── seat-availability.service.ts# Gộp ghế (cinemas) + HELD (Redis) + SOLD (DB) → seat map
+│   │   │   │   │   └── booking-validation.service.ts   # Tối đa N ghế, không bỏ trống ghế lẻ, cùng 1 suất
+│   │   │   │   ├── event-handlers/
+│   │   │   │   │   ├── on-order-paid.handler.ts    # Nghe order.paid → confirm booking
+│   │   │   │   │   ├── on-order-cancelled.handler.ts
+│   │   │   │   │   └── on-showtime-cancelled.handler.ts
+│   │   │   │   ├── jobs/timeout-booking.processor.ts   # BullMQ delayed job: hết TTL → EXPIRED + release ghế
+│   │   │   │   └── dto/
+│   │   │   │       ├── hold-seats.dto.ts
+│   │   │   │       ├── release-seats.dto.ts
+│   │   │   │       ├── seat-map-response.dto.ts
+│   │   │   │       └── booking-response.dto.ts
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── persistence/typeorm-booking.repository.ts
+│   │   │   │   ├── locks/redis-distributed-lock.service.ts # SET NX PX all-or-nothing + Lua script release an toàn theo owner
+│   │   │   │   └── redis/booking-redis.constant.ts         # seat-lock:{showtimeId}:{seatId}
+│   │   │   ├── presentation/
+│   │   │   │   ├── controllers/bookings.controller.ts      # POST /bookings/hold, DELETE /bookings/:id, GET /showtimes/:id/seat-map
+│   │   │   │   └── gateways/seat-status.gateway.ts         # WebSocket: đẩy trạng thái ghế realtime theo room showtime:{id}
+│   │   │   ├── public-api/
+│   │   │   │   ├── bookings.facade.ts              # getBookingSummary(), assertBookingHeldBy(userId), markConfirmed()
+│   │   │   │   ├── dto/booking-summary.dto.ts      # id, userId, showtimeId, seats[{seatId, seatCode, seatTypeId}], expiresAt, status
+│   │   │   │   └── index.ts
+│   │   │   └── bookings.module.ts
+│   │   │
+│   │   ├── orders/                                 # [P] Phụ thuộc: bookings, showtimes, fnb, promotions, users. Trách nhiệm: TÍNH TIỀN + HOÁ ĐƠN
+│   │   │   ├── domain/
+│   │   │   │   ├── entities/
+│   │   │   │   │   ├── order.entity.ts             # bookingId, userId, subtotal, discount, total, status, voucherCode
+│   │   │   │   │   ├── order-ticket-item.entity.ts # Dòng vé: seatCode, seatTypeName, unitPrice (snapshot)
+│   │   │   │   │   ├── order-fnb-item.entity.ts    # Dòng bắp nước: fnbItemId, name, qty, unitPrice (snapshot)
+│   │   │   │   │   └── ticket.entity.ts            # Vé điện tử sau khi PAID: qrCode, checkedInAt
+│   │   │   │   ├── enums/order-status.enum.ts      # PENDING, PAID, CANCELLED, REFUNDED
+│   │   │   │   ├── events/
+│   │   │   │   │   ├── order-created.event.ts
+│   │   │   │   │   ├── order-paid.event.ts         # → bookings confirm, notifications gửi mail, promotions cộng điểm
+│   │   │   │   │   └── order-cancelled.event.ts
+│   │   │   │   └── repositories/
+│   │   │   │       ├── order.repository.interface.ts
+│   │   │   │       └── ticket.repository.interface.ts
+│   │   │   ├── application/
+│   │   │   │   ├── usecases/
+│   │   │   │   │   ├── create-order.usecase.ts     # Orchestrate: booking → giá vé → F&B → voucher → lưu order
+│   │   │   │   │   ├── cancel-order.usecase.ts
+│   │   │   │   │   ├── mark-order-paid.usecase.ts  # payments gọi qua facade → phát order.paid, sinh ticket
+│   │   │   │   │   └── check-in-ticket.usecase.ts  # Quét QR tại quầy
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── order-pricing.service.ts    # Cộng dồn vé + F&B − voucher, dùng Money VO
+│   │   │   │   │   └── ticket-issuing.service.ts
+│   │   │   │   ├── event-handlers/
+│   │   │   │   │   └── on-booking-expired.handler.ts   # Huỷ order PENDING
+│   │   │   │   └── dto/
+│   │   │   │       ├── create-order.dto.ts         # bookingId, fnbItems[], voucherCode?
+│   │   │   │       ├── order-response.dto.ts
+│   │   │   │       ├── query-orders.dto.ts
+│   │   │   │       └── check-in-ticket.dto.ts
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── persistence/
+│   │   │   │   │   ├── typeorm-order.repository.ts
+│   │   │   │   │   └── typeorm-ticket.repository.ts
+│   │   │   │   ├── qrcode/ticket-qrcode.service.ts # Ký payload QR chống làm giả
+│   │   │   │   └── pdf/ticket-pdf.generator.ts
+│   │   │   ├── presentation/controllers/
+│   │   │   │   ├── orders.controller.ts            # POST /orders, GET /orders/me, POST /orders/:id/cancel
+│   │   │   │   ├── tickets.controller.ts           # GET /tickets/:id, POST /tickets/check-in
+│   │   │   │   └── admin-orders.controller.ts      # Lọc theo cineplex scope
+│   │   │   ├── public-api/
+│   │   │   │   ├── orders.facade.ts                # getOrderSummary(), markOrderPaid(orderId, paymentRef), markOrderFailed()
+│   │   │   │   ├── dto/order-summary.dto.ts        # id, userId, total, currency, status, expiresAt
+│   │   │   │   └── index.ts
+│   │   │   └── orders.module.ts
+│   │   │
+│   │   ├── payments/                               # [P] Phụ thuộc: orders (facade)
+│   │   │   ├── domain/
+│   │   │   │   ├── entities/
+│   │   │   │   │   ├── payment.entity.ts           # orderId (id mềm), method, amount, status, gatewayTxnRef
+│   │   │   │   │   └── payment-transaction.entity.ts   # Log raw request/response/IPN để đối soát
+│   │   │   │   ├── enums/
+│   │   │   │   │   ├── payment-status.enum.ts      # INITIATED, SUCCESS, FAILED, REFUNDED
+│   │   │   │   │   └── payment-method.enum.ts      # VNPAY, (MOMO, ZALOPAY mở rộng sau)
+│   │   │   │   ├── events/
+│   │   │   │   │   ├── payment-succeeded.event.ts
+│   │   │   │   │   └── payment-failed.event.ts
+│   │   │   │   └── repositories/payment.repository.interface.ts
+│   │   │   ├── application/
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── payments.service.ts         # initiate(), handleIpn() idempotent theo gatewayTxnRef
+│   │   │   │   │   └── refund.service.ts
+│   │   │   │   └── dto/
+│   │   │   │       ├── initiate-payment.dto.ts     # orderId, method, returnUrl?
+│   │   │   │       ├── vnpay-ipn-query.dto.ts
+│   │   │   │       └── payment-response.dto.ts
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── persistence/typeorm-payment.repository.ts
+│   │   │   │   └── gateways/
+│   │   │   │       ├── payment-gateway.interface.ts    # createPaymentUrl(), verifyIpn(), refund()  (Strategy)
+│   │   │   │       ├── payment-gateway.registry.ts     # method → gateway
+│   │   │   │       └── vnpay/
+│   │   │   │           ├── vnpay.gateway.ts
+│   │   │   │           ├── vnpay-signature.util.ts     # HMAC SHA512, sort param
+│   │   │   │           └── vnpay-response-code.map.ts
+│   │   │   ├── presentation/controllers/
+│   │   │   │   ├── payments.controller.ts          # POST /payments/initiate, GET /payments/:orderId
+│   │   │   │   └── vnpay-ipn.controller.ts         # GET /payments/vnpay/ipn, /return (@Public, verify chữ ký)
+│   │   │   ├── public-api/
+│   │   │   │   ├── payments.facade.ts              # getPaymentStatus(orderId)
+│   │   │   │   ├── dto/payment-status.dto.ts
+│   │   │   │   └── index.ts
+│   │   │   └── payments.module.ts
+│   │   │
+│   │   │ ╔═════════════════════════════════════════════════════════════════╗
+│   │   │ ║  🟩 NHÓM ĐƠN GIẢN: entities / dto / controller / service        ║
+│   │   │ ║  Bắt buộc có public-api/ nếu có module khác gọi vào [P]         ║
+│   │   │ ╚═════════════════════════════════════════════════════════════════╝
+│   │   │
+│   │   ├── locations/                              # [P] cinemas gọi để validate tỉnh/thành
+│   │   │   ├── entities/
+│   │   │   │   ├── province.entity.ts
+│   │   │   │   └── district.entity.ts
+│   │   │   ├── dto/
+│   │   │   │   ├── query-locations.dto.ts
+│   │   │   │   └── location-response.dto.ts
+│   │   │   ├── locations.controller.ts
+│   │   │   ├── locations.service.ts
+│   │   │   ├── public-api/{locations.facade.ts, dto/location-summary.dto.ts, index.ts}
+│   │   │   └── locations.module.ts
+│   │   │
+│   │   ├── cinemas/                                # [P] Phụ thuộc: locations. Cụm rạp → Phòng chiếu → Ghế
+│   │   │   ├── entities/
+│   │   │   │   ├── cineplex.entity.ts              # name, address, provinceId, hotline, status
+│   │   │   │   ├── auditorium.entity.ts            # cineplexId, name, screenType, capacity, status
+│   │   │   │   └── seat.entity.ts                  # auditoriumId, rowLabel, columnNumber, seatCode, seatTypeId, isActive
+│   │   │   ├── dto/
+│   │   │   │   ├── create-cineplex.dto.ts
+│   │   │   │   ├── update-cineplex.dto.ts
+│   │   │   │   ├── query-cineplexes.dto.ts
+│   │   │   │   ├── create-auditorium.dto.ts
+│   │   │   │   ├── update-auditorium-status.dto.ts
+│   │   │   │   ├── create-seat-layout.dto.ts       # Sinh sơ đồ ghế theo ma trận hàng × cột
+│   │   │   │   └── seat-layout-response.dto.ts
+│   │   │   ├── cineplex.controller.ts
+│   │   │   ├── auditorium.controller.ts
+│   │   │   ├── seat.controller.ts
+│   │   │   ├── cineplex.service.ts
+│   │   │   ├── auditorium.service.ts
+│   │   │   ├── seat.service.ts
+│   │   │   ├── cinemas-redis.constant.ts           # Cache danh sách rạp/sơ đồ ghế (ít đổi, đọc nhiều)
+│   │   │   ├── public-api/
+│   │   │   │   ├── cinemas.facade.ts               # getSeatsByIds(), getSeatsByAuditorium(), getAuditoriumInfo(), assertCineplexExists()
+│   │   │   │   ├── dto/{seat-summary.dto.ts, auditorium-summary.dto.ts, cineplex-summary.dto.ts}
+│   │   │   │   └── index.ts
+│   │   │   └── cinemas.module.ts
+│   │   │
+│   │   ├── seat-types/                             # [P] showtimes (bảng giá), cinemas (gán loại ghế)
+│   │   │   ├── entities/seat-type.entity.ts        # code, name, color, surchargeDefault
+│   │   │   ├── dto/{create-seat-type.dto.ts, update-seat-type.dto.ts}
+│   │   │   ├── seat-types.controller.ts
+│   │   │   ├── seat-types.service.ts
+│   │   │   ├── public-api/{seat-types.facade.ts, dto/seat-type-summary.dto.ts, index.ts}
+│   │   │   └── seat-types.module.ts
+│   │   │
+│   │   ├── genres/                                 # [P] movies gọi
+│   │   │   ├── entities/genre.entity.ts
+│   │   │   ├── dto/{create-genre.dto.ts, update-genre.dto.ts}
+│   │   │   ├── genres.controller.ts
+│   │   │   ├── genres.service.ts
+│   │   │   ├── public-api/{genres.facade.ts, dto/genre-summary.dto.ts, index.ts}
+│   │   │   └── genres.module.ts
+│   │   │
+│   │   ├── distributors/                           # [P] movies gọi
+│   │   │   ├── entities/distributor.entity.ts
+│   │   │   ├── dto/{create-distributor.dto.ts, update-distributor.dto.ts}
+│   │   │   ├── distributors.controller.ts
+│   │   │   ├── distributors.service.ts
+│   │   │   ├── public-api/{distributors.facade.ts, dto/distributor-summary.dto.ts, index.ts}
+│   │   │   └── distributors.module.ts
+│   │   │
+│   │   ├── movies/                                 # [P] Phụ thuộc: genres, distributors. showtimes gọi
+│   │   │   ├── entities/
+│   │   │   │   ├── movie.entity.ts                 # title, slug, duration, releaseDate, ageRating, status, posterUrl, trailerUrl, distributorId
+│   │   │   │   ├── movie-genre.entity.ts           # bảng nối movie ↔ genreId (id mềm)
+│   │   │   │   └── person.entity.ts                # diễn viên/đạo diễn
+│   │   │   ├── enums/{movie-status.enum.ts, age-rating.enum.ts}   # COMING_SOON/NOW_SHOWING/ENDED; P, T13, T16, T18
+│   │   │   ├── dto/
+│   │   │   │   ├── create-movie.dto.ts
+│   │   │   │   ├── update-movie.dto.ts
+│   │   │   │   ├── query-movies.dto.ts             # genreId, status, keyword
+│   │   │   │   └── movie-response.dto.ts
+│   │   │   ├── movies.controller.ts                # GET /movies, /movies/now-showing, /movies/coming-soon
+│   │   │   ├── movies.service.ts
+│   │   │   ├── public-api/{movies.facade.ts, dto/movie-summary.dto.ts, index.ts}   # getMovieSummary(), getDuration()
+│   │   │   └── movies.module.ts
+│   │   │
+│   │   ├── fnb/                                    # [P] orders gọi. Đồ ăn & nước uống
+│   │   │   ├── entities/
+│   │   │   │   ├── fnb-item.entity.ts              # name, price, category, imageUrl, isAvailable
+│   │   │   │   ├── fnb-combo.entity.ts
+│   │   │   │   └── fnb-combo-item.entity.ts
+│   │   │   ├── dto/{create-fnb-item.dto.ts, create-fnb-combo.dto.ts, query-fnb.dto.ts}
+│   │   │   ├── fnb.controller.ts
+│   │   │   ├── fnb.service.ts
+│   │   │   ├── public-api/{fnb.facade.ts, dto/fnb-item-summary.dto.ts, index.ts}   # getItemsForOrder(ids) trả giá snapshot
+│   │   │   └── fnb.module.ts
+│   │   │
+│   │   ├── promotions/                             # [P] orders gọi (áp voucher). Tự nghe event cộng điểm
+│   │   │   ├── entities/
+│   │   │   │   ├── voucher.entity.ts               # code, type(PERCENT/FIXED), value, minOrder, maxDiscount, usageLimit, validFrom/To
+│   │   │   │   ├── voucher-usage.entity.ts         # Chống dùng lại
+│   │   │   │   └── loyalty-transaction.entity.ts   # EARN/REDEEM, points, orderId (id mềm)
+│   │   │   ├── dto/{create-voucher.dto.ts, apply-voucher.dto.ts, query-vouchers.dto.ts}
+│   │   │   ├── promotions.controller.ts            # POST /promotions/vouchers/validate
+│   │   │   ├── promotions.service.ts
+│   │   │   ├── listeners/on-order-paid.listener.ts # Nghe order.paid → cộng điểm theo tier, ghi nhận voucher-usage
+│   │   │   ├── public-api/
+│   │   │   │   ├── promotions.facade.ts            # calculateDiscount(code, subtotal, userId), reserveVoucher(), releaseVoucher()
+│   │   │   │   ├── dto/discount-result.dto.ts
+│   │   │   │   └── index.ts
+│   │   │   └── promotions.module.ts
+│   │   │
+│   │   └── notifications/                          # [L] Module lá: chỉ NGHE event, không ai được gọi vào
+│   │       ├── listeners/
+│   │       │   ├── on-order-paid.listener.ts       # Mail vé + QR
+│   │       │   ├── on-user-registered.listener.ts  # Mail chào mừng / xác minh
+│   │       │   └── on-booking-expired.listener.ts
+│   │       ├── channels/{email.channel.ts, sms.channel.ts, push.channel.ts}
+│   │       ├── templates/{ticket-confirmation.template.ts, welcome.template.ts}
+│   │       ├── notifications.service.ts
+│   │       └── notifications.module.ts             # Không export gì
+│   │
+│   └── jobs/                                       # Cron toàn hệ thống (không thuộc riêng module nào)
+│       ├── jobs.module.ts
+│       ├── sync-movie-status.cron.ts               # COMING_SOON → NOW_SHOWING theo releaseDate
+│       ├── close-ended-showtimes.cron.ts
+│       └── showtime-reminder.cron.ts               # Nhắc trước 1h qua event → notifications
+│
+├── test/
+│   ├── e2e/
+│   │   ├── auth.e2e-spec.ts
+│   │   ├── rbac-scope.e2e-spec.ts                  # Manager rạp A không sửa được rạp B
+│   │   ├── booking-flow.e2e-spec.ts                # hold → order → payment IPN → ticket
+│   │   └── seat-concurrency.e2e-spec.ts            # 50 request cùng giữ 1 ghế → đúng 1 thành công
+│   ├── fixtures/
+│   ├── helpers/test-app.factory.ts
+│   └── jest-e2e.json
+│
+├── docs/
+│   ├── architecture.md
+│   ├── module-boundaries.md                        # Ma trận ai được gọi ai (xem bên dưới), quy tắc thêm module mới
+│   ├── event-catalog.md
+│   ├── error-codes.md
+│   └── adr/                                        # Architecture Decision Records
+│       ├── 0001-modular-monolith-hybrid.md         # Vì sao 2 nhóm module (DDD + CRUD)
+│       ├── 0002-event-emitter-over-cqrs.md
+│       └── 0003-seat-hold-with-redis-lock.md
+│
+├── scripts/{seed.ts, migration-run.sh, check-boundaries.sh}
+├── .dependency-cruiser.cjs                         # Enforce boundary + chặn vòng phụ thuộc + kiểm tra chiều phụ thuộc
+├── docker-compose.yml                              # postgres, redis, pgadmin
+├── docker-compose.dev.yml
+├── Dockerfile
+├── nest-cli.json
+├── tsconfig.json
+├── package.json                                    # script: "lint:boundaries": "depcruise src --config .dependency-cruiser.cjs"
+└── .env.example
