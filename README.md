@@ -1,180 +1,56 @@
 # Cinema Booking Agent
 
-Cinema management and movie ticket booking system with an AI booking agent.
+Cinema management and movie ticket booking, with a planned AI booking assistant.
 
-## Repository Structure
+## Start here
 
-```text
-apps/
-  cinema-backend/   Existing cinema backend
-  cinema-frontend/  Web application
-  cinema-mobile/    Mobile application
-  cinema-agent/     AI booking agent
-
-packages/            Shared packages when needed
-docs/                Project documentation
-```
-
-## Current Status
-
-The repository is being organized into a lightweight monorepo-style structure. This restructuring only establishes top-level ownership boundaries; it does not redesign the internal architecture of each application.
-
-Currently runnable:
-
-- Cinema Backend
-- PostgreSQL
-- Redis
-
-Not initialized yet:
-
-- Cinema Frontend
-- Cinema Mobile
-- Cinema Agent
+- [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md): product foundation and confirmed direction.
+- [CONTEXT.md](CONTEXT.md): current implementation state and material limitations.
+- [Documentation map](docs/README.md): architecture, domain, Standards, specs and procedures.
 
 ## Applications
 
-### Cinema Backend
+| App | State |
+| --- | --- |
+| [Cinema Backend](apps/cinema-backend/README.md) | Initialized NestJS application; startup/build not verified in this checkout |
+| [Cinema Frontend](apps/cinema-frontend/README.md) | Not initialized; Next.js + TypeScript selected |
+| [Cinema Mobile](apps/cinema-mobile/README.md) | Not initialized; stack undecided |
+| [Cinema Agent](apps/cinema-agent/README.md) | Not initialized; runtime/tool contracts undecided |
 
-Existing NestJS backend code is located at `apps/cinema-backend`.
+Dependencies are managed per app. There is no root npm workspace. PostgreSQL and Redis are provided by the root Docker Compose file.
 
-### Cinema Frontend
+## Local development
 
-Reserved for the web application.
+Clone the repository:
 
-### Cinema Mobile
-
-Reserved for the customer mobile application.
-
-### Cinema Agent
-
-Reserved for the AI-powered booking agent application.
-
-## Getting Started
-
-The current local development setup runs PostgreSQL and Redis with Docker Compose, then runs the Cinema Backend locally with npm.
-
-### Prerequisites
-
-Make sure the following tools are available on your machine:
-
-- Git
-- Node.js and npm
-- Docker with Docker Compose
-- Cloudinary development credentials
-
-### 1. Clone the repository
-
-```bash
-git clone <repository-url>
+```sh
+git clone https://github.com/GiaBaoIT27/cinema-booking-agent.git
 cd cinema-booking-agent
 ```
 
-### 2. Start PostgreSQL and Redis
+Follow [local development](docs/07-guides/local-development.md) for Node requirements, environment setup, installation, infrastructure and app commands.
 
-From the repository root:
+The current backend defaults to `http://localhost:3000/api/v1`. It requires PostgreSQL, Redis and valid development configuration, including Cloudinary credentials. Send `Accept: application/json`; see [HTTP contracts](docs/02-architecture/http-contracts.md).
 
-```bash
-docker compose up -d
+## Documentation check
+
+From the root:
+
+```sh
+node scripts/verify-docs.mjs
+git diff --check
 ```
 
-This starts the current local services:
+The checker validates shared documentation structure and local link targets. It does not verify application behavior or remote links. Backend test configuration exists, but no tests are tracked yet.
 
-| Service | Address |
-| --- | --- |
-| PostgreSQL | `localhost:5432` |
-| Redis | `localhost:6379` |
+## Team development
 
-### 3. Configure the backend environment
+Shared documentation lives in numbered `docs/` areas. It covers architecture, domain, API contracts, decisions and development procedures. Personal tool configuration is maintained separately.
 
-Move into the backend application:
+The [contribution guide](docs/07-guides/contributing.md) and [Issue](.github/ISSUE_TEMPLATE/implementation-task.yml)/[PR](.github/PULL_REQUEST_TEMPLATE.md) templates are available for team review. Proposed practices are not recorded as agreements until both contributors confirm them.
 
-```bash
-cd apps/cinema-backend
-```
+For frontend work, read [Figma delivery](docs/07-guides/figma-delivery.md). Canonical AI version and responsive scope still need decisions.
 
-Create a local `.env` file from the tracked template.
+## Historical documentation
 
-macOS/Linux:
-
-```bash
-cp .env.example .env
-```
-
-Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-The development database values in `.env.example` already match the root `docker-compose.yml`.
-
-Before starting the backend, replace the development placeholders for JWT and provide valid Cloudinary credentials:
-
-```env
-JWT_ACCESS_SECRET=<your-development-secret>
-JWT_REFRESH_SECRET=<your-development-secret>
-
-CLOUDINARY_CLOUD_NAME=<your-cloud-name>
-CLOUDINARY_API_KEY=<your-api-key>
-CLOUDINARY_API_SECRET=<your-api-secret>
-```
-
-Do not commit your local `.env` file or real credentials.
-
-> Cloudinary credentials are currently required by backend environment validation. The backend will fail to start if they are missing.
-
-### 4. Install backend dependencies
-
-From `apps/cinema-backend`:
-
-```bash
-npm install
-```
-
-### 5. Seed development data (optional)
-
-After PostgreSQL is running and the backend environment is configured:
-
-```bash
-npm run db:seed
-```
-
-This step is optional for starting the application, but it can populate development data used by the existing backend.
-
-### 6. Start the backend
-
-```bash
-npm run start:dev
-```
-
-The current backend listens on:
-
-```text
-http://localhost:3000
-```
-
-The current API base path is:
-
-```text
-http://localhost:3000/api/v1
-```
-
-### 7. Stop local services
-
-When development is finished, run this from the repository root:
-
-```bash
-docker compose down
-```
-
-## Current Limitations
-
-- Only `apps/cinema-backend` is currently initialized as a runnable application.
-- `apps/cinema-frontend`, `apps/cinema-mobile`, and `apps/cinema-agent` are placeholders and do not have runtime setup yet.
-- The backend currently uses npm and its own `package-lock.json`; no root workspace package manager has been introduced yet.
-- The API prefix is currently implemented as `api/v1` in the backend bootstrap code.
-- Local development currently depends on valid Cloudinary credentials.
-
-## Development
-
-Application-specific setup details can live in each application's README as those applications are initialized.
+The root [structure.md](structure.md) and [frontend workflow pointer](docs/frontend-design-workflow.md) route readers to current documents and preserved historical notes. Do not use archived snapshots as current implementation authority.
