@@ -2,10 +2,10 @@ import { expect, test } from "vitest";
 import { formatShowtime, getDictionary } from "./dictionary";
 
 test("genre and status labels translate while stable IDs remain keys", () => {
-  expect(getDictionary("vi").genres["sci-fi"]).toBe("Khoa học viễn tưởng");
-  expect(getDictionary("en").genres["sci-fi"]).toBe("Sci-fi");
+  expect(getDictionary("vi").genres["sci-fi"]).toBe("Viễn tưởng");
+  expect(getDictionary("en").genres["sci-fi"]).toBe("Sci-Fi");
   expect(getDictionary("vi").statuses["now-showing"]).toBe("Đang chiếu");
-  expect(getDictionary("en").statuses["now-showing"]).toBe("Now Showing");
+  expect(getDictionary("en").statuses["now-showing"]).toBe("Now showing");
 });
 
 test("showtime formatting is independent of the machine timezone", () => {

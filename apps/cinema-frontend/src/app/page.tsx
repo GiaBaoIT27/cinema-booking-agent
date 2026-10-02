@@ -1,9 +1,7 @@
-import { PreferenceControls } from "@/features/preferences/controls";
-import { ShellHeading } from "@/features/preferences/shell-heading";
-
-export default function HomeShell() {
-  return <main className="shell-page">
-    <header className="shell-header"><span>Cinema</span><PreferenceControls /></header>
-    <section className="shell-content"><ShellHeading /></section>
-  </main>;
+import { HomeClient } from "@/features/home/home-client";
+import { homeCatalog } from "@/features/home/fixtures";
+export const dynamic = "force-dynamic";
+export default function HomePage() {
+  const scenario = process.env.MBA_FIXTURE_SCENARIO === "error-once" ? "error-once" : "ready";
+  return <HomeClient catalog={homeCatalog} scenario={scenario} />;
 }

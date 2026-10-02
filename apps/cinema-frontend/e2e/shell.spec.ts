@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("server renders default preference attributes and a usable shell", async ({ page }) => {
+test("server renders default preferences and the full Home catalog", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -12,6 +12,9 @@ test("server renders default preference attributes and a usable shell", async ({
   await expect(page.locator("html")).toHaveAttribute("lang", "vi");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("searchbox")).toBeVisible();
+  await expect(page.getByRole("combobox")).toHaveCount(4);
+  await expect(page.getByTestId("movie-card")).toHaveCount(10);
   expect(errors).toEqual([]);
 });
 
