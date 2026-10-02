@@ -1,0 +1,39 @@
+name: Implementation task
+description: Define a scoped, verifiable development task.
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome and scope
+      description: State observable behavior, target app and excluded changes.
+    validations:
+      required: true
+  - type: textarea
+    id: authority
+    attributes:
+      label: Requirements and design authority
+      description: Link relevant specs, Figma frame IDs, decisions and agreed conventions. Identify unresolved choices explicitly.
+    validations:
+      required: true
+  - type: textarea
+    id: contracts
+    attributes:
+      label: Files, interfaces and dependencies
+      description: Identify likely files, API inputs/outputs and prerequisite tasks. Distinguish mocks from integrated behavior.
+  - type: textarea
+    id: plan
+    attributes:
+      label: Implementation plan
+      description: Use independently verifiable steps and identify sequential dependencies.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance and verification
+      description: Define user-visible criteria, error/recovery cases and commands with cwd. Include screenshots for Figma work.
+    validations:
+      required: true
+  - type: textarea
+    id: open_questions
+    attributes:
+      label: Open questions and risks
+      description: Record decisions that still need resolution and dependencies to discuss with the other contributor.
