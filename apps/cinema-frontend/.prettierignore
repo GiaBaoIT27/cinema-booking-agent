@@ -1,0 +1,11 @@
+.next/
+node_modules/
+playwright-report/
+test-results/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+package-lock.json
+src/fonts/
+public/icons/
+e2e/*-snapshots/

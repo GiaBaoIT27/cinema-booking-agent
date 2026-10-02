@@ -18,11 +18,16 @@ test("English and dark mode survive reload independently", async ({ page }) => {
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Find your next movie");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Find your next movie",
+  );
   expect(errors).toEqual([]);
 });
 
-test("invalid locale cookie falls back without discarding dark theme", async ({ page, context }) => {
+test("invalid locale cookie falls back without discarding dark theme", async ({
+  page,
+  context,
+}) => {
   await context.addCookies([
     { name: "mba_locale", value: "xx", url: "http://127.0.0.1:3100" },
     { name: "mba_theme", value: "dark", url: "http://127.0.0.1:3100" },
@@ -38,15 +43,26 @@ test("changing theme leaves locale and its copy intact", async ({ page }) => {
   await page.getByRole("button", { name: "Dark" }).click();
   await page.getByRole("button", { name: "Light" }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Find your next movie");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Find your next movie",
+  );
 });
 
-test("blocked cookie writes do not block in-session locale changes", async ({ page }) => {
+test("blocked cookie writes do not block in-session locale changes", async ({
+  page,
+}) => {
   await page.addInitScript(() => {
-    Object.defineProperty(document, "cookie", { configurable: true, set() { throw new Error("blocked cookie"); } });
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      set() {
+        throw new Error("blocked cookie");
+      },
+    });
   });
   await page.goto("/");
   await page.getByRole("button", { name: "EN", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Find your next movie");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Find your next movie",
+  );
 });

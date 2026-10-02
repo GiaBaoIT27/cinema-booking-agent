@@ -77,3 +77,7 @@ App commands run from `apps/cinema-frontend`; root commands run from the reposit
 Environment: Windows, Node 24.19.0, npm 11.17.0, Next 16.3.8, Playwright 1.63.0, pinned Chromium. Browser test processes clear inherited `NO_COLOR` and `FORCE_COLOR` only for those commands to avoid conflicting child-process diagnostics. No machine-wide environment setting changed.
 
 Known limits and review notes: baseline PNGs are platform/font specific; native select popup appearance varies by OS. The backend, mobile and agent apps were not validated by these checks. The earlier Quick sorting and mismatched movie-ID test gaps are closed by the final tests. Two nonblocking maintainability notes remain: Quick date/time labels split a combined formatter string on punctuation, and DemoDialog's conditional JSX is dense. The final focus repair addresses the later observed open-modal defect. No merge, deploy or API integration is represented by this acceptance.
+
+## Formatting follow-up (2026-10-02)
+
+The frontend now uses Prettier with a shared format and check policy. Mechanical formatting spread DemoDialog's JSX across lines, addressing the line-density part of the earlier note. Its conditional rendering remains as designed, and the Quick label punctuation dependency remains. No runtime logic, fixtures, or visual baselines changed. After formatting, lint, typecheck, 26 unit tests, the production build, 61 normal browser tests, and 3 error browser tests passed. These are follow-up results; the table above records the original M1 acceptance run.

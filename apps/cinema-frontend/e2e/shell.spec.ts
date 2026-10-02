@@ -1,10 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("server renders default preferences and the full Home catalog", async ({ page }) => {
+test("server renders default preferences and the full Home catalog", async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() === "error" && /hydration/i.test(message.text())) errors.push(message.text());
+    if (message.type() === "error" && /hydration/i.test(message.text()))
+      errors.push(message.text());
   });
 
   const response = await page.goto("/");
@@ -18,7 +21,10 @@ test("server renders default preferences and the full Home catalog", async ({ pa
   expect(errors).toEqual([]);
 });
 
-test("valid preference cookies are reflected in the server response", async ({ page, context }) => {
+test("valid preference cookies are reflected in the server response", async ({
+  page,
+  context,
+}) => {
   await context.addCookies([
     { name: "mba_locale", value: "en", url: "http://127.0.0.1:3100" },
     { name: "mba_theme", value: "dark", url: "http://127.0.0.1:3100" },

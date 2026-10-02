@@ -1,7 +1,10 @@
 import type { Catalog, CatalogAdapter, FixtureScenario } from "./model";
 import { getQuickOptions, resolveQuickSelection } from "./quick-selection";
 
-export function createFixtureAdapter(catalog: Catalog, options: { scenario?: FixtureScenario; delayMs?: number } = {}): CatalogAdapter {
+export function createFixtureAdapter(
+  catalog: Catalog,
+  options: { scenario?: FixtureScenario; delayMs?: number } = {},
+): CatalogAdapter {
   let errorPending = options.scenario === "error-once";
   return {
     search(query, signal) {
@@ -23,14 +26,20 @@ export function createFixtureAdapter(catalog: Catalog, options: { scenario?: Fix
             reject(new Error("Demo search failed"));
             return;
           }
-          resolve(catalog.movies.filter((movie) => movie.title.toLocaleLowerCase().includes(normalizedQuery)
-            && movie.releaseStatus === query.status
-            && (query.genreId === null || movie.genreId === query.genreId)));
+          resolve(
+            catalog.movies.filter(
+              (movie) =>
+                movie.title.toLocaleLowerCase().includes(normalizedQuery) &&
+                movie.releaseStatus === query.status &&
+                (query.genreId === null || movie.genreId === query.genreId),
+            ),
+          );
         }, options.delayMs ?? 300);
         signal?.addEventListener("abort", onAbort, { once: true });
       });
     },
     getQuickOptions: (selection) => getQuickOptions(catalog, selection),
-    resolveQuickSelection: (selection) => resolveQuickSelection(catalog, selection),
+    resolveQuickSelection: (selection) =>
+      resolveQuickSelection(catalog, selection),
   };
 }

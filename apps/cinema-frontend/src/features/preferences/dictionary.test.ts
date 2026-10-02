@@ -9,6 +9,10 @@ test("genre and status labels translate while stable IDs remain keys", () => {
 });
 
 test("showtime formatting is independent of the machine timezone", () => {
-  expect(formatShowtime("2026-10-10", "19:30", "vi")).toBe("10/10/2026 · 19:30");
-  expect(formatShowtime("2026-10-10", "19:30", "en")).toBe("Oct 10, 2026 · 7:30 PM");
+  expect(formatShowtime("2026-10-10", "19:30", "vi")).toBe(
+    "10/10/2026 · 19:30",
+  );
+  expect(formatShowtime("2026-10-10", "19:30", "en")).toBe(
+    "Oct 10, 2026 · 7:30 PM",
+  );
 });
