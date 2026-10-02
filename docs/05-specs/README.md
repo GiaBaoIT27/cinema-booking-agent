@@ -1,17 +1,17 @@
 # 05 — Specifications
 
-This area owns durable required behavior and contracts. No feature specification has been accepted yet.
+This area owns durable required behavior and contracts.
 
 ## M1 Foundation + Home
 
-The [M1 specification](m1-foundation-home.md) is a draft for project-owner review. The owner confirmed:
+The project owner accepted the [M1 specification](m1-foundation-home.md) on 2026-10-02. It includes:
 
 - Next.js + TypeScript and Tailwind CSS.
 - Fixture data with interactions before API integration.
 - Desktop layouts and responsive checks at 375/768/1024px.
 - Minimal contrast corrections.
 
-Detailed behavior remains proposed until the owner approves the written spec. The [source token snapshot](m1-foundation-home.tokens.json) preserves the Figma values separately from proposed corrections. It is design documentation, not runtime configuration.
+The [source token snapshot](m1-foundation-home.tokens.json) preserves the Figma values separately from the accepted M1 corrections. It is design documentation, not runtime configuration. The [implementation plan](../07-guides/m1-foundation-home-implementation-plan.md) maps the specification to files, interfaces and verification.
 
 ## Specification contents
 

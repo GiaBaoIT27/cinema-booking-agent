@@ -17,6 +17,6 @@ Observed on 2026-10-01. This is a compatibility map, not a task backlog or accep
 
 ## M1 clarification — 2026-10-02
 
-The owner selected fixture data for M1 Foundation + Home, Tailwind CSS, responsive layouts with 375/768/1024px checks, and minimal AA contrast corrections. The [detailed audit](figma-m1-audit-2026-10-02.md) confirms Home poster placeholders and missing responsive frames. The [M1 draft spec](../05-specs/m1-foundation-home.md) proposes the additional layout and interaction rules. M1 does not resolve backend artwork, transaction, auth or AI contracts in the table above.
+The owner selected fixture data for M1 Foundation + Home, Tailwind CSS, responsive layouts with 375/768/1024px checks, and minimal AA contrast corrections. The [detailed audit](figma-m1-audit-2026-10-02.md) confirms Home poster placeholders and missing responsive frames. The owner accepted the [M1 spec](../05-specs/m1-foundation-home.md), including the additional layout and interaction rules, on 2026-10-02. M1 does not resolve backend artwork, transaction, auth or AI contracts in the table above.
 
 Use [HTTP contracts](../02-architecture/http-contracts.md) and source to establish endpoints, not prototype navigation or a service method name. The [Figma delivery guide](../07-guides/figma-delivery.md) describes the proposed implementation sequence.

@@ -1,6 +1,7 @@
 ---
-status: draft
+status: accepted
 date: 2026-10-02
+approved_at: 2026-10-02
 scope: M1 Foundation + Home
 ---
 
@@ -8,7 +9,7 @@ scope: M1 Foundation + Home
 
 ## 1. Trạng thái và quyết định
 
-Đây là bản spec để chủ dự án review trước khi lập implementation plan. Bản audit đã hoàn tất; frontend chưa được khởi tạo. Các hành vi và cách tổ chức dưới đây là thiết kế đề xuất, trừ những lựa chọn đã được xác nhận trong bảng.
+Chủ dự án đã duyệt bản spec trong cuộc trao đổi ngày 2026-10-02 bằng xác nhận “tôi duyệt bản spec”. Các hành vi, cấu trúc và khác biệt với Figma dưới đây được chấp nhận cho M1. Bản audit đã hoàn tất; frontend chưa được khởi tạo.
 
 | Quyết định đã được chủ dự án xác nhận | Phạm vi |
 | --- | --- |
@@ -49,7 +50,7 @@ Nguồn canonical, số đo chi tiết, component IDs và các phát hiện ở 
 
 State board `218:6139` chỉ xác định giữ context và recovery; nhãn/viền chú thích không thuộc UI. Prototype Happy/S01 có điểm chuyển Search sang S02; M1 thay điểm chuyển đó bằng preview demo như mục 6, không coi prototype là hợp đồng backend.
 
-## 4. Foundation và cấu trúc frontend đề xuất
+## 4. Foundation và cấu trúc frontend
 
 ### 4.1. Runtime và styling
 
@@ -58,7 +59,7 @@ State board `218:6139` chỉ xác định giữ context và recovery; nhãn/vi�
 - Theme selector `data-theme="light|dark"`; chỉ dùng `dark:` khi có khác biệt cấu trúc cần thiết. [Tailwind dark mode](https://tailwindcss.com/docs/dark-mode).
 - Inter 400/500/600/700 và Roboto Slab 600/700, tải font qua cơ chế build của Next.js; không dùng font fallback làm baseline ảnh chụp.
 - 66 token nguồn giữ nguyên trong tài liệu. Runtime áp dụng hiệu chỉnh được duyệt từ `proposedM1Overrides`; radius control 12 và QuickBooking 16 cùng typography roles riêng từ `homeRoleExtensions`.
-- Primary Light đề xuất `#278349`, hover/action-text `#267a44`; secondary và tertiary Light `#5b7069`; tertiary Dark `#9ab0a7`. Dark action và signature giữ nguồn. Màu status nền không tự động được dùng làm chữ nhỏ nếu chưa kiểm tra cặp nền/chữ.
+- Primary Light `#278349`, hover/action-text `#267a44`; secondary và tertiary Light `#5b7069`; tertiary Dark `#9ab0a7`. Dark action và signature giữ nguồn. Màu status nền không tự động được dùng làm chữ nhỏ nếu chưa kiểm tra cặp nền/chữ.
 
 Đây là khởi tạo frontend mới; chưa có component framework, state library hoặc test runner mặc định của dự án. Chỉ thêm dependency phục vụ một nhu cầu cụ thể của M1.
 
@@ -95,7 +96,7 @@ Chiều cao nội dung theo text thực tế; không đặt page height 2630/268
 
 ### 5.2. Responsive bổ sung
 
-Các breakpoint dưới đây là đề xuất cụ thể cho phạm vi responsive đã được chọn. Breakpoint xét CSS viewport width.
+Các breakpoint dưới đây được chấp nhận cho phạm vi responsive M1. Breakpoint xét CSS viewport width.
 
 | Quy tắc | Điện thoại <768 | Tablet 768–1023 | 1024–1279 | ≥1280 |
 | --- | --- | --- | --- | --- |
@@ -116,7 +117,7 @@ Các breakpoint dưới đây là đề xuất cụ thể cho phạm vi responsi
 - Không có horizontal page scroll tại 375/768/1024. Kiểm tra thêm reflow ở 320 và zoom 200% để phát hiện chiều rộng/chiều cao cố định gây mất nội dung.
 - Menu mobile giữ mọi destination của desktop; đóng khi chọn action hoặc Escape, trả focus về trigger khi đóng thủ công.
 
-## 6. Hành vi tương tác đề xuất
+## 6. Hành vi tương tác
 
 ### 6.1. Search và filter draft
 
@@ -223,7 +224,7 @@ Genre/status/age/duration labels lấy từ dictionary; title không dịch. Kh�
 
 | Khác biệt M1 | Lý do / trạng thái |
 | --- | --- |
-| Primary/hover/action-text và tertiary colors theo snapshot | Chủ dự án cho phép sửa tối thiểu; mã cụ thể chờ review spec |
+| Primary/hover/action-text và tertiary colors theo snapshot | Chủ dự án đã duyệt các mã cụ thể cùng spec ngày 2026-10-02 |
 | Responsive breakpoint/layout và mobile menu | Chủ dự án chọn responsive; chưa có frame mobile/tablet |
 | Focus, disabled dependency, no-options, loading/error/empty | Bổ sung hành vi có thể kiểm chứng; board chỉ mô tả một phần |
 | Typography Home roles và radius 12/16 | Giữ số đo Home đang khác base styles/tokens |
@@ -254,7 +255,7 @@ Mọi khác biệt mới ngoài bảng phải được giải thích trong revie
 
 Verification tập trung vào behavior thật: reducer/dependency reset và fixture relations, preference persistence/hydration, search lifecycle, keyboard/dialog, visual tại các viewport. Không viết test chỉ kiểm tra tên class/token giống implementation. Ảnh đối chiếu chụp vùng nội dung tương ứng; không yêu cầu total page height bằng canvas Figma có blank tail. Ngưỡng/tolerance và cách lưu visual evidence được chốt trong implementation plan.
 
-## 11. Thứ tự triển khai để lập plan sau review
+## 11. Thứ tự triển khai
 
 1. Chốt dependency versions, package manager/lockfile, app boundary và commands thật.
 2. Foundation: fonts, semantic Tailwind theme, preference SSR/client và UI primitives cần thiết.
@@ -263,4 +264,4 @@ Verification tập trung vào behavior thật: reducer/dependency reset và fixt
 5. Responsive, focus/keyboard và states; đối chiếu desktop sau mỗi thay đổi ảnh hưởng layout.
 6. Chạy tiêu chí nghiệm thu, sửa lệch, lưu bằng chứng và review trước bước tích hợp.
 
-Danh sách này là build sequence để review; chưa phải implementation plan theo file/task. Sau khi duyệt spec mới lập plan chi tiết và bắt đầu scaffold. Việc nối API M2 cần đọc controller/DTO/envelope thật theo [HTTP contracts](../02-architecture/http-contracts.md), không suy endpoint từ Figma.
+Danh sách này là build sequence đã được duyệt; công việc theo file/task nằm trong [implementation plan](../07-guides/m1-foundation-home-implementation-plan.md). Việc nối API M2 cần đọc controller/DTO/envelope thật theo [HTTP contracts](../02-architecture/http-contracts.md), không suy endpoint từ Figma.

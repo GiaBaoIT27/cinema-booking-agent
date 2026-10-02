@@ -24,7 +24,7 @@ The following sequence is a proposal for team review:
 3. Booking, payment and ticket: local selection, server hold, recovery and transaction outcomes.
 4. Tickets/account and the selected AI experience, reusing transactional behavior.
 
-Next.js + TypeScript is selected. For M1 Foundation + Home, the owner chose Tailwind CSS, fixture interactions before API integration, desktop plus responsive checks at 375/768/1024px, and minimal AA contrast corrections. Review the [M1 draft spec](../05-specs/m1-foundation-home.md) and [detailed audit](../03-product/figma-m1-audit-2026-10-02.md) before scaffolding.
+Next.js + TypeScript is selected. The owner accepted the [M1 spec](../05-specs/m1-foundation-home.md) on 2026-10-02, including Tailwind CSS, fixture interactions before API integration, desktop plus responsive checks at 375/768/1024px, and minimal AA contrast corrections. Use the [implementation plan](m1-foundation-home-implementation-plan.md) and [detailed audit](../03-product/figma-m1-audit-2026-10-02.md) when scaffolding.
 
 Establish auth/session handling and responsive scope for later slices in their specifications. Use flexible layouts and durable local static assets. M1 keeps the Figma poster placeholders; map real artwork when integrating data. Share component behavior across theme/locale combinations.
 

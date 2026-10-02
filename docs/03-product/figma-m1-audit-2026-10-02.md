@@ -134,7 +134,7 @@ Tính từ cặp màu sRGB nguồn bằng relative luminance; không đo pixel a
 | Dark tertiary trên surface-subtle | 3.92:1 | Tertiary đề xuất `#9ab0a7`: 6.55:1 |
 | Dark on-primary `#07110a` trên primary | 7.93:1 | Giữ nguyên |
 
-Chữ nhỏ action trên surface-subtle/soft dùng role `action/text` Light `#267a44`, thay vì màu background primary; đạt 4.62:1 trên action-soft. Chủ dự án đã cho phép chỉnh màu tối thiểu để đạt AA. Các mã màu trên là phương án cụ thể để review, có lưu nguyên bản trong token snapshot. Những cặp này chưa chứng minh toàn bộ ứng dụng đạt AA; runtime vẫn cần kiểm tra focus, các nền thực tế và trạng thái.
+Chữ nhỏ action trên surface-subtle/soft dùng role `action/text` Light `#267a44`, thay vì màu background primary; đạt 4.62:1 trên action-soft. Chủ dự án đã cho phép chỉnh màu tối thiểu để đạt AA và duyệt các mã cụ thể cùng spec ngày 2026-10-02; token snapshot vẫn giữ giá trị nguyên bản. Những cặp này chưa chứng minh toàn bộ ứng dụng đạt AA; runtime vẫn cần kiểm tra focus, các nền thực tế và trạng thái.
 
 ## 7. Refactor Figma cần thiết đến mức nào?
 
@@ -146,4 +146,4 @@ Không cần thiết kế lại toàn bộ file để bắt đầu M1. Có thể
 4. Thêm responsive examples hoặc constraint notes theo spec được duyệt.
 5. Chỉnh lại genre VI, component content properties và phân biệt rõ library hiện hành với lịch sử.
 
-Các chỉnh sửa Figma này chưa được thực hiện trong audit. M1 có thể triển khai sau khi duyệt bản spec bổ sung; full discovery, auth, AI và booking cần spec riêng.
+Các chỉnh sửa Figma này chưa được thực hiện trong audit. Chủ dự án đã duyệt spec M1 bổ sung ngày 2026-10-02; full discovery, auth, AI và booking cần spec riêng.

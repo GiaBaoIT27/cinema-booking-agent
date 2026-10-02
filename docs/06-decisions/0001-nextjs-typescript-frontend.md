@@ -18,4 +18,4 @@ The project owner selected this stack. The record does not infer a separate SEO,
 
 The implementation plan must establish the actual framework version, route/rendering boundaries, session strategy and verification commands. Keep NestJS as the existing backend boundary unless an authorized design changes it.
 
-Follow-up on 2026-10-02: the owner selected Tailwind CSS for M1 Foundation + Home, fixture interactions, responsive scope and minimal contrast corrections. The [M1 draft spec](../05-specs/m1-foundation-home.md) records those choices and proposes the remaining details; auth/session strategy is still open.
+Follow-up on 2026-10-02: the owner accepted the [M1 spec](../05-specs/m1-foundation-home.md), including Tailwind CSS, fixture interactions, responsive scope and minimal contrast corrections. Auth/session strategy is still open.
