@@ -24,7 +24,9 @@ The following sequence is a proposal for team review:
 3. Booking, payment and ticket: local selection, server hold, recovery and transaction outcomes.
 4. Tickets/account and the selected AI experience, reusing transactional behavior.
 
-Choose styling, session handling and responsive scope in the slice specification. Next.js + TypeScript is selected; CSS Modules was suggested but not accepted. Use flexible layouts, dynamic movie artwork and durable local static assets. Share component behavior across theme/locale combinations.
+Next.js + TypeScript is selected. For M1 Foundation + Home, the owner chose Tailwind CSS, fixture interactions before API integration, desktop plus responsive checks at 375/768/1024px, and minimal AA contrast corrections. Review the [M1 draft spec](../05-specs/m1-foundation-home.md) and [detailed audit](../03-product/figma-m1-audit-2026-10-02.md) before scaffolding.
+
+Establish auth/session handling and responsive scope for later slices in their specifications. Use flexible layouts and durable local static assets. M1 keeps the Figma poster placeholders; map real artwork when integrating data. Share component behavior across theme/locale combinations.
 
 ## Verify
 

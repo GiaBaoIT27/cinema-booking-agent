@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-01
+last_verified: 2026-10-02
 ---
 
 # Current Project Context
@@ -14,7 +14,7 @@ last_verified: 2026-10-01
 
 ## Current direction
 
-Prepare the web application from the Figma design in independently verifiable slices. The first proposed slice is foundation + Home. There is no accepted feature specification or initialized frontend yet.
+Prepare the web application from the Figma design in independently verifiable slices. The owner selected Foundation + Home for M1, using Tailwind CSS, fixture interactions, responsive layouts and minimal contrast corrections. The [M1 audit](docs/03-product/figma-m1-audit-2026-10-02.md) is complete and the [written specification](docs/05-specs/m1-foundation-home.md) is a draft for review. There is no accepted full feature specification or initialized frontend yet.
 
 ## Material limitations
 
@@ -23,13 +23,14 @@ Prepare the web application from the Figma design in independently verifiable sl
 - Payment handling currently includes a mock gateway. Production gateway integration and design payment-state coverage require separate work.
 - Global request middleware, authentication and response envelopes affect frontend integration; see [HTTP contracts](docs/02-architecture/http-contracts.md).
 - Figma includes several AI generations. Some designs are historical; canonical selection remains unresolved.
-- The Figma page inventory found desktop designs and no frame named mobile/tablet/responsive. A complete responsive audit is still needed.
+- The Figma Screens inventory found desktop designs and no frame named mobile/tablet/responsive. The M1 spec proposes responsive rules for the owner's chosen 375/768/1024px checks; later slices still need their own audit and rules.
 - Design and backend differences include hold duration and auth/payment endpoint coverage; see [design contract gaps](docs/03-product/design-contract-gaps.md).
 
 ## Read next
 
 - [Project foundation](PROJECT-OVERVIEW.md)
 - [Documentation map](docs/README.md)
+- [M1 Foundation + Home draft](docs/05-specs/m1-foundation-home.md)
 - [Local development](docs/07-guides/local-development.md)
 - Task scope and status: the team's chosen tracker or task discussion.
 
