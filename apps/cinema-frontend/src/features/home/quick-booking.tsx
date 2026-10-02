@@ -13,7 +13,7 @@ export function QuickBooking({ adapter, selection, dispatchQuick, openIntent }: 
  const options = adapter.getQuickOptions(selection);
  const resolved = adapter.resolveQuickSelection(selection);
  const noOptions = Boolean(selection.cinemaId && options.movies.length === 0);
- return <><form className="quick-booking" aria-labelledby="quick-title" onSubmit={(event) => {
+ return <><form className="quick-booking" data-testid="quick-booking" aria-labelledby="quick-title" onSubmit={(event) => {
         event.preventDefault();
         const showtime = adapter.resolveQuickSelection(selection);
         if (!showtime) { setQuickError(true); return; }

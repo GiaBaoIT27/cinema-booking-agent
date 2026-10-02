@@ -13,7 +13,7 @@ Cinema management and movie ticket booking, with a planned AI booking assistant.
 | App | State |
 | --- | --- |
 | [Cinema Backend](apps/cinema-backend/README.md) | Initialized NestJS application; startup/build not verified in this checkout |
-| [Cinema Frontend](apps/cinema-frontend/README.md) | Not initialized; Next.js + TypeScript selected |
+| [Cinema Frontend](apps/cinema-frontend/README.md) | M1 Foundation and Home fixture demo implemented; Next.js + TypeScript + Tailwind CSS |
 | [Cinema Mobile](apps/cinema-mobile/README.md) | Not initialized; stack undecided |
 | [Cinema Agent](apps/cinema-agent/README.md) | Not initialized; runtime/tool contracts undecided |
 
@@ -49,7 +49,7 @@ Shared documentation lives in numbered `docs/` areas. It covers architecture, do
 
 The [contribution guide](docs/07-guides/contributing.md) and [Issue](.github/ISSUE_TEMPLATE/implementation-task.yml)/[PR](.github/PULL_REQUEST_TEMPLATE.md) templates are available for team review. Proposed practices are not recorded as agreements until both contributors confirm them.
 
-For frontend work, read [Figma delivery](docs/07-guides/figma-delivery.md). Canonical AI version and responsive scope still need decisions.
+For frontend work, read [Figma delivery](docs/07-guides/figma-delivery.md) and the [M1 acceptance record](docs/99-notes/m1-foundation-home-acceptance.md). The M1 responsive scope is fixed in the accepted spec; the canonical AI version for later slices remains open.
 
 ## Historical documentation
 

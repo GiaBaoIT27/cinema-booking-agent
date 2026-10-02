@@ -9,7 +9,7 @@ export function Hero({ draft, setDraft, onSearch }: { draft: SearchQuery; setDra
  const d = useDictionary();
  const { preferences } = usePreferences();
  const setStatus = (status: ReleaseStatus) => setDraft(previous => ({ ...previous, status }));
- return <section className="home-hero" aria-labelledby="hero-title">
+ return <section className="home-hero" data-testid="hero" aria-labelledby="hero-title">
         <div className="hero-discovery">
           <h1 id="hero-title" className="text-hero">{d.home.heroTitle}</h1>
           <p className="hero-description">{d.home.heroDescription}</p>

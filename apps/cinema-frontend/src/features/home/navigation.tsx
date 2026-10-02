@@ -28,8 +28,8 @@ export function Navigation({ openIntent, onFocusFallback }: { openIntent(intent:
    openIntent(intent);
  };
  return <header id="top" className="home-container">
-      <div className="home-utility"><PreferenceControls /></div>
-      <nav className="home-nav" aria-label={d.navigation.home}>
+      <div className="home-utility" data-testid="preferences"><PreferenceControls /></div>
+      <nav className="home-nav" data-testid="navigation" aria-label={d.navigation.home}>
         <a ref={setBrand} href="#top" className="home-brand"><span className="text-movie-title">{d.brand}</span><span>{d.tagline}</span></a>
         <div className="home-nav-links">
           <a href="#top" aria-current="page">{d.navigation.home}</a>

@@ -1,6 +1,6 @@
 # Cinema frontend
 
-This is the Next.js application for the cinema booking web interface. The current Foundation slice has a temporary shell at `/` with Vietnamese/English and light/dark controls. Home content and fixture interactions are added in later M1 tasks. It does not contact the backend.
+This Next.js app runs the M1 Foundation and Home demo at `/`. It has Vietnamese and English copy, light and dark themes, ten fixture movies, local search previews, Quick Booking selections, and clearly labelled handoff dialogs. It does not call the backend, AI, Redis, or a database. A selection does not reserve a seat, take payment, or issue a ticket.
 
 ## Requirements
 
@@ -14,7 +14,9 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. The initial preference is Vietnamese with the light theme. The controls update the page in the current session and save one-year `mba_locale` and `mba_theme` cookies when the browser permits it. The server reads those cookies on a later request.
+Open `http://localhost:3000`. The initial preference is Vietnamese with the light theme. Controls update immediately and save one-year `mba_locale` and `mba_theme` cookies when the browser permits it. Reloading reads those cookies on the server. Invalid cookie values fall back to the default for that preference. Changing either preference keeps the search draft and Quick Booking selection.
+
+Search filters local fixture titles by text, release status, and genre. Quick Booking uses fixed demo dates (`2026-10-10` and `2026-10-11`); they are example showtimes, not current availability. Other destinations open a demo handoff. The `MBA_FIXTURE_SCENARIO=error-once` environment value is used by the isolated error test; normal runs use the ready fixture.
 
 ## Checks
 
@@ -24,10 +26,14 @@ npm run typecheck
 npm test
 npm run build
 npx playwright install chromium
-npm run test:e2e -- e2e/shell.spec.ts e2e/preferences.spec.ts
+npm run test:e2e
+npm run test:e2e:error
+npm run test:visual
 ```
 
-The browser tests start the production build on port 3100. Run `npm run build` before them. `test:e2e:error` and `test:visual` are reserved for the later Home tests.
+Run the browser suites after the build, in the order shown. Playwright starts the production server on `127.0.0.1:3100` and refuses to reuse an existing server there. The normal suite uses ready fixtures; the error suite starts a fresh server with the error-once fixture. Visual checks use Chromium, DPR 1, and reviewed Windows region baselines at 1440, 375, 768, and 1024 CSS pixels. The screenshot limit is 0.5% changed pixels on the same OS and font setup. The visual suite also checks responsive geometry and targets at 320px. Install the pinned Playwright Chromium if it is not present; do not regenerate snapshots simply to make a failure pass. Compare changed regions with the [accepted design](../../docs/05-specs/m1-foundation-home.md) before updating a baseline.
+
+From the repository root, also run `node scripts/verify-docs.mjs` and `git diff --check`. The [M1 acceptance record](../../docs/99-notes/m1-foundation-home-acceptance.md) lists the observed checks, design comparison, and limits.
 
 ## Fonts and design tokens
 

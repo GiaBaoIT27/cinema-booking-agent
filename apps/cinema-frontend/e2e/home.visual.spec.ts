@@ -43,3 +43,22 @@ for (const width of [320, 375, 768, 1024, 1440]) {
     });
   }
 }
+
+// Region snapshots guard the reviewed design across viewport, language and theme.
+// The responsive content cases above separately assert geometry and usable targets.
+for (const width of [1440, 375, 768, 1024]) {
+  for (const locale of ["vi", "en"]) for (const theme of ["light", "dark"]) {
+    test(`reviewed regions ${width}-${locale}-${theme}`, async ({ page, context }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await context.addCookies([
+        { name: "mba_locale", value: locale, url: "http://127.0.0.1:3100" },
+        { name: "mba_theme", value: theme, url: "http://127.0.0.1:3100" },
+      ]);
+      await page.goto("/");
+      await page.evaluate(() => document.fonts.ready);
+      for (const region of ["preferences", "navigation", "hero", "quick-booking", "ai-entry", "now-showing", "upcoming"]) {
+        await expect(page.getByTestId(region)).toHaveScreenshot(`${region}-${width}-${locale}-${theme}.png`, { animations: "disabled", maxDiffPixelRatio: 0.005 });
+      }
+    });
+  }
+}
