@@ -21,7 +21,7 @@ The reviewed [region baselines](../../apps/cinema-frontend/e2e/home.visual.spec.
 
 The [normal browser suite](../../apps/cinema-frontend/e2e/) covers server-rendered preferences, cookie reload/fallback/blocked writes, search submissions and preview states, Quick dependencies and handoffs, navigation, locale updates, keyboard/dialog behavior, responsive layout, actual rendered contrast, and axe scans. The [error suite](../../apps/cinema-frontend/e2e/home.error.spec.ts) runs a fresh server with `MBA_FIXTURE_SCENARIO=error-once` and tests Retry with the submitted context. Each test has a fresh browser context. No application HTTP adapter or backend call is present in M1.
 
-At 375px, visible phone controls measured at least 44×44px. Keyboard checks include native Quick select changes, Search/Quick/menu dialog Tab and Shift+Tab boundaries, Escape, focus return, menu handoff, resize, and reduced motion. The 320px reflow cases found no horizontal document scroll or clipped visible text. A separate genuine Chromium 200% profile-zoom check used two isolated browser profiles at the same 1440×1000 outer window: the CSS inner viewport changed from 1424×905 to 712×452, DPR from 1 to 2, while computed CSS zoom and `visualViewport.scale` remained 1. At 200%, the measured document width was 712/712 (scroll/client), controls and dialog remained usable, and full viewport captures showed the Quick helper, movie metadata and actions. This was a programmatic Chromium zoom preference check; a native Edge toolbar/shortcut check could not be completed. The 320px viewport test is separate reflow evidence.
+At 375px, visible phone controls measured at least 44×44px. Keyboard checks include native Quick select changes, Search/Quick/menu dialog Tab and Shift+Tab boundaries, Escape, focus return, menu handoff, resize, and reduced motion. The final focus repair keeps focus on the persistent Close button when keyboard Clear filters or View details replaces its focused action inside the still-open native modal. Focused browser tests cover Clear through loading and ready, View details, Tab/Shift+Tab, Escape to the original Search opener, and retention of focused locale/theme controls. The existing mobile menu test also covers immediate resize before Escape and restores the visible Menu trigger. The 320px reflow cases found no horizontal document scroll or clipped visible text. A separate genuine Chromium 200% profile-zoom check used two isolated browser profiles at the same 1440×1000 outer window: the CSS inner viewport changed from 1424×905 to 712×452, DPR from 1 to 2, while computed CSS zoom and `visualViewport.scale` remained 1. At 200%, the measured document width was 712/712 (scroll/client), controls and dialog remained usable, and full viewport captures showed the Quick helper, movie metadata and actions. This was a programmatic Chromium zoom preference check; a native Edge toolbar/shortcut check could not be completed. The 320px viewport test is separate reflow evidence.
 
 Rendered enabled text pairs were read from Chromium computed foreground/opaque background (and `::placeholder` where applicable), including settled hover states. The measured scope is Home and its dialogs; this is not a whole-application accessibility certification. Disabled Quick text is excluded from enabled text contrast claims.
 
@@ -49,10 +49,10 @@ The bundled Inter and Roboto Slab fonts were loaded before capture. A source-bac
 | M1-04 | [Preference tests](../../apps/cinema-frontend/e2e/preferences.spec.ts) and [Home browser tests](../../apps/cinema-frontend/e2e/home.spec.ts) check SSR, independent toggles, reload/fallback, blocked writes and retained draft/tuple. |
 | M1-05 | [Fixture search tests](../../apps/cinema-frontend/src/features/home/fixture-adapter.test.ts) cover normalized AND filters; Home browser tests cover Enter/button, draft and initial sections. |
 | M1-06 | [Preview reducer tests](../../apps/cinema-frontend/src/features/home/search-preview.test.ts), normal/error browser suites cover delay, abort, empty, error-once and Retry. |
-| M1-07 | [Quick model tests](../../apps/cinema-frontend/src/features/home/quick-selection.test.ts) and Home browser tests cover reset, no options, tuple validation and demo handoff. |
+| M1-07 | [Quick model tests](../../apps/cinema-frontend/src/features/home/quick-selection.test.ts) and Home browser tests cover reset, no options, shuffled date/time ordering, mismatched real movie IDs in tuples and demo handoff. |
 | M1-08 | Home browser tests cover nav, movie details, AI, browse and Quick CTA; all stay within fixture dialogs. |
 | M1-09 | [Dictionary](../../apps/cinema-frontend/src/features/preferences/dictionary.ts) and preference/Home browser tests cover VI/EN labels, genres, status, time and stable IDs. |
-| M1-10 | [Accessibility browser tests](../../apps/cinema-frontend/e2e/accessibility.spec.ts), 44px phone checks and zoom/reflow observations above. |
+| M1-10 | [Accessibility browser tests](../../apps/cinema-frontend/e2e/accessibility.spec.ts), including replacement focus and resize return-focus regressions, plus 44px phone checks and zoom/reflow observations above. |
 | M1-11 | Computed color pairs and source-to-override trace above; Light AI exception is scoped. |
 | M1-12 | Fonts-ready capture, bundled font evidence and source SVG hashes/18×18 runtime size above; poster ratio check in visual suite. |
 | M1-13 | Exact commands, versions, scenarios and nonempty results in the verification table below. |
@@ -63,17 +63,17 @@ App commands run from `apps/cinema-frontend`; root commands run from the reposit
 
 | CWD | Command | Exit and observed result |
 | --- | --- | --- |
-| Frontend | `npm ci` | 0; 388 packages added, 0 vulnerabilities; npm reported one pending `unrs-resolver` install script approval. |
+| Frontend | `npm ci` | 0; 388 packages added, 0 vulnerabilities; npm reported pinned ESLint 9.39.5 as deprecated and one pending `unrs-resolver@1.12.2` install script approval. |
 | Frontend | `npm run lint` | 0; ESLint reported no findings. |
 | Frontend | `npm run typecheck` | 0; Next route types generated, TypeScript passed. |
-| Frontend | `npm test` | 0; 6 files, 25 tests passed. |
+| Frontend | `npm test` | 0; 6 files, 26 tests passed. |
 | Frontend | `npm run build` | 0; optimized build passed; `/` is server-rendered on demand. |
-| Frontend | `npm run test:e2e` | 0; 59 tests passed in 51.9s on ready fixtures. |
-| Frontend | `npm run test:e2e:error` | 0; 3 tests passed in 5.6s on error-once fixtures. |
-| Frontend | `npm run test:visual` | 0; 36 tests passed in 27.0s against existing baselines, with no snapshot update. |
+| Frontend | `npm run test:e2e` | 0; 61 tests passed in 54.2s on ready fixtures. |
+| Frontend | `npm run test:e2e:error` | 0; 3 tests passed in 5.7s on error-once fixtures. |
+| Frontend | `npm run test:visual` | 0; 36 tests passed in 27.1s against existing baselines, with no snapshot update. |
 | Root | `node scripts/verify-docs.mjs` | 0; 35 current Markdown files and 136 local link targets passed. |
 | Root | `git diff --check` | 0; no whitespace errors. |
 
 Environment: Windows, Node 24.19.0, npm 11.17.0, Next 16.3.8, Playwright 1.63.0, pinned Chromium. Browser test processes clear inherited `NO_COLOR` and `FORCE_COLOR` only for those commands to avoid conflicting child-process diagnostics. No machine-wide environment setting changed.
 
-Known limits and review notes: baseline PNGs are platform/font specific; native select popup appearance varies by OS. The backend, mobile and agent apps were not validated by these checks. Earlier reviews recorded minor test coverage gaps for deliberately unordered Quick rows and a wrong non-null movie ID, and maintainability notes for Quick date/time punctuation splitting and dense DemoDialog branches. No observed M1 production defect was found in those reviews; the notes remain for later cleanup. No merge, deploy or API integration is represented by this acceptance.
+Known limits and review notes: baseline PNGs are platform/font specific; native select popup appearance varies by OS. The backend, mobile and agent apps were not validated by these checks. The earlier Quick sorting and mismatched movie-ID test gaps are closed by the final tests. Two nonblocking maintainability notes remain: Quick date/time labels split a combined formatter string on punctuation, and DemoDialog's conditional JSX is dense. The final focus repair addresses the later observed open-modal defect. No merge, deploy or API integration is represented by this acceptance.

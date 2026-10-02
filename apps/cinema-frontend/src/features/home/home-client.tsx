@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useReducer, useState } from "react";
+import { useCallback, useMemo, useReducer, useState } from "react";
 import { createFixtureAdapter } from "./fixture-adapter";
 import { EMPTY_QUICK_SELECTION, reduceQuickSelection } from "./quick-selection";
 import { clearSearchQuery } from "./search-preview";
@@ -20,13 +20,14 @@ export function HomeClient({ catalog, scenario }: { catalog: Catalog; scenario: 
   const [intent, setIntent] = useState<HomeIntent | null>(null);
   const [searchOrigin, setSearchOrigin] = useState<"hero" | "browse">("hero");
   const [returnFocus, setReturnFocus] = useState<HTMLElement | null>(null);
-  const [navigationFocus, setNavigationFocus] = useState<HTMLElement | null>(null);
+  const [navigationFocus, setNavigationFocus] = useState<(() => HTMLElement | null) | null>(null);
+  const setNavigationFocusResolver = useCallback((resolve: () => HTMLElement | null) => setNavigationFocus(() => resolve), []);
   const rememberFocus = () => setReturnFocus(document.activeElement instanceof HTMLElement ? document.activeElement : null);
   const openIntent = (next: HomeIntent) => { rememberFocus(); preview.close(); setIntent(next); };
   const search = (query: SearchQuery, origin: "hero" | "browse") => { rememberFocus(); setIntent(null); setSearchOrigin(origin); preview.submit(query); };
   const closeDialog = () => { preview.close(); setIntent(null); };
   return <>
-    <Navigation openIntent={openIntent} onFocusFallback={setNavigationFocus} />
+    <Navigation openIntent={openIntent} onFocusFallback={setNavigationFocusResolver} />
     <main className="home-container home-main">
       <Hero draft={draft} setDraft={setDraft} onSearch={query => search(query, "hero")} />
       <QuickBooking adapter={adapter} selection={selection} dispatchQuick={dispatchQuick} openIntent={openIntent} />

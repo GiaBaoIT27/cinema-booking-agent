@@ -51,6 +51,14 @@ test("quick options follow relationships and sort dates and times without select
   expect(day.showtimes.map((row) => row.time)).toEqual(["18:00", "20:30"]);
 });
 
+test("quick dates and showtimes sort shuffled catalog rows independently of input order", () => {
+  const [early, late, nextDay, ...others] = homeCatalog.showtimes;
+  const catalog = { ...homeCatalog, showtimes: [nextDay, late, early, ...others] };
+  const movie = { ...EMPTY_QUICK_SELECTION, cinemaId: "demo-central", movieId: "dune-part-two" };
+  expect(getQuickOptions(catalog, movie).dates).toEqual(["2026-10-10", "2026-10-11"]);
+  expect(getQuickOptions(catalog, { ...movie, date: "2026-10-10" }).showtimes.map((row) => row.time)).toEqual(["18:00", "20:30"]);
+});
+
 test("changing an upstream field clears all downstream fields", () => {
   const full = { cinemaId: "demo-central", movieId: "dune-part-two", date: "2026-10-10", showtimeId: "central-dune-1010-1800" };
   expect(reduceQuickSelection(full, { type: "cinema", value: "demo-west" })).toEqual({ cinemaId: "demo-west", movieId: null, date: null, showtimeId: null });
@@ -64,6 +72,7 @@ test("a showtime from another cinema or date cannot validate a tuple", () => {
   expect(resolveQuickSelection(homeCatalog, full)?.id).toBe("central-dune-1010-1800");
   expect(resolveQuickSelection(homeCatalog, { ...full, cinemaId: "demo-west" })).toBeUndefined();
   expect(resolveQuickSelection(homeCatalog, { ...full, date: "2026-10-11" })).toBeUndefined();
+  expect(resolveQuickSelection(homeCatalog, { ...full, movieId: "afterlight" })).toBeUndefined();
   expect(resolveQuickSelection(homeCatalog, { ...full, movieId: null })).toBeUndefined();
   expect(getQuickOptions(homeCatalog, { ...EMPTY_QUICK_SELECTION, cinemaId: "demo-no-showtimes" }).movies).toEqual([]);
 });

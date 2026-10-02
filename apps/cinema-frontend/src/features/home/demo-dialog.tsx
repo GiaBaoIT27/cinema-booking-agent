@@ -7,7 +7,7 @@ import { MovieMetadata } from "./movie-card";
 import type { Catalog, HomeIntent } from "./model";
 import type { useSearchPreview } from "./use-search-preview";
 
-export function DemoDialog({ catalog, intent, preview, returnFocus, closeDialog, openIntent, onClear }: { catalog: Catalog; intent: HomeIntent | null; preview: ReturnType<typeof useSearchPreview>; returnFocus: HTMLElement | null; closeDialog(): void; openIntent(intent: HomeIntent): void; onClear(): void }) {
+export function DemoDialog({ catalog, intent, preview, returnFocus, closeDialog, openIntent, onClear }: { catalog: Catalog; intent: HomeIntent | null; preview: ReturnType<typeof useSearchPreview>; returnFocus: HTMLElement | null | (() => HTMLElement | null); closeDialog(): void; openIntent(intent: HomeIntent): void; onClear(): void }) {
  const d = useDictionary();
  const { preferences } = usePreferences();
   const intentMovie = intent?.kind === "movie-details" ? catalog.movies.find((m) => m.id === intent.movieId) : undefined;
@@ -24,7 +24,7 @@ export function DemoDialog({ catalog, intent, preview, returnFocus, closeDialog,
         </>}
         {intentMovie && <article><h3 className="text-movie-title">{intentMovie.title}</h3><p><MovieMetadata movie={intentMovie} /></p></article>}
         {intentShowtime && <p>{catalog.movies.find((m) => m.id === intentShowtime.movieId)?.title} · {catalog.cinemas.find((c) => c.id === intentShowtime.cinemaId)?.name} · {formatShowtime(intentShowtime.date, intentShowtime.time, preferences.locale)}</p>}
-        <Button variant="tertiary" onClick={closeDialog}>{d.home.close}</Button>
+        <Button variant="tertiary" data-dialog-focus-fallback onClick={closeDialog}>{d.home.close}</Button>
       </div>
     </Dialog>;
 }

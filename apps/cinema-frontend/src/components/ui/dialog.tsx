@@ -7,7 +7,7 @@ export type DialogProps = {
   title: string;
   onClose(): void;
   children: ReactNode;
-  returnFocusTo?: HTMLElement | null;
+  returnFocusTo?: HTMLElement | null | (() => HTMLElement | null);
 };
 
 function canReceiveFocus(element: HTMLElement | null | undefined): element is HTMLElement {
@@ -55,10 +55,17 @@ export function Dialog({ open, title, onClose, children, returnFocusTo }: Dialog
       dialog.removeEventListener("cancel", onCancel);
       dialog.removeEventListener("keydown", onKeyDown);
       if (dialog.open) dialog.close();
-      const target = canReceiveFocus(prior) ? prior : fallbackRef.current;
+      const fallback = fallbackRef.current;
+      const target = canReceiveFocus(prior) ? prior : typeof fallback === "function" ? fallback() : fallback;
       if (canReceiveFocus(target)) target.focus();
     };
   }, [open]);
+
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    if (!open || !dialog?.matches(":modal") || dialog.contains(document.activeElement)) return;
+    dialog.querySelector<HTMLElement>("[data-dialog-focus-fallback]")?.focus();
+  });
 
   return <dialog ref={dialogRef} aria-labelledby={titleId} className="m-auto w-[min(640px,calc(100vw-32px))] max-h-[calc(100dvh-32px)] overflow-auto rounded-xl border border-border-subtle bg-surface p-6 text-text-primary shadow-2xl backdrop:bg-black/60">
     <h2 id={titleId} className="text-release-panel-title">{title}</h2>

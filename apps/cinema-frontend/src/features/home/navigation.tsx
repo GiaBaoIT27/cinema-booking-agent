@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Dialog } from "@/components/ui/dialog";
 
-export function Navigation({ openIntent, onFocusFallback }: { openIntent(intent: HomeIntent): void; onFocusFallback(element: HTMLElement | null): void }) {
+export function Navigation({ openIntent, onFocusFallback }: { openIntent(intent: HomeIntent): void; onFocusFallback(resolve: () => HTMLElement | null): void }) {
  const d = useDictionary();
  const [menuOpen, setMenuOpen] = useState(false);
  const menuButton = useRef<HTMLButtonElement>(null);
@@ -14,7 +14,7 @@ export function Navigation({ openIntent, onFocusFallback }: { openIntent(intent:
  useEffect(() => {
    const desktop = window.matchMedia("(min-width: 1024px)");
    const update = () => {
-     onFocusFallback(desktop.matches ? brand : menuButton.current);
+     onFocusFallback(() => menuButton.current?.getClientRects().length ? menuButton.current : brand);
      if (desktop.matches) setMenuOpen(false);
    };
    update();
