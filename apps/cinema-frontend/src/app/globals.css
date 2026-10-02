@@ -98,7 +98,7 @@ html[lang="vi"] .quick-booking { width: 1104px; }
 .quick-helper { font-size: 12px; line-height: 18px; color: var(--mba-text-tertiary); }
 .ai-entry { width: 760px; padding: 18px 19px; display: flex; align-items: center; gap: 18px; border: 1px solid var(--mba-signature-brown); border-radius: 14px; background: var(--mba-signature-brown-soft); }
 .ai-entry > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.ai-entry p { width: 520px; color: var(--mba-text-secondary); }
+.ai-entry p { width: 520px; color: var(--mba-ai-text-secondary); }
 .ai-entry > button { flex-shrink: 0; }
 .movie-section { width: 1200px; display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 24px; }
 .movie-section-heading { display: flex; align-items: center; justify-content: space-between; }
@@ -113,3 +113,69 @@ html[lang="vi"] .quick-booking { width: 1104px; }
 .demo-content { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; }
 .preview-movies { display: flex; flex-direction: column; gap: 16px; }
 .preview-movies article { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+/* Responsive additions preserve the canonical desktop measurements above. */
+.home-container { max-width: calc(100% - 64px); }
+.home-menu-trigger { display: none; }
+.mobile-menu { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; }
+.mobile-menu a { display: flex; align-items: center; min-height: 44px; padding: 12px 18px; }
+.preference-controls { flex-wrap: wrap; }
+.demo-content { overflow-wrap: anywhere; }
+
+@media (width < 1280px) {
+  .home-hero { width: 100%; grid-template-columns: minmax(0, 1fr); }
+  .hero-discovery h1, .hero-description, .release-panel > :is(h2, p) { width: auto; max-width: 100%; }
+  .text-hero { font-size: 40px; line-height: 46px; }
+  .hero-search { width: 100%; max-width: 760px; }
+  .hero-search > div { width: auto; flex: 1; }
+  .hero-filters { flex-wrap: wrap; }
+  .release-panel { max-width: 100%; }
+  .quick-booking, html[lang="vi"] .quick-booking { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .quick-intro { width: auto; grid-column: 1 / -1; }
+  .quick-booking > div:not(.quick-intro) { width: auto; height: auto; }
+  .quick-booking select { min-height: 44px; height: auto; font-size: 14px; line-height: 20px; }
+  .home-container .quick-booking > button { grid-column: 1 / -1; min-height: 44px; }
+  .ai-entry { width: 100%; max-width: 760px; }
+  .ai-entry p { width: auto; }
+  .movie-section { width: 100%; }
+  .movie-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .movie-card { width: auto; min-width: 0; overflow-wrap: anywhere; }
+  .movie-poster { width: 100%; height: auto; aspect-ratio: 192 / 250; }
+  .movie-card button { max-width: 100%; }
+  .movie-section-heading { gap: 16px; flex-wrap: wrap; }
+}
+
+@media (width < 1024px) {
+  .home-container { max-width: calc(100% - 48px); }
+  .home-nav-links, .home-nav-actions { display: none; }
+  .home-menu-trigger { display: inline-flex; }
+  .movie-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (width < 768px) {
+  .home-container { max-width: calc(100% - 32px); }
+  .home-utility { height: auto; min-height: 44px; padding-block: 8px; }
+  .preference-controls { gap: 8px 16px; }
+  .preference-group button { min-width: 44px; min-height: 44px; }
+  .home-nav { height: auto; min-height: 72px; padding: 12px; gap: 12px; }
+  .home-brand { min-height: 44px; justify-content: center; }
+  .home-brand .text-movie-title { font-size: 16px; line-height: 22px; }
+  .home-main { gap: 32px; padding-block: 32px 48px; }
+  .home-hero { gap: 32px; }
+  .text-hero { font-size: 32px; line-height: 38px; }
+  .text-section-heading { font-size: 28px; line-height: 34px; }
+  .hero-search { flex-direction: column; align-items: stretch; }
+  .hero-search > div { min-height: 44px; padding-block: 0; }
+  .hero-search input { min-height: 44px; }
+  .home-container button, .home-container .text-button-label, .home-container .text-button-label[class*="border-signature-brown"], dialog button { min-width: 44px; min-height: 44px; }
+  .quick-booking, html[lang="vi"] .quick-booking { grid-template-columns: minmax(0, 1fr); }
+  .ai-entry { flex-direction: column; align-items: stretch; }
+  .movie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .movie-section-heading button { text-align: left; }
+  .movie-card { min-height: 0; }
+  .movie-card button { padding-inline: 10px; }
+}
+
+@media (width < 360px) {
+  .movie-grid { grid-template-columns: minmax(0, 1fr); }
+}

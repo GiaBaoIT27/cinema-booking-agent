@@ -1,4 +1,20 @@
 import { expect, test } from "@playwright/test";
+import { contrast } from "./contrast";
+import { writeFile } from "node:fs/promises";
+
+for (const theme of ["light", "dark"]) {
+  test(`runtime error text contrast ${theme}`, async ({ page, context }, testInfo) => {
+    await context.addCookies([{ name: "mba_theme", value: theme, url: "http://127.0.0.1:3100" }]);
+    await page.goto("/");
+    await page.getByRole("searchbox").press("Enter");
+    const error = page.getByRole("dialog").getByRole("status");
+    await expect(error).toContainText("Không thể tải");
+    const pair = await contrast(error);
+    expect(pair.ratio).toBeGreaterThanOrEqual(4.5);
+    await testInfo.attach("runtime-error-contrast.json", { body: JSON.stringify(pair), contentType: "application/json" });
+    await writeFile(testInfo.outputPath("runtime-error-contrast.json"), JSON.stringify(pair, null, 2));
+  });
+}
 test("Retry uses submitted snapshot and preferences do not recreate the error-once adapter", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("searchbox").fill("Dune");

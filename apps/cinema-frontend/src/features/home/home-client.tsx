@@ -20,19 +20,20 @@ export function HomeClient({ catalog, scenario }: { catalog: Catalog; scenario: 
   const [intent, setIntent] = useState<HomeIntent | null>(null);
   const [searchOrigin, setSearchOrigin] = useState<"hero" | "browse">("hero");
   const [returnFocus, setReturnFocus] = useState<HTMLElement | null>(null);
+  const [navigationFocus, setNavigationFocus] = useState<HTMLElement | null>(null);
   const rememberFocus = () => setReturnFocus(document.activeElement instanceof HTMLElement ? document.activeElement : null);
   const openIntent = (next: HomeIntent) => { rememberFocus(); preview.close(); setIntent(next); };
   const search = (query: SearchQuery, origin: "hero" | "browse") => { rememberFocus(); setIntent(null); setSearchOrigin(origin); preview.submit(query); };
   const closeDialog = () => { preview.close(); setIntent(null); };
   return <>
-    <Navigation openIntent={openIntent} />
+    <Navigation openIntent={openIntent} onFocusFallback={setNavigationFocus} />
     <main className="home-container home-main">
       <Hero draft={draft} setDraft={setDraft} onSearch={query => search(query, "hero")} />
       <QuickBooking adapter={adapter} selection={selection} dispatchQuick={dispatchQuick} openIntent={openIntent} />
       <AIEntry onOpen={() => openIntent({ kind: "ai-assistant" })} />
       {(["now-showing", "upcoming"] as const).map(status => <MovieSection key={status} status={status} movies={catalog.movies} onBrowse={status => search({ query: "", status, genreId: null }, "browse")} onDetails={movieId => openIntent({ kind: "movie-details", movieId })} />)}
     </main>
-    <DemoDialog catalog={catalog} intent={intent} preview={preview} returnFocus={returnFocus} closeDialog={closeDialog} openIntent={openIntent} onClear={() => {
+    <DemoDialog catalog={catalog} intent={intent} preview={preview} returnFocus={navigationFocus ?? returnFocus} closeDialog={closeDialog} openIntent={openIntent} onClear={() => {
       if (searchOrigin === "hero" && preview.state.status !== "closed") setDraft(clearSearchQuery(preview.state.submitted));
       preview.clear();
     }} />

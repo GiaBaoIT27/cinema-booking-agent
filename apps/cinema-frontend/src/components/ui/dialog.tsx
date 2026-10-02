@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
 export type DialogProps = {
   open: boolean;
@@ -21,7 +21,7 @@ export function Dialog({ open, title, onClose, children, returnFocusTo }: Dialog
   const onCloseRef = useRef(onClose);
   const fallbackRef = useRef(returnFocusTo);
   const titleId = useId();
-  useEffect(() => {
+  useLayoutEffect(() => {
     onCloseRef.current = onClose;
     fallbackRef.current = returnFocusTo;
   }, [onClose, returnFocusTo]);

@@ -18,6 +18,8 @@
   --mba-signature-brown: #784131;
   --mba-signature-brown-hover: #663628;
   --mba-signature-brown-soft: #f3e8e3;
+  /* Scoped AA correction: secondary text on the AI panel's brown surface. */
+  --mba-ai-text-secondary: #596e67;
   --mba-signature-on-brown: #ffffff;
   --mba-status-success: #2d9c8a;
   --mba-status-warning: #b97822;
@@ -45,6 +47,7 @@
   --mba-signature-brown: #c68f79;
   --mba-signature-brown-hover: #d5a38e;
   --mba-signature-brown-soft: #2b1c18;
+  --mba-ai-text-secondary: #9ab0a7;
   --mba-signature-on-brown: #0b1412;
   --mba-status-success: #46b9a3;
   --mba-status-warning: #d8a04d;

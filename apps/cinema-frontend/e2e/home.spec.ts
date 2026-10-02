@@ -1,5 +1,25 @@
 import { expect, test } from "@playwright/test";
 
+test("mobile navigation preserves every destination and closes after selection", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/");
+  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  for (const name of ["Rạp phim", "Vé của tôi", "Hỏi AI", "Đăng nhập"]) {
+    await menu.click();
+    await page.getByRole("dialog").getByRole("button", { name, exact: true }).click();
+    await expect(page.locator("dialog[open]")).toHaveCount(1);
+    await expect(page.getByRole("dialog")).toContainText("dữ liệu mẫu");
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeFocused();
+  }
+  for (const [name, hash] of [["Đang chiếu", "#now-showing"], ["Trang chủ", "#top"]]) {
+    await menu.click();
+    await page.getByRole("dialog").getByRole("link", { name, exact: true }).click();
+    await expect(page.locator("dialog[open]")).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`${hash}$`));
+  }
+});
+
 test("search draft preserves curated sections; Enter and button submit the same snapshot", async ({ page }) => {
   await page.goto("/");
   const input = page.getByRole("searchbox", { name: "Tìm phim" });
