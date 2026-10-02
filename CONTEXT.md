@@ -19,7 +19,7 @@ The owner accepted the [M1 Foundation + Home specification](docs/05-specs/m1-fou
 
 ## Material limitations
 
-- The frontend has unit, browser, accessibility and visual checks. No CI workflow is present. Backend build, lint and server startup have not been verified in this checkout.
+- The frontend has unit, browser, accessibility and visual checks. The [frontend CI workflow](.github/workflows/frontend-ci.yml) checks formatting, lint, TypeScript, unit tests and the production build; its remote result has not yet been observed. Backend build, lint and server startup have not been verified in this checkout.
 - The backend lint script references an absent `test/` directory. An empty test suite must not be reported as passing behavior verification.
 - Payment handling currently includes a mock gateway. Production gateway integration and design payment-state coverage require separate work.
 - Global request middleware, authentication and response envelopes affect frontend integration; see [HTTP contracts](docs/02-architecture/http-contracts.md).
