@@ -45,12 +45,18 @@ export class PermissionsGuard implements CanActivate {
     // 3. Lấy user từ request (đã được JwtAuthGuard gán)
     const request = context.switchToHttp().getRequest();
     const user = request.user;
+    const userId = user?.id || user?.userId;
 
-    if (!user?.id) {
+    if (!userId) {
       throw new ForbiddenException({
         message: 'Bạn không có quyền truy cập vào tài nguyên này.',
         errorCode: 'RBAC_FORBIDDEN',
       });
+    }
+
+    // Tài khoản SUPER_ADMIN có toàn quyền trên toàn hệ thống
+    if (user.roles?.includes('SUPER_ADMIN')) {
+      return true;
     }
 
     // 4. Xác định cineplexId nếu endpoint có @CineplexScope()
@@ -67,7 +73,7 @@ export class PermissionsGuard implements CanActivate {
     // 5. Resolve quyền qua IPermissionResolver (RbacFacade implement)
     //    Nếu có cineplexId → tra quyền theo scope rạp, ngược lại tra toàn hệ thống
     const userPermissions = await this.permissionResolver.getUserPermissions(
-      user.id,
+      String(userId),
       cineplexId,
     );
 

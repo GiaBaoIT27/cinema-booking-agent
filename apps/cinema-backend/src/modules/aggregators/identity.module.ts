@@ -21,5 +21,6 @@ import { UsersModule } from '../users/users.module.js';
  */
 @Module({
   imports: [UsersModule, RbacModule, AuthModule],
+  exports: [RbacModule],
 })
 export class IdentityModule {}

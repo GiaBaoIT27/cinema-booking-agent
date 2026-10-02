@@ -4,8 +4,11 @@
  * Được dùng bởi @CurrentUser() decorator và PermissionsGuard.
  */
 export interface IAuthenticatedUser {
-  /** UUID của user */
+  /** UUID / ID của user */
   id: string;
+
+  /** Alias ID tương thích ngược cho @CurrentUser('userId') */
+  userId: string;
 
   /** Email đăng nhập */
   email: string;
@@ -15,4 +18,7 @@ export interface IAuthenticatedUser {
 
   /** Danh sách permission code đã được resolve (tuỳ chọn — rbac có thể gắn thêm sau JWT verify) */
   permissions?: string[];
+
+  /** ID rạp làm việc (nếu có) */
+  cineplexId?: string | null;
 }

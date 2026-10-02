@@ -1,0 +1,24 @@
+name: Protect Main
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  check-author:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kiểm tra quyền phê duyệt
+        run: |
+          # Kiểm tra nếu người thực hiện không phải là Owner
+          if [ "${{ github.actor }}" != "GiaBaoIT27" ]; then
+            echo "=========================================================="
+            echo "❌ LỖI BẢO MẬT: Bạn không có quyền tự quyết định trên nhánh main!"
+            echo "Chỉ có Owner mới được phép merge hoặc push vào đây."
+            echo "=========================================================="
+            exit 1
+          fi
+          echo "Hợp lệ. Chào mừng Owner!"

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Role } from './domain/entities/role.entity.js';
 import { Permission } from './domain/entities/permission.entity.js';
@@ -23,6 +23,7 @@ import { UserRolesController } from './presentation/controllers/user-roles.contr
 import { RbacFacade } from './public-api/rbac.facade.js';
 import { PERMISSION_RESOLVER } from '#src/common/interfaces/permission-resolver.interface.js';
 
+@Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([Role, Permission, RolePermission, UserRole]),

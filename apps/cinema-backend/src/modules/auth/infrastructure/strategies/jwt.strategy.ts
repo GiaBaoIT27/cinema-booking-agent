@@ -25,10 +25,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      userId: payload.sub,
+      id: String(payload.sub),
+      userId: String(payload.sub),
       email: payload.email,
       roles: payload.roles || [],
       permissions: payload.permissions || [],
+      cineplexId: payload.cineplexId || null,
     };
   }
 }
