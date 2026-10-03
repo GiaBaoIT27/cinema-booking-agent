@@ -1,5 +1,8 @@
 import { expect, test } from "vitest";
-import { parsePreferences, serializePreferenceCookie } from "./model";
+import {
+  parsePreferences,
+  serializePreferenceCookie,
+} from "../../../../src/features/preferences/model";
 
 test("invalid locale preserves a valid dark theme", () => {
   expect(parsePreferences({ mba_locale: "xx", mba_theme: "dark" })).toEqual({

@@ -1,5 +1,8 @@
 import { expect, test } from "vitest";
-import { clearSearchQuery, reduceSearchPreview } from "./search-preview";
+import {
+  clearSearchQuery,
+  reduceSearchPreview,
+} from "../../../../src/features/home/search-preview";
 const submitted = {
   query: "Dune",
   status: "now-showing",

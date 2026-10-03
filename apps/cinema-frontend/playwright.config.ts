@@ -9,7 +9,7 @@ export const appServer = {
 };
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: "./tests/e2e",
   testIgnore: "**/home.error.spec.ts",
   fullyParallel: false,
   workers: 1,

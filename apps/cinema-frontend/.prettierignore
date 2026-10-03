@@ -8,4 +8,4 @@ next-env.d.ts
 package-lock.json
 src/fonts/
 public/icons/
-e2e/*-snapshots/
+tests/e2e/*-snapshots/

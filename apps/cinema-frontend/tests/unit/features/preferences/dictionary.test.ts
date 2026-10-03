@@ -1,5 +1,8 @@
 import { expect, test } from "vitest";
-import { formatShowtime, getDictionary } from "./dictionary";
+import {
+  formatShowtime,
+  getDictionary,
+} from "../../../../src/features/preferences/dictionary";
 
 test("genre and status labels translate while stable IDs remain keys", () => {
   expect(getDictionary("vi").genres["sci-fi"]).toBe("Viễn tưởng");

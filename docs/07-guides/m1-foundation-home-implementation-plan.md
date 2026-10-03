@@ -57,7 +57,7 @@ Các command dưới đây là **command sẽ được tạo**, chưa tồn tạ
   "test:watch": "vitest",
   "test:e2e": "playwright test",
   "test:e2e:error": "playwright test --config playwright.error.config.ts",
-  "test:visual": "playwright test e2e/home.visual.spec.ts"
+  "test:visual": "playwright test tests/e2e/home.visual.spec.ts"
 }
 ```
 
@@ -93,7 +93,6 @@ src/
     dialog.tsx [C]               native modal, Escape and focus return
   features/preferences/
     model.ts [C]                enum validation, cookie serialization
-    model.test.ts [C]           invalid values and independent updates
     dictionary.ts [C]           typed VI/EN UI copy and formatter helpers
     provider.tsx [C]            initial SSR preferences + client persistence
     controls.tsx [C]            LanguageSwitch + ThemeSwitch
@@ -101,11 +100,8 @@ src/
     model.ts [C]                catalog/query/quick/intent types
     fixtures.ts [C]             canonical movies + synthetic cinemas/showtimes
     fixture-adapter.ts [C]      search, option relations, abort/scenarios
-    fixture-adapter.test.ts [C] relation/search/recovery checks
     quick-selection.ts [C]      dependency reset and tuple resolution
-    quick-selection.test.ts [C] reset/no-options/invalid tuple checks
     search-preview.ts [C]       request identity and preview reducer
-    search-preview.test.ts [C]  stale completion, clear, retry context
     use-search-preview.ts [C]   asynchronous lifecycle around adapter
     home-client.tsx [C]         view composition and navigation intents
     navigation.tsx [C]          guest nav + mobile menu
@@ -115,14 +111,23 @@ src/
     movie-card.tsx [C]          artwork + metadata + detail action
     movie-section.tsx [C]       section heading/grid/browse intent
     demo-dialog.tsx [C]         search results or bounded handoff content
-e2e/
-  shell.spec.ts [C]             app startup and hydration smoke
-  preferences.spec.ts [C]       SSR/reload/blocked persistence behavior
-  home.spec.ts [C]              Search, QuickBooking, every CTA
-  home.error.spec.ts [C]        error-once Retry and context
-  accessibility.spec.ts [C]     keyboard/focus/axe/targets
-  home.visual.spec.ts [C]       four preferences + viewport regions
-  home.visual.spec.ts-snapshots/ [C, generated and reviewed]
+tests/
+  unit/
+    components/ui/primitives.test.ts [C]          primitive rendering checks
+    features/preferences/model.test.ts [C]        invalid values and independent updates
+    features/preferences/dictionary.test.ts [C]   translated copy and time formatting
+    features/home/fixture-adapter.test.ts [C]      relation/search/recovery checks
+    features/home/quick-selection.test.ts [C]     reset/no-options/invalid tuple checks
+    features/home/search-preview.test.ts [C]      stale completion, clear, retry context
+  e2e/
+    shell.spec.ts [C]             app startup and hydration smoke
+    preferences.spec.ts [C]       SSR/reload/blocked persistence behavior
+    home.spec.ts [C]              Search, QuickBooking, every CTA
+    home.error.spec.ts [C]        error-once Retry and context
+    accessibility.spec.ts [C]     keyboard/focus/axe/targets
+    home.visual.spec.ts [C]       four preferences + viewport regions
+    contrast.ts [C]              browser contrast helper
+    home.visual.spec.ts-snapshots/ [C, generated and reviewed]
 ```
 
 Ngoài app: sửa `.gitignore` ở root để ignore `playwright-report/`, `test-results/`, `.vitest/`; cập nhật [CONTEXT](../../CONTEXT.md) và README app sau khi runtime đã kiểm chứng. Không ignore snapshot baseline cần review. Không đổi package/backend, API hay schema.
@@ -216,14 +221,14 @@ Dialog UI props: `open: boolean`, `title: string`, `onClose(): void`, `children:
 
 ### Task 1 — Frontend shell, Foundation và preferences
 
-**Files:** create package/config/app/styles và toàn bộ `features/preferences/`; test `model.test.ts`, `e2e/shell.spec.ts`, `e2e/preferences.spec.ts`; modify app README/root `.gitignore` theo file map.
+**Files:** create package/config/app/styles và toàn bộ `features/preferences/`; test `model.test.ts`, `tests/e2e/shell.spec.ts`, `tests/e2e/preferences.spec.ts`; modify app README/root `.gitignore` theo file map.
 
 **Consumes:** spec §§4–5, source tokens/overrides, hiện trạng app chỉ có README.
 
 **Produces:** app có build/run/check commands; preference interface §3.1; semantic theme utilities và font roles. Trang shell tạm chỉ cần H1 và preference controls, được thay bằng Home ở Task 4.
 
 - [ ] Viết `package.json` private, `engines.node: ">=24 <25"`, `packageManager: "npm@11.17.0"`, scripts ở §1. Pin dependencies ở bảng; tạo config trong app, không chạy generator lên thư mục đang có tài liệu.
-- [ ] Tạo TS strict config: target ES2017, module ESNext, moduleResolution Bundler, jsx react-jsx, noEmit, esModuleInterop, resolveJsonModule, incremental; paths `@/*: ["./src/*"]`; include source, Next generated types, e2e/config.
+- [ ] Tạo TS strict config: target ES2017, module ESNext, moduleResolution Bundler, jsx react-jsx, noEmit, esModuleInterop, resolveJsonModule, incremental; paths `@/*: ["./src/*"]`; include source, Next generated types, tests/config.
 - [ ] Tạo PostCSS và ESLint config:
 
 ```js
@@ -239,7 +244,7 @@ export default defineConfig([
 ]);
 ```
 
-- [ ] Tạo `vitest.config.ts` dùng `defineConfig` từ `vitest/config`, `test.environment: "node"`, `include: ["src/**/*.test.ts"]`. Tạo Playwright config mẫu ở Task 6 trước khi chạy browser smoke.
+- [ ] Tạo `vitest.config.ts` dùng `defineConfig` từ `vitest/config`, `test.environment: "node"`, `include: ["tests/unit/**/*.test.ts"]`. Tạo Playwright config mẫu ở Task 6 trước khi chạy browser smoke.
 - [ ] Chạy `npm install`, `npx playwright install chromium`; kiểm tra lockfile/dependency tree bằng `npm ls --depth=0`. Nếu có peer/engine lỗi, xử lý trước khi viết UI.
 - [ ] Viết behavior tests preference trước implementation:
 
@@ -261,7 +266,7 @@ test("preference cookie gets HTTPS attributes only when requested", () => {
 });
 ```
 
-- [ ] Run `npm test -- src/features/preferences/model.test.ts`, xác nhận RED do module/hành vi chưa tồn tại; thêm fallback độc lập cho từng enum và serializer đúng thuộc tính, rerun GREEN.
+- [ ] Run `npm test -- tests/unit/features/preferences/model.test.ts`, xác nhận RED do module/hành vi chưa tồn tại; thêm fallback độc lập cho từng enum và serializer đúng thuộc tính, rerun GREEN.
 - [ ] Tạo provider một state Preferences; setter merge một thuộc tính, cập nhật `document.documentElement.lang`, `dataset.theme`, `style.colorScheme`, rồi thử ghi cookie trong try/catch. Không đọc localStorage để ghi đè SSR. `controls.tsx` của Task 1 dùng native buttons; chưa import primitives sẽ được tạo ở Task 3.
 - [ ] Root layout `await cookies()` từ `next/headers`, gọi parser, đặt `<html lang={locale} data-theme={theme}>`; wrap children bằng provider `initial`. Dùng `Inter`/`Roboto_Slab` từ `next/font/google` với latin/vietnamese và các weight spec; font variables không xung đột semantic aliases.
 - [ ] Map 22 colors mỗi theme vào CSS variables trong `styles/theme.css`; áp dụng overrides runtime, giữ artwork colors theo movie data. Base `globals.css`:
@@ -285,12 +290,12 @@ test("preference cookie gets HTTPS attributes only when requested", () => {
 
 - [ ] Thêm aliases còn lại cho border/signature/status/radius, role typography đúng audit. `body` dùng page/text-primary/font-body. Focus outline nhìn thấy ở cả hai theme; `prefers-reduced-motion` tắt smooth transitions/scroll.
 - [ ] Browser test: cookie EN/Dark render `html` đúng từ response, reload vẫn EN/Dark; invalid locale fallback VI nhưng theme vẫn Dark; thay theme không đổi locale. Với cookie write bị chặn trong init script, thao tác đổi locale vẫn đổi UI/lang ở phiên hiện tại. Collect `pageerror` và lỗi hydration.
-- [ ] Chạy `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e -- e2e/shell.spec.ts e2e/preferences.spec.ts`. GREEN cho shell, không gọi đó là hoàn tất Home.
+- [ ] Chạy `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e -- tests/e2e/shell.spec.ts tests/e2e/preferences.spec.ts`. GREEN cho shell, không gọi đó là hoàn tất Home.
 - [ ] Commit riêng deliverable Foundation, kèm configs/lockfile/tests/docs; chỉ stage các paths Task 1 sở hữu.
 
 ### Task 2 — Catalog fixture và QuickBooking logic
 
-**Files:** create `model.ts`, `fixtures.ts`, `fixture-adapter.ts/.test.ts`, `quick-selection.ts/.test.ts`.
+**Files:** create `model.ts`, `fixtures.ts`, `fixture-adapter.ts`, `quick-selection.ts` and their tests under `tests/unit/features/home/`.
 
 **Consumes:** model contracts §3.2, fixture table và dependency reset từ spec.
 
@@ -333,11 +338,11 @@ test("showtime from another cinema cannot make a tuple valid", () => {
 - [ ] Run RED, implement reducers/resolver. Resolver phải kiểm tra đủ bốn giá trị với cùng một row, không chỉ kiểm tra `showtimeId` tồn tại.
 - [ ] Search: normalize bằng `trim().toLocaleLowerCase()`, title includes query; status AND optional genre. Giữ thứ tự catalog. Test `"  DUNE "` + now-showing + sci-fi → đúng một phim; query không khớp → empty.
 - [ ] Search Promise timer 300ms, abort clears timer/listener và reject AbortError. Error-once không reset khi đổi preference. Vitest dùng fake timers, `advanceTimersByTimeAsync(300)`; test abort không tiêu hao error-once, Retry cùng query sau lỗi trả kết quả.
-- [ ] Run `npm test -- src/features/home/fixture-adapter.test.ts src/features/home/quick-selection.test.ts`, `npm run typecheck`, `npm run lint`; commit Task 2.
+- [ ] Run `npm test -- tests/unit/features/home/fixture-adapter.test.ts tests/unit/features/home/quick-selection.test.ts`, `npm run typecheck`, `npm run lint`; commit Task 2.
 
 ### Task 3 — Primitives, dialog và asset nguồn
 
-**Files:** create `components/ui/*`, hai magnifier SVG; modify `features/preferences/controls.tsx` để dùng Button; extend `e2e/accessibility.spec.ts` cho controls hiện có trên shell/preference. Chưa cần test snapshots primitives riêng.
+**Files:** create `components/ui/*`, hai magnifier SVG; modify `features/preferences/controls.tsx` để dùng Button; extend `tests/e2e/accessibility.spec.ts` cho controls hiện có trên shell/preference. Chưa cần test snapshots primitives riêng.
 
 **Consumes:** semantic utilities Task 1, dictionary/provider, component variants/nodes trong audit.
 
@@ -353,7 +358,7 @@ test("showtime from another cinema cannot make a tuple valid", () => {
 
 ### Task 4 — Home desktop có tương tác đầy đủ
 
-**Files:** create các Home view files, `search-preview.ts/.test.ts`, `use-search-preview.ts`, `playwright.error.config.ts`; modify `app/page.tsx`; create/extend `home.spec.ts`, `home.error.spec.ts`, `accessibility.spec.ts`.
+**Files:** create các Home view files, `search-preview.ts`, `tests/unit/features/home/search-preview.test.ts`, `use-search-preview.ts`, `playwright.error.config.ts`; modify `app/page.tsx`; create/extend `tests/e2e/home.spec.ts`, `tests/e2e/home.error.spec.ts`, `tests/e2e/accessibility.spec.ts`.
 
 **Consumes:** Task 1 preference/dictionary/theme, Task 2 CatalogAdapter/quick functions, Task 3 primitives; source four Home contexts và screenshots.
 
@@ -454,7 +459,7 @@ for (const width of [320, 375, 768, 1024, 1440]) {
 
 ### Task 6 — Nghiệm thu, visual baseline và tài liệu chạy
 
-**Files:** finish `e2e/*`, reviewed snapshot baseline; modify README app/CONTEXT, tạo evidence tại `docs/99-notes/m1-foundation-home-acceptance.md` khi thực sự thực thi.
+**Files:** finish `tests/e2e/*`, reviewed snapshot baseline; modify README app/CONTEXT, tạo evidence tại `docs/99-notes/m1-foundation-home-acceptance.md` khi thực sự thực thi.
 
 **Consumes:** tất cả Tasks 1–5, criteria M1-01…13.
 

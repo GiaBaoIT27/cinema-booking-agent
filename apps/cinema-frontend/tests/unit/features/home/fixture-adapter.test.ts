@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { homeCatalog } from "./fixtures";
-import { createFixtureAdapter } from "./fixture-adapter";
+import { homeCatalog } from "../../../../src/features/home/fixtures";
+import { createFixtureAdapter } from "../../../../src/features/home/fixture-adapter";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());

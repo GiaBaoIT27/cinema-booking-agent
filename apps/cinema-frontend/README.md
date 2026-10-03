@@ -33,6 +33,11 @@ npm test
 npm run build
 ```
 
+All frontend tests live under `tests/`. Unit tests in `tests/unit/` mirror
+their `src/` modules; browser specs, support files, and reviewed screenshot
+baselines live in `tests/e2e/`. `npm test` runs the unit suite, while the
+browser commands below run the Playwright suites.
+
 The formatter skips generated build and test output, `next-env.d.ts`, the npm
 lockfile, screenshot baselines, and original font and icon assets. Regenerate
 those files with their tools when needed; do not edit them by hand.

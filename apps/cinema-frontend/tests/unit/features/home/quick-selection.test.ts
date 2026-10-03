@@ -1,11 +1,11 @@
 import { expect, test } from "vitest";
-import { homeCatalog } from "./fixtures";
+import { homeCatalog } from "../../../../src/features/home/fixtures";
 import {
   EMPTY_QUICK_SELECTION,
   getQuickOptions,
   reduceQuickSelection,
   resolveQuickSelection,
-} from "./quick-selection";
+} from "../../../../src/features/home/quick-selection";
 
 test("catalog IDs are unique and showtimes reference existing movies and cinemas", () => {
   for (const rows of [

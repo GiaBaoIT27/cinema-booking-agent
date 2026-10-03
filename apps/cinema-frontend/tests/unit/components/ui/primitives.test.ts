@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Button } from "./button";
-import { SearchField } from "./search-field";
-import { FilterChip } from "./filter-chip";
-import { SelectField } from "./select-field";
+import { Button } from "../../../../src/components/ui/button";
+import { SearchField } from "../../../../src/components/ui/search-field";
+import { FilterChip } from "../../../../src/components/ui/filter-chip";
+import { SelectField } from "../../../../src/components/ui/select-field";
 
 describe("native UI controls", () => {
   it("keeps action buttons from submitting a surrounding form unless requested", () => {

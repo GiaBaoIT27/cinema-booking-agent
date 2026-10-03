@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:error": "playwright test --config playwright.error.config.ts",
-    "test:visual": "playwright test e2e/home.visual.spec.ts"
+    "test:visual": "playwright test tests/e2e/home.visual.spec.ts"
   },
   "dependencies": {
     "next": "16.3.8",

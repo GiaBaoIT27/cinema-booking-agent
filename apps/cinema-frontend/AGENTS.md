@@ -1,5 +1,7 @@
 # Frontend checks
 
+Keep all frontend tests, test support files, and screenshot baselines under `tests/`. Place unit tests in `tests/unit/`, mirroring their source paths, and browser tests in `tests/e2e/`. Do not place test or spec files in `src/`.
+
 After every frontend change, run these commands from `apps/cinema-frontend`, in order:
 
 ```sh
