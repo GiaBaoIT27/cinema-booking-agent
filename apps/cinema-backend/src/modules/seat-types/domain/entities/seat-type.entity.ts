@@ -1,12 +1,5 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-  Check,
-} from 'typeorm';
+import { Entity, Column, Index, Check } from 'typeorm';
+import { BaseIdentityEntity } from '#src/common/domain/base-identity.entity.js';
 import { ColumnNumericTransformer } from '#src/common/transformers/numeric.transformer.js';
 
 @Entity('seat_types')
@@ -14,13 +7,7 @@ import { ColumnNumericTransformer } from '#src/common/transformers/numeric.trans
 @Check(`"surcharge_amount" >= 0.00`)
 @Check(`"seat_count" >= 1`)
 @Check(`"color_code" ~* '^#[0-9A-Fa-f]{6}$'`)
-export class SeatType {
-  @PrimaryGeneratedColumn({
-    type: 'bigint',
-    name: 'id',
-  })
-  id: string;
-
+export class SeatType extends BaseIdentityEntity {
   @Index('idx_seat_types_code_unique', { unique: true })
   @Column({
     type: 'varchar',
@@ -92,19 +79,4 @@ export class SeatType {
     name: 'display_order',
   })
   displayOrder: number;
-
-  @CreateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    name: 'created_at',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-    name: 'updated_at',
-  })
-  updatedAt: Date;
 }
