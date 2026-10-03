@@ -7,7 +7,7 @@ import {
   Min,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
-import { WardType } from '../enums/ward-type.enum.js';
+import { WardType } from '../../domain/enums/ward-type.enum.js';
 
 export class CreateWardDto {
   @IsNotEmpty({ message: 'provinceId không được để trống' })

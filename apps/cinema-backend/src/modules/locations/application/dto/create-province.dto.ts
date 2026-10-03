@@ -6,7 +6,7 @@ import {
   IsEnum,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ProvinceType } from '../enums/province-type.enum.js';
+import { ProvinceType } from '../../domain/enums/province-type.enum.js';
 
 export class CreateProvinceDto {
   @IsNotEmpty({ message: 'Mã Tỉnh/Thành phố không được để trống' })

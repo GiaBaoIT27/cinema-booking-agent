@@ -1,23 +1,19 @@
 import {
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
   Index,
+  type Relation,
 } from 'typeorm';
+import { BaseIdentityEntity } from '#src/common/domain/base-identity.entity.js';
 import { WardType } from '../enums/ward-type.enum.js';
 import { Province } from './province.entity.js';
 
 @Entity('wards')
 @Index(['code'], { unique: true })
 @Index(['provinceId'])
-export class Ward {
-  @PrimaryGeneratedColumn({ type: 'bigint', name: 'id' })
-  id: string;
-
+export class Ward extends BaseIdentityEntity {
   @Column({
     name: 'province_id',
     type: 'bigint',
@@ -25,11 +21,12 @@ export class Ward {
   })
   provinceId: string;
 
+  // Relation<> tránh lỗi "before initialization" do import vòng Province <-> Ward trong ESM
   @ManyToOne(() => Province, (province) => province.wards, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'province_id' })
-  province: any;
+  province: Relation<Province>;
 
   @Column({
     type: 'varchar',
@@ -54,19 +51,4 @@ export class Ward {
     comment: 'Loại hình đơn vị hành chính cấp xã (Phường, Xã, Thị trấn)',
   })
   type: WardType;
-
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp with time zone',
-    comment: 'Thời điểm tạo bản ghi',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp with time zone',
-    nullable: true,
-    comment: 'Thời điểm cập nhật bản ghi gần nhất',
-  })
-  updatedAt: Date;
 }
