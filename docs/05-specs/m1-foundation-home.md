@@ -142,7 +142,7 @@ Thứ tự: `cinemaId → movieId → date → showtimeId`. Options lấy từ f
 - Ban đầu chỉ Cinema enabled; placeholder “Chưa chọn / Not selected”. Upstream chưa chọn thì downstream disabled.
 - Không có options: giữ lựa chọn upstream, hiển thị “Chưa có suất phù hợp / No matching showtimes”, downstream/CTA disabled. Không tự chọn option đầu tiên.
 - Đổi upstream rồi chọn lại giá trị cũ vẫn cần chọn lại downstream; không phục hồi tuple cũ từ label.
-- Dùng native select có label kết hợp container visual của QuickBooking; đối chiếu SelectField để xử lý focus/disabled. Có thể dùng option popup của trình duyệt; không sao chép một ô text tĩnh giả select.
+- Cập nhật theo phản hồi của chủ dự án ngày 2026-10-03: dùng select-only combobox tùy biến. Toàn bộ box (nhãn, giá trị, icon và padding) mở danh sách khi enabled. Popup dùng semantic tokens Light/Dark, các option có hover/active, dấu tick cho giá trị đang chọn và target tối thiểu 44px. Enter/Space mở hoặc chọn; Arrow/Home/End điều hướng; gõ chữ tìm lựa chọn; Tab chọn và sang control tiếp theo; Escape hủy thao tác đang duyệt; bấm ngoài đóng popup. Giữ focus trên trigger với `aria-activedescendant`, có accessible label và selected state; upstream reset/downstream disabled giữ như trước. Popup giới hạn trong viewport, có cuộn và mở phía trên khi thiếu chỗ phía dưới.
 - Khi Submit, kiểm tra lại tuple tồn tại trong adapter. Hợp lệ mở demo handoff `seat-selection` với movie/cinema/date/time. Tuple sai hiển thị lỗi cục bộ và không chuyển bước. Không ghi server hold/order.
 
 ### 6.3. Các CTA khác và phạm vi demo
@@ -211,7 +211,7 @@ Genre/status/age/duration labels lấy từ dictionary; title không dịch. Kh�
 
 ## 8. Accessibility
 
-- Cấu trúc semantic: header/nav/main, một H1, headings sections; button cho action, label cho input/select; icon search trang trí không đọc lặp.
+- Cấu trúc semantic: header/nav/main, một H1, headings sections; button cho action, label cho input và `aria-labelledby` cho combobox; icon search trang trí không đọc lặp. Input tìm kiếm không có outline hình chữ nhật bên trong; dấu hiệu focus nằm trên viền bo tròn của container.
 - Theme/locale/chip phản ánh selected state bằng tên và `aria-pressed` phù hợp; visible label không chỉ phụ thuộc màu.
 - Mọi control operable bằng bàn phím, focus nhìn thấy trên Light/Dark. Dialog có accessible name, chuyển focus vào dialog, trap focus, Escape, restore focus; không có focusable hidden menu.
 - Status loading/error/empty thông báo qua live region thích hợp; Retry và clear filters có tên rõ. Disabled dùng native disabled và helper giải thích khi cần.
@@ -231,7 +231,7 @@ Genre/status/age/duration labels lấy từ dictionary; title không dịch. Kh�
 | Genre VI được dịch nhất quán | Sửa UI strings còn tiếng Anh trong Upcoming/VI |
 | Trang cao theo nội dung, bỏ blank tail canvas | Tránh fixed-height gây tràn/cắt khi wrap và zoom |
 | Search preview và dialog handoff cho màn hình ngoài M1 | Giới hạn Home tương tác với fixture; S02/S08 thật thuộc bước sau |
-| Native select popup và mobile target size | Hành vi keyboard/touch; Figma QuickBooking đang là static visual |
+| Custom combobox popup và mobile target size | Phản hồi chủ dự án 2026-10-03; keyboard/touch, Light/Dark và vị trí popup trong viewport |
 
 Mọi khác biệt mới ngoài bảng phải được giải thích trong review trước khi thay baseline. Không tự thêm movie photo, footer, login state, AI generation hoặc transaction simulation.
 

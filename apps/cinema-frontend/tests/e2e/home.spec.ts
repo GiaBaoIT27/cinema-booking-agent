@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { chooseQuickOption } from "./quick-controls";
 
 test("mobile navigation preserves every destination and closes after selection", async ({
   page,
@@ -120,31 +121,19 @@ test("quick dependencies reset downstream and no-options stays disabled", async 
   await expect(
     page.getByRole("combobox", { name: "2. Chọn phim" }),
   ).toBeDisabled();
-  await page
-    .getByRole("combobox", { name: "1. Chọn rạp" })
-    .selectOption("demo-central");
-  await page
-    .getByRole("combobox", { name: "2. Chọn phim" })
-    .selectOption("dune-part-two");
-  await page
-    .getByRole("combobox", { name: "3. Chọn ngày" })
-    .selectOption("2026-10-10");
-  await page
-    .getByRole("combobox", { name: /^4\./ })
-    .selectOption("central-dune-1010-1800");
-  await page
-    .getByRole("combobox", { name: "1. Chọn rạp" })
-    .selectOption("demo-west");
+  await chooseQuickOption(page, "1. Chọn rạp", "Demo Central");
+  await chooseQuickOption(page, "2. Chọn phim", "Dune: Part Two");
+  await chooseQuickOption(page, "3. Chọn ngày", "10/10/2026");
+  await chooseQuickOption(page, /^4\./, "18:00");
+  await chooseQuickOption(page, "1. Chọn rạp", "Demo West");
   await expect(
     page.getByRole("combobox", { name: "2. Chọn phim" }),
-  ).toHaveValue("");
+  ).toContainText("Chưa chọn");
   await expect(
     page.getByRole("combobox", { name: "3. Chọn ngày" }),
   ).toBeDisabled();
   await expect(page.getByTestId("quick-submit")).toBeDisabled();
-  await page
-    .getByRole("combobox", { name: "1. Chọn rạp" })
-    .selectOption("demo-no-showtimes");
+  await chooseQuickOption(page, "1. Chọn rạp", "Demo Empty");
   await expect(
     page.getByRole("combobox", { name: "2. Chọn phim" }),
   ).toBeDisabled();
@@ -160,18 +149,10 @@ test("preferences preserve query, filters and tuple with translated modal contex
     .getByTestId("hero-filters")
     .getByRole("button", { name: "Viễn tưởng" })
     .click();
-  await page
-    .getByRole("combobox", { name: "1. Chọn rạp" })
-    .selectOption("demo-central");
-  await page
-    .getByRole("combobox", { name: "2. Chọn phim" })
-    .selectOption("dune-part-two");
-  await page
-    .getByRole("combobox", { name: "3. Chọn ngày" })
-    .selectOption("2026-10-10");
-  await page
-    .getByRole("combobox", { name: /^4\./ })
-    .selectOption("central-dune-1010-1800");
+  await chooseQuickOption(page, "1. Chọn rạp", "Demo Central");
+  await chooseQuickOption(page, "2. Chọn phim", "Dune: Part Two");
+  await chooseQuickOption(page, "3. Chọn ngày", "10/10/2026");
+  await chooseQuickOption(page, /^4\./, "18:00");
   await page.getByTestId("quick-submit").click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("Dune: Part Two");
@@ -182,8 +163,8 @@ test("preferences preserve query, filters and tuple with translated modal contex
   await expect(dialog).toContainText("demo data");
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(page.getByRole("searchbox")).toHaveValue("Dune");
-  await expect(page.getByRole("combobox", { name: /^4\./ })).toHaveValue(
-    "central-dune-1010-1800",
+  await expect(page.getByRole("combobox", { name: /^4\./ })).toContainText(
+    "6:00 PM",
   );
   await expect(
     page.getByTestId("hero-filters").getByRole("button", { name: "Sci-Fi" }),

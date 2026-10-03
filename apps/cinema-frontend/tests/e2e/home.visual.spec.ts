@@ -38,7 +38,7 @@ for (const width of [320, 375, 768, 1024, 1440]) {
                   : 5,
         );
         const fields = await page
-          .locator(".quick-booking select")
+          .locator(".quick-booking [role='combobox']")
           .evaluateAll((elements) =>
             elements.map((el) => {
               const r = el.getBoundingClientRect();

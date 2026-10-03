@@ -52,9 +52,9 @@ export function QuickBooking({
           placeholder={d.home.notSelected}
           value={selection.cinemaId ?? ""}
           options={options.cinemas.map((c) => ({ value: c.id, label: c.name }))}
-          onChange={(e) => {
+          onValueChange={(value) => {
             setQuickError(false);
-            dispatchQuick({ type: "cinema", value: e.target.value || null });
+            dispatchQuick({ type: "cinema", value: value || null });
           }}
         />
         <SelectField
@@ -64,8 +64,8 @@ export function QuickBooking({
           value={selection.movieId ?? ""}
           disabled={!selection.cinemaId || !options.movies.length}
           options={options.movies.map((m) => ({ value: m.id, label: m.title }))}
-          onChange={(e) =>
-            dispatchQuick({ type: "movie", value: e.target.value || null })
+          onValueChange={(value) =>
+            dispatchQuick({ type: "movie", value: value || null })
           }
         />
         <SelectField
@@ -80,8 +80,8 @@ export function QuickBooking({
               " · ",
             )[0],
           }))}
-          onChange={(e) =>
-            dispatchQuick({ type: "date", value: e.target.value || null })
+          onValueChange={(value) =>
+            dispatchQuick({ type: "date", value: value || null })
           }
         />
         <SelectField
@@ -96,8 +96,8 @@ export function QuickBooking({
               " · ",
             )[1],
           }))}
-          onChange={(e) =>
-            dispatchQuick({ type: "showtime", value: e.target.value || null })
+          onValueChange={(value) =>
+            dispatchQuick({ type: "showtime", value: value || null })
           }
         />
         <Button type="submit" data-testid="quick-submit" disabled={!resolved}>

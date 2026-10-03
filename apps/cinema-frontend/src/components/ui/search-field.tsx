@@ -19,7 +19,7 @@ export function SearchField({
 }: SearchFieldProps) {
   return (
     <div
-      className={`flex min-h-11 min-w-0 items-center gap-[10px] rounded-control border border-border-subtle bg-surface px-[14px] py-3 focus-within:border-action-primary ${className}`}
+      className={`search-field flex min-h-11 min-w-0 items-center gap-[10px] rounded-control border border-border-subtle bg-surface px-[14px] py-3 focus-within:border-action-primary ${className}`}
     >
       <Image
         src={

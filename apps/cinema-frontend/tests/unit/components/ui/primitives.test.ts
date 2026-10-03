@@ -6,7 +6,7 @@ import { SearchField } from "../../../../src/components/ui/search-field";
 import { FilterChip } from "../../../../src/components/ui/filter-chip";
 import { SelectField } from "../../../../src/components/ui/select-field";
 
-describe("native UI controls", () => {
+describe("UI controls", () => {
   it("keeps action buttons from submitting a surrounding form unless requested", () => {
     const markup = renderToStaticMarkup(
       createElement(Button, { disabled: true }, "Continue"),
@@ -41,7 +41,7 @@ describe("native UI controls", () => {
     expect(markup).toContain(" disabled");
   });
 
-  it("labels a native select and keeps an empty placeholder option", () => {
+  it("labels the select-only combobox and exposes its collapsed state", () => {
     const markup = renderToStaticMarkup(
       createElement(SelectField, {
         id: "cinema",
@@ -49,11 +49,14 @@ describe("native UI controls", () => {
         placeholder: "Choose a cinema",
         value: "",
         options: [{ value: "a", label: "Cinema A" }],
-        onChange: () => {},
+        onValueChange: () => {},
       }),
     );
-    expect(markup).toContain('<select id="cinema"');
-    expect(markup).toContain('for="cinema"');
-    expect(markup).toContain('<option value="" selected=""');
+    expect(markup).toContain('role="combobox"');
+    expect(markup).toContain('aria-labelledby="cinema-label"');
+    expect(markup).toContain('id="cinema-label"');
+    expect(markup).toContain('aria-expanded="false"');
+    expect(markup).toContain('type="button"');
+    expect(markup).toContain("Choose a cinema");
   });
 });

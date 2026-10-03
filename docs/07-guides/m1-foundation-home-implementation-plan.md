@@ -89,7 +89,7 @@ src/
     button.tsx [C]               variant and keyboard focus
     search-field.tsx [C]         labeled input + source icon
     filter-chip.tsx [C]          toggle with aria-pressed
-    select-field.tsx [C]         native select in visual shell
+    select-field.tsx [C]         select-only combobox with custom popup
     dialog.tsx [C]               native modal, Escape and focus return
   features/preferences/
     model.ts [C]                enum validation, cookie serialization
@@ -351,7 +351,7 @@ test("showtime from another cinema cannot make a tuple valid", () => {
 - [ ] Lấy SVG từ magnifier nguồn SearchField cho Light/Dark; lưu hai file tên ổn định trong `public/icons`. Giữ vector/path, không vẽ lại bằng emoji hay CSS, không commit URL asset tạm thời.
 - [ ] Button props extend `ButtonHTMLAttributes<HTMLButtonElement>`, `variant: "primary"|"secondary"|"tertiary"`; default `type="button"`, native disabled, focus-visible và pressed feedback. Primary colors dùng semantic tokens.
 - [ ] SearchField extend input attributes, nhận `id`, `label`, `theme`; `<label>` có thể visually hidden nhưng accessible name rõ. Icon decorative: Next Image `alt=""`, width/height 18, aria-hidden; input focus không mất border/theme.
-- [ ] FilterChip là button toggle `aria-pressed`, label từ dictionary; SelectField dùng `<label htmlFor>`, native `<select id disabled value onChange>`, option placeholder `value=""`. Không thay bằng clickable div.
+- [ ] FilterChip là button toggle `aria-pressed`, label từ dictionary. Cập nhật theo phản hồi chủ dự án 2026-10-03: SelectField dùng button `role="combobox"`, `aria-labelledby`, `aria-expanded`, `aria-controls` và `aria-activedescendant`, mở custom listbox từ toàn bộ box. Giữ placeholder rỗng, controlled value, disabled, chọn bằng pointer/keyboard, Escape hủy duyệt và Tab chọn/sang control tiếp theo; xem [spec QuickBooking](../05-specs/m1-foundation-home.md). Không thay bằng một ô text tĩnh.
 - [ ] Dialog implement effect open→`showModal()`, close→`close()`, listener cancel→onClose, cleanup listeners/unmount. Lưu prior focused element; restoration chỉ focus khi element còn connected/visible, nếu không dùng `returnFocusTo`. Không thêm thư viện trap focus khi native modal đã đảm nhiệm.
 - [ ] Kiểm tra browser nền Foundation: Tab tới preference controls, dùng Space/Enter đổi trạng thái, thấy focus và aria-pressed; các test modal sẽ RED khi Home/dialog trigger được nối ở Task 4, không claim đã pass modal chỉ từ static JSX.
 - [ ] Chạy lint/typecheck/build, kiểm tra SVG nhìn đúng Light/Dark; commit Task 3. Ghi rõ modal integration cần check Task 4.
