@@ -1,0 +1,209 @@
+import { expect, test } from "@playwright/test";
+import { chooseQuickOption } from "./quick-controls";
+
+test("mobile navigation preserves every destination and closes after selection", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/");
+  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  for (const name of ["Rạp phim", "Vé của tôi", "Hỏi AI", "Đăng nhập"]) {
+    await menu.click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name, exact: true })
+      .click();
+    await expect(page.locator("dialog[open]")).toHaveCount(1);
+    await expect(page.getByRole("dialog")).toContainText("dữ liệu mẫu");
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeFocused();
+  }
+  for (const [name, hash] of [
+    ["Đang chiếu", "#now-showing"],
+    ["Trang chủ", "#top"],
+  ]) {
+    await menu.click();
+    await page
+      .getByRole("dialog")
+      .getByRole("link", { name, exact: true })
+      .click();
+    await expect(page.locator("dialog[open]")).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`${hash}$`));
+  }
+});
+
+test("search draft preserves curated sections; Enter and button submit the same snapshot", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const input = page.getByRole("searchbox", { name: "Tìm phim" });
+  await input.fill(" dUnE ");
+  await expect(page.getByTestId("movie-card")).toHaveCount(10);
+  await input.press("Enter");
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("status")).toContainText("Đang tìm phim");
+  await expect(
+    dialog.getByRole("heading", { name: "Dune: Part Two" }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Đóng", exact: true }).click();
+  await page.getByRole("button", { name: "Tìm phim", exact: true }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Dune: Part Two" }),
+  ).toBeVisible();
+});
+
+test("closing pending search cancels it and a new submission owns the result", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.clock.install();
+  const input = page.getByRole("searchbox");
+  await input.fill("Dune");
+  await input.press("Enter");
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByTestId("search-skeleton")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.clock.runFor(350);
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await input.fill("Afterlight");
+  await input.press("Enter");
+  await page.clock.runFor(350);
+  await expect(
+    page.getByRole("dialog").getByRole("heading", { name: "Afterlight" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("dialog").getByRole("heading", { name: "Dune: Part Two" }),
+  ).toHaveCount(0);
+});
+
+test("empty recovery preserves upcoming and syncs hero while browse preserves hero draft", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByTestId("hero-filters")
+    .getByRole("button", { name: "Sắp chiếu" })
+    .click();
+  await page
+    .getByTestId("hero-filters")
+    .getByRole("button", { name: "Tâm lý" })
+    .click();
+  await page.getByRole("searchbox").fill("missing");
+  await page.getByRole("searchbox").press("Enter");
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("status")).toContainText(
+    "Không có phim phù hợp",
+  );
+  await dialog.getByRole("button", { name: "Xóa bộ lọc" }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Orbit Zero" }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Đóng", exact: true }).click();
+  await expect(page.getByRole("searchbox")).toHaveValue("");
+  await expect(
+    page.getByTestId("hero-filters").getByRole("button", { name: "Sắp chiếu" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("searchbox").fill("my draft");
+  await page
+    .getByRole("button", { name: "Xem tất cả phim", exact: true })
+    .click();
+  await expect(
+    dialog.getByRole("heading", { name: "Dune: Part Two" }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Đóng", exact: true }).click();
+  await expect(page.getByRole("searchbox")).toHaveValue("my draft");
+});
+
+test("quick dependencies reset downstream and no-options stays disabled", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("combobox", { name: "2. Chọn phim" }),
+  ).toBeDisabled();
+  await chooseQuickOption(page, "1. Chọn rạp", "Demo Central");
+  await chooseQuickOption(page, "2. Chọn phim", "Dune: Part Two");
+  await chooseQuickOption(page, "3. Chọn ngày", "10/10/2026");
+  await chooseQuickOption(page, /^4\./, "18:00");
+  await chooseQuickOption(page, "1. Chọn rạp", "Demo West");
+  await expect(
+    page.getByRole("combobox", { name: "2. Chọn phim" }),
+  ).toContainText("Chưa chọn");
+  await expect(
+    page.getByRole("combobox", { name: "3. Chọn ngày" }),
+  ).toBeDisabled();
+  await expect(page.getByTestId("quick-submit")).toBeDisabled();
+  await chooseQuickOption(page, "1. Chọn rạp", "Demo Empty");
+  await expect(
+    page.getByRole("combobox", { name: "2. Chọn phim" }),
+  ).toBeDisabled();
+  await expect(page.getByRole("status")).toContainText("Chưa có suất phù hợp");
+});
+
+test("preferences preserve query, filters and tuple with translated modal context", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("searchbox").fill("Dune");
+  await page
+    .getByTestId("hero-filters")
+    .getByRole("button", { name: "Viễn tưởng" })
+    .click();
+  await chooseQuickOption(page, "1. Chọn rạp", "Demo Central");
+  await chooseQuickOption(page, "2. Chọn phim", "Dune: Part Two");
+  await chooseQuickOption(page, "3. Chọn ngày", "10/10/2026");
+  await chooseQuickOption(page, /^4\./, "18:00");
+  await page.getByTestId("quick-submit").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Dune: Part Two");
+  await expect(dialog).toContainText("Demo Central");
+  await dialog.getByRole("button", { name: "EN", exact: true }).click();
+  await dialog.getByRole("button", { name: "Dark", exact: true }).click();
+  await expect(dialog).toContainText("Oct 10, 2026");
+  await expect(dialog).toContainText("demo data");
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.getByRole("searchbox")).toHaveValue("Dune");
+  await expect(page.getByRole("combobox", { name: /^4\./ })).toContainText(
+    "6:00 PM",
+  );
+  await expect(
+    page.getByTestId("hero-filters").getByRole("button", { name: "Sci-Fi" }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
+
+test("guest destinations, movie details, AI and section browse have bounded feedback", async ({
+  page,
+}) => {
+  await page.goto("/");
+  for (const [name, title] of [
+    ["Rạp phim", "Rạp phim"],
+    ["Vé của tôi", "Vé của tôi"],
+    ["Đăng nhập", "Đăng nhập"],
+    ["Hỏi AI", "Trợ lý AI"],
+  ]) {
+    await page.getByRole("button", { name, exact: true }).first().click();
+    await expect(
+      page.getByRole("dialog").getByRole("heading", { level: 2 }),
+    ).toHaveText(title);
+    await expect(page.getByRole("dialog")).toContainText("dữ liệu mẫu");
+    await page.keyboard.press("Escape");
+  }
+  await page.getByTestId("ai-entry").getByRole("button").click();
+  await expect(page.getByRole("dialog")).toContainText("Trợ lý AI");
+  await page.keyboard.press("Escape");
+  for (const card of await page.getByTestId("movie-card").all()) {
+    const title = await card.getByRole("heading").innerText();
+    await card.getByRole("button").click();
+    await expect(page.getByRole("dialog")).toContainText(title);
+    await page.keyboard.press("Escape");
+  }
+  await page.getByRole("button", { name: "Xem tất cả phim sắp chiếu" }).click();
+  await expect(
+    page.getByRole("dialog").getByRole("heading", { name: "Orbit Zero" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("link", { name: "Đang chiếu", exact: true }).click();
+  await expect(page).toHaveURL(/#now-showing$/);
+  await page.getByRole("link", { name: /Movie Booking Agent/ }).click();
+  await expect(page).toHaveURL(/#top$/);
+});

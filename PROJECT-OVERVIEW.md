@@ -10,6 +10,7 @@ This file owns the product foundation and confirmed direction. Read [CONTEXT.md]
 
 - Keep the existing NestJS backend in `apps/cinema-backend`.
 - Implement the web application with **Next.js + TypeScript** in `apps/cinema-frontend`, as selected by the project owner.
+- For M1 Foundation + Home, the owner selected **Tailwind CSS**, fixture data with interactions before API integration, desktop plus responsive checks at 375/768/1024px, and minimal color corrections for AA contrast. The owner accepted the [written M1 specification](docs/05-specs/m1-foundation-home.md) on 2026-10-02.
 - Use the [Movie Booking Agent Figma file](https://www.figma.com/design/8n7jzPDh8S4VuiemeEHUgE?node-id=2-2) as the visual design source, with frame selection and behavior captured in accepted specifications.
 - Application boundaries are organized in `apps/`. Shared documentation describes architecture, domain, API contracts and development procedures.
 
@@ -36,8 +37,8 @@ Canonical vocabulary lives in [the cinema domain](docs/03-product/cinema-domain.
 ## Open decisions
 
 - Which AI design is canonical: original, split view, adaptive, or inline conversation? Inline Conversation + E2E25 was proposed, not approved.
-- Which desktop, tablet and mobile layouts are required for each delivery slice?
-- Frontend styling, session/cookie strategy, backend rendering integration and deployment target.
+- Responsive scope for slices after M1; M1 includes desktop 1440 and phone/tablet layouts.
+- Auth/session strategy, backend rendering integration and deployment target. M1 preference persistence is defined in its accepted spec, separate from authentication.
 - Agent runtime/model/tool contracts and production payment gateways.
 - How to reconcile design seat limits and hold/payment timing with existing backend behavior.
 

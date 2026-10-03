@@ -1,0 +1,57 @@
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --mba-bg-page: #fbfcfa;
+  --mba-bg-surface: #ffffff;
+  --mba-bg-surface-subtle: #f2f6f4;
+  --mba-bg-surface-strong: #e8efec;
+  --mba-border-subtle: #d9e2de;
+  --mba-border-strong: #b7c7c0;
+  --mba-text-primary: #1f3b36;
+  --mba-text-secondary: #5b7069;
+  --mba-text-tertiary: #5b7069;
+  --mba-action-primary: #278349;
+  --mba-action-primary-hover: #267a44;
+  --mba-action-soft: #e3f3e8;
+  --mba-action-on-primary: #ffffff;
+  --mba-action-text: #267a44;
+  --mba-signature-brown: #784131;
+  --mba-signature-brown-hover: #663628;
+  --mba-signature-brown-soft: #f3e8e3;
+  /* Scoped AA correction: secondary text on the AI panel's brown surface. */
+  --mba-ai-text-secondary: #596e67;
+  --mba-signature-on-brown: #ffffff;
+  --mba-status-success: #2d9c8a;
+  --mba-status-warning: #b97822;
+  --mba-status-error: #c84b57;
+  --mba-status-info: #3e7fa8;
+  --mba-artwork-placeholder: #355c4d;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --mba-bg-page: #0b1412;
+  --mba-bg-surface: #12201c;
+  --mba-bg-surface-subtle: #182a24;
+  --mba-bg-surface-strong: #20342d;
+  --mba-border-subtle: #2a3d36;
+  --mba-border-strong: #456158;
+  --mba-text-primary: #d7efe6;
+  --mba-text-secondary: #9ab0a7;
+  --mba-text-tertiary: #9ab0a7;
+  --mba-action-primary: #4dbb73;
+  --mba-action-primary-hover: #63c884;
+  --mba-action-soft: #12301e;
+  --mba-action-on-primary: #07110a;
+  --mba-action-text: #4dbb73;
+  --mba-signature-brown: #c68f79;
+  --mba-signature-brown-hover: #d5a38e;
+  --mba-signature-brown-soft: #2b1c18;
+  --mba-ai-text-secondary: #9ab0a7;
+  --mba-signature-on-brown: #0b1412;
+  --mba-status-success: #46b9a3;
+  --mba-status-warning: #d8a04d;
+  --mba-status-error: #e56e78;
+  --mba-status-info: #67a7ce;
+  --mba-artwork-placeholder: #27483c;
+}

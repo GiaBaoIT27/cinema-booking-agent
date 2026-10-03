@@ -1,0 +1,280 @@
+{
+  "format": "design-documentation/v1",
+  "status": "accepted",
+  "approvedAt": "2026-10-02",
+  "auditedAt": "2026-10-02",
+  "source": {
+    "fileKey": "8n7jzPDh8S4VuiemeEHUgE",
+    "foundationNodeId": "17:3219",
+    "homeNodeIds": [
+      "33:6047",
+      "33:6203",
+      "33:6362",
+      "33:6518"
+    ],
+    "canonicalCollections": {
+      "themeColors": 44,
+      "spacing": 11,
+      "radius": 5,
+      "layout": 6
+    },
+    "excludedPrefixes": [
+      "LegacyDraft",
+      "LegacyFailed"
+    ],
+    "numberUnits": "px"
+  },
+  "sourceTokens": {
+    "light/bg/page": "#fbfcfa",
+    "light/bg/surface": "#ffffff",
+    "light/bg/surface-subtle": "#f2f6f4",
+    "light/bg/surface-strong": "#e8efec",
+    "light/border/subtle": "#d9e2de",
+    "light/border/strong": "#b7c7c0",
+    "light/text/primary": "#1f3b36",
+    "light/text/secondary": "#60756e",
+    "light/text/tertiary": "#7c8f88",
+    "light/action/primary": "#33a15b",
+    "light/action/primary-hover": "#2b8a4d",
+    "light/action/soft": "#e3f3e8",
+    "light/action/on-primary": "#ffffff",
+    "light/signature/brown": "#784131",
+    "light/signature/brown-hover": "#663628",
+    "light/signature/brown-soft": "#f3e8e3",
+    "light/signature/on-brown": "#ffffff",
+    "light/status/success": "#2d9c8a",
+    "light/status/warning": "#b97822",
+    "light/status/error": "#c84b57",
+    "light/status/info": "#3e7fa8",
+    "light/artwork/placeholder": "#355c4d",
+    "dark/bg/page": "#0b1412",
+    "dark/bg/surface": "#12201c",
+    "dark/bg/surface-subtle": "#182a24",
+    "dark/bg/surface-strong": "#20342d",
+    "dark/border/subtle": "#2a3d36",
+    "dark/border/strong": "#456158",
+    "dark/text/primary": "#d7efe6",
+    "dark/text/secondary": "#9ab0a7",
+    "dark/text/tertiary": "#71877f",
+    "dark/action/primary": "#4dbb73",
+    "dark/action/primary-hover": "#63c884",
+    "dark/action/soft": "#12301e",
+    "dark/action/on-primary": "#07110a",
+    "dark/signature/brown": "#c68f79",
+    "dark/signature/brown-hover": "#d5a38e",
+    "dark/signature/brown-soft": "#2b1c18",
+    "dark/signature/on-brown": "#0b1412",
+    "dark/status/success": "#46b9a3",
+    "dark/status/warning": "#d8a04d",
+    "dark/status/error": "#e56e78",
+    "dark/status/info": "#67a7ce",
+    "dark/artwork/placeholder": "#27483c",
+    "space/1": 4,
+    "space/2": 8,
+    "space/3": 12,
+    "space/4": 16,
+    "space/5": 20,
+    "space/6": 24,
+    "space/8": 32,
+    "space/10": 40,
+    "space/12": 48,
+    "space/16": 64,
+    "space/20": 80,
+    "radius/sm": 6,
+    "radius/md": 10,
+    "radius/lg": 14,
+    "radius/xl": 18,
+    "radius/full": 999,
+    "desktop/content-max": 1200,
+    "desktop/gutter": 32,
+    "desktop/nav-height": 72,
+    "control/height-sm": 36,
+    "control/height-md": 44,
+    "control/height-lg": 48
+  },
+  "proposedM1Overrides": {
+    "light/action/primary": {
+      "value": "#278349",
+      "reason": "White CTA text and action links on page reach 4.5:1."
+    },
+    "light/action/primary-hover": {
+      "value": "#267a44",
+      "reason": "White hover label reaches 4.5:1."
+    },
+    "light/text/secondary": {
+      "value": "#5b7069",
+      "reason": "Small text also passes on surface-strong."
+    },
+    "light/text/tertiary": {
+      "value": "#5b7069",
+      "reason": "Small metadata/placeholder text passes on Home surfaces."
+    },
+    "dark/text/tertiary": {
+      "value": "#9ab0a7",
+      "reason": "Small metadata/placeholder text passes on Home surfaces."
+    }
+  },
+  "homeRoleExtensions": {
+    "colors": {
+      "light/action/text": "#267a44",
+      "dark/action/text": "#4dbb73"
+    },
+    "radius": {
+      "control": 12,
+      "quick-booking": 16
+    },
+    "typography": {
+      "hero": {
+        "family": "Roboto Slab",
+        "weight": 700,
+        "size": 48,
+        "lineHeight": 54
+      },
+      "release-panel-title": {
+        "family": "Roboto Slab",
+        "weight": 600,
+        "size": 22,
+        "lineHeight": 28
+      },
+      "movie-title": {
+        "family": "Roboto Slab",
+        "weight": 600,
+        "size": 18,
+        "lineHeight": 24
+      },
+      "quick-title": {
+        "family": "Roboto Slab",
+        "weight": 600,
+        "size": 20,
+        "lineHeight": 25
+      },
+      "quick-intro": {
+        "family": "Inter",
+        "weight": 400,
+        "size": 11,
+        "lineHeight": 15
+      },
+      "quick-label": {
+        "family": "Inter",
+        "weight": 500,
+        "size": 12,
+        "lineHeight": 16
+      },
+      "quick-value": {
+        "family": "Inter",
+        "weight": 400,
+        "size": 10,
+        "lineHeight": 14
+      },
+      "button-label": {
+        "family": "Inter",
+        "weight": 600,
+        "size": 13,
+        "lineHeight": 17
+      },
+      "ai-title": {
+        "family": "Roboto Slab",
+        "weight": 600,
+        "size": 18,
+        "lineHeight": 24
+      },
+      "ai-body": {
+        "family": "Inter",
+        "weight": 400,
+        "size": 13,
+        "lineHeight": 19
+      }
+    }
+  },
+  "contrastEvidence": {
+    "method": "WCAG sRGB relative luminance; unrounded ratios; no antialiased screenshot pixel sampling",
+    "sourceUrl": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
+    "cases": [
+      {
+        "role": "source/light-cta",
+        "foreground": "#ffffff",
+        "background": "#33a15b",
+        "ratio": 3.2865005274410755
+      },
+      {
+        "role": "source/light-hover",
+        "foreground": "#ffffff",
+        "background": "#2b8a4d",
+        "ratio": 4.334120035155822
+      },
+      {
+        "role": "source/light-action-link",
+        "foreground": "#33a15b",
+        "background": "#fbfcfa",
+        "ratio": 3.193607258565607
+      },
+      {
+        "role": "source/light-tertiary",
+        "foreground": "#7c8f88",
+        "background": "#f2f6f4",
+        "ratio": 3.1366988452027904
+      },
+      {
+        "role": "source/light-secondary-strong",
+        "foreground": "#60756e",
+        "background": "#e8efec",
+        "ratio": 4.21580699617945
+      },
+      {
+        "role": "source/dark-tertiary",
+        "foreground": "#71877f",
+        "background": "#182a24",
+        "ratio": 3.9227498280967
+      },
+      {
+        "role": "m1/light-cta",
+        "foreground": "#ffffff",
+        "background": "#278349",
+        "ratio": 4.741482326417875
+      },
+      {
+        "role": "m1/light-hover",
+        "foreground": "#ffffff",
+        "background": "#267a44",
+        "ratio": 5.316861814770462
+      },
+      {
+        "role": "m1/light-action-link",
+        "foreground": "#278349",
+        "background": "#fbfcfa",
+        "ratio": 4.60746385024889
+      },
+      {
+        "role": "m1/light-secondary-subtle",
+        "foreground": "#5b7069",
+        "background": "#f2f6f4",
+        "ratio": 4.856718951130129
+      },
+      {
+        "role": "m1/light-secondary-strong",
+        "foreground": "#5b7069",
+        "background": "#e8efec",
+        "ratio": 4.53525039110459
+      },
+      {
+        "role": "m1/light-action-text-soft",
+        "foreground": "#267a44",
+        "background": "#e3f3e8",
+        "ratio": 4.6210250111155515
+      },
+      {
+        "role": "m1/dark-tertiary-subtle",
+        "foreground": "#9ab0a7",
+        "background": "#182a24",
+        "ratio": 6.551165052193738
+      },
+      {
+        "role": "source/dark-cta",
+        "foreground": "#07110a",
+        "background": "#4dbb73",
+        "ratio": 7.929108756373031
+      }
+    ],
+    "limitation": "Selected color pairs only; runtime focus, states and actual surfaces still need verification."
+  }
+}
