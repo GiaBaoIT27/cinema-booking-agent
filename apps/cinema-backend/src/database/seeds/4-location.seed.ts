@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { Province } from '#modules/locations/entities/province.entity.js';
-import { Ward } from '#modules/locations/entities/ward.entity.js';
-import { ProvinceType } from '#modules/locations/enums/province-type.enum.js';
-import { WardType } from '#modules/locations/enums/ward-type.enum.js';
+import { Province } from '#modules/locations/domain/entities/province.entity.js';
+import { Ward } from '#modules/locations/domain/entities/ward.entity.js';
+import { ProvinceType } from '#modules/locations/domain/enums/province-type.enum.js';
+import { WardType } from '#modules/locations/domain/enums/ward-type.enum.js';
 
 export class LocationSeeder {
   async run(dataSource: DataSource): Promise<void> {

@@ -9,8 +9,7 @@ import {
   JoinColumn,
   Check,
 } from 'typeorm';
-import type { Relation } from 'typeorm';
-import { Cineplex } from '#modules/cinemas/entities/cineplex.entity.js';
+import type { CineplexSummaryDto } from '#modules/cinemas/public-api/index.js';
 import { ProjectionType } from '#src/modules/showtimes/domain/enums/projection-type.enum.js';
 import { DayType } from '../enums/day-type.enum.js';
 import { ColumnNumericTransformer } from '#src/common/transformers/numeric.transformer.js';
@@ -78,9 +77,9 @@ export class PriceRule {
   })
   basePrice: number;
 
-  @ManyToOne(() => Cineplex, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne('Cineplex', { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'cineplex_id' })
-  cineplex: Relation<Cineplex> | null;
+  cineplex: CineplexSummaryDto | null;
 
   @CreateDateColumn({
     type: 'timestamp',

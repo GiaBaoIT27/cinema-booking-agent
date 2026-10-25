@@ -1,4 +1,5 @@
-version: "3.8"
+# Stack đầy đủ: postgres + redis + backend (NestJS) + agent (LangGraph/Gemini) + frontend (Next.js)
+# Chạy: docker compose up -d --build   (chi tiết xem DOCKER.md)
 services:
   postgres:
     image: postgres:16-alpine
@@ -8,15 +9,139 @@ services:
       POSTGRES_PASSWORD: cinema_password
       POSTGRES_DB: cinema_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cinema_admin -d cinema_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     container_name: cinema_redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: cinema_redisinsight
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./apps/cinema-backend
+    container_name: cinema_backend
+    # .env của backend (JWT, Cloudinary, Mail...) + overridehostname nội mạng bên dưới
+    env_file: ./apps/cinema-backend/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      NODE_ENV: development # synchronize=true → tự tạo schema (dự án chưa có migration)
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # GET /api/v1/movies là route Public — vừa check app vừa check DB (yêu cầu header Accept: application/json)
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/v1/movies?limit=1', { headers: { Accept: 'application/json' } }).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  agent:
+    build:
+      context: ./apps/cinema-agent
+    container_name: cinema_agent
+    env_file: ./apps/cinema-agent/.env
+    environment:
+      # Trong compose network, backend không phải localhost
+      BACKEND_API_URL: http://backend:3000/api/v1
+      # Origin của browser truy cập frontend qua host (đã map port 3001)
+      CORS_ORIGINS: http://localhost:3001
+      # Google API key lấy từ .env ở ROOT (compose tự đọc file .env cạnh compose.yml)
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      # Để trống vẫn chạy (backend tự verify JWT thật); điền cùng
+      # JWT_ACCESS_SECRET của backend nếu muốn agent tự verify chữ ký.
+      JWT_SECRET: ${AGENT_JWT_SECRET:-}
+      PORT: "3002"
+    ports:
+      - "3002:3002"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./apps/cinema-frontend-v1
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api/v1}
+        NEXT_PUBLIC_MAPBOX_TOKEN: ${NEXT_PUBLIC_MAPBOX_TOKEN:-}
+        NEXT_PUBLIC_MAPBOX_STYLE: ${NEXT_PUBLIC_MAPBOX_STYLE:-mapbox/streets-v12}
+    container_name: cinema_frontend
+    environment:
+      PORT: "3001"
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "3001:3001"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3001').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  redisinsight_data:

@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import type { Relation } from 'typeorm';
 import { Showtime } from './showtime.entity.js';
-import { Seat } from '#modules/cinemas/entities/seat.entity.js';
+import type { Seat } from '#modules/cinemas/domain/entities/seat.entity.js';
 import { ShowtimeSeatStatus } from '../enums/showtime-seat-status.js';
 
 @Entity('showtime_seats')
@@ -44,7 +44,7 @@ export class ShowtimeSeat {
   @JoinColumn({ name: 'showtime_id' })
   showtime: Relation<Showtime>;
 
-  @ManyToOne(() => Seat, (seat) => seat.showtimeSeats, { onDelete: 'RESTRICT' })
+  @ManyToOne('Seat', (seat: any) => seat.showtimeSeats, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'seat_id' })
   seat: Relation<Seat>;
 }

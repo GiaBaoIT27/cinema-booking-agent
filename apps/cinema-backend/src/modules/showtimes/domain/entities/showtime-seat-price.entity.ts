@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import type { Relation } from 'typeorm';
 import { Showtime } from '#src/modules/showtimes/domain/entities/showtime.entity.js';
-import { SeatType } from '#modules/seat-types/entities/seat-type.entity.js';
+import type { SeatTypeSummaryDto } from '#modules/seat-types/public-api/index.js';
 import { ColumnNumericTransformer } from '#src/common/transformers/numeric.transformer.js';
 
 @Entity('showtime_seat_prices')
@@ -68,7 +68,7 @@ export class ShowtimeSeatPrice {
   @JoinColumn({ name: 'showtime_id' })
   showtime: Relation<Showtime>;
 
-  @ManyToOne(() => SeatType, { onDelete: 'RESTRICT' })
+  @ManyToOne('SeatType', { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'seat_type_id' })
-  seatType: Relation<SeatType>;
+  seatType: SeatTypeSummaryDto;
 }

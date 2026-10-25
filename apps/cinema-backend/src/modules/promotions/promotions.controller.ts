@@ -39,7 +39,6 @@ export class PromotionsController {
   // 1. GET /api/v1/promotions
   @Get()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:view')
   findAllForAdmin(@Query() query: GetPromotionsQueryDto) {
     return this.promotionsService.findAllForAdmin(query);
@@ -64,7 +63,6 @@ export class PromotionsController {
   // 5. PUT /api/v1/promotions/:id
   @Put(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:update')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -76,7 +74,6 @@ export class PromotionsController {
   // 6. PATCH /api/v1/promotions/:id/status
   @Patch(':id/status')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('promo:update')
   updateStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -88,8 +85,7 @@ export class PromotionsController {
   // 7. POST /api/v1/promotions/validate
   @Post('validate')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @RequirePermissions('promo:apply')
+  @Public()
   validateAndCalculate(@Body() validateDto: ValidatePromotionDto) {
     return this.promotionsService.validateAndCalculate(validateDto);
   }

@@ -1,9 +1,9 @@
 import { DataSource } from 'typeorm';
-import { Movie } from '#modules/movies/entities/movie.entity.js'; // Điều chỉnh lại đường dẫn cho đúng entity của bạn
-import { Genre } from '#modules/genres/entities/genre.entity.js';
-import { Distributor } from '#modules/distributors/entities/distributor.entity.js';
-import { AgeRating } from '#modules/movies/enums/movie-age-rating.enum.js';
-import { MovieStatus } from '#modules/movies/enums/movie-status.enum.js';
+import { Movie } from '#modules/movies/domain/entities/movie.entity.js'; // Điều chỉnh lại đường dẫn cho đúng entity của bạn
+import { Genre } from '#modules/genres/domain/entities/genre.entity.js';
+import { Distributor } from '#modules/distributors/domain/entities/distributor.entity.js';
+import { AgeRating } from '#modules/movies/domain/enums/movie-age-rating.enum.js';
+import { MovieStatus } from '#modules/movies/domain/enums/movie-status.enum.js';
 
 export class MovieSeeder {
   async run(dataSource: DataSource): Promise<void> {
@@ -43,11 +43,11 @@ export class MovieSeeder {
         country: 'Việt Nam',
         originalLanguage: 'Tiếng Việt',
         revenueShareRatio: 50.0,
-        trailerUrl: 'https://www.youtube.com/watch?v=HKJpU2j3Oeo',
+        trailerUrl: 'https://youtu.be/HXWRTGbhb4U?si=X1Z0nErPXqGuxYkC',
         posterUrl:
-          'https://images.unsplash.com/photo-1536440136628-849c177e76a1',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791733903/mai_teaser_poster_digital_1_.jpg',
         bannerUrl:
-          'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791733903/mai_teaser_poster_digital_1_.jpg',
         releaseDate: new Date('2026-02-10'),
         endDate: new Date('2026-05-10'),
         status: MovieStatus.SHOWING || 'SHOWING',
@@ -68,9 +68,9 @@ export class MovieSeeder {
         revenueShareRatio: 45.0,
         trailerUrl: 'https://www.youtube.com/watch?v=Way9Dexny3w',
         posterUrl:
-          'https://images.unsplash.com/photo-1518709268805-4e9042af9f23',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791733903/vn_dune3_vert_tsr_2764x4096_intl.jpg',
         bannerUrl:
-          'https://images.unsplash.com/photo-1509198397868-475647b2a1e5',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791733903/vn_dune3_vert_tsr_2764x4096_intl.jpg',
         releaseDate: new Date('2026-03-01'),
         endDate: new Date('2026-06-01'),
         status: MovieStatus.SHOWING || 'SHOWING',
@@ -89,11 +89,11 @@ export class MovieSeeder {
         country: 'Hàn Quốc',
         originalLanguage: 'Tiếng Hàn',
         revenueShareRatio: 50.0,
-        trailerUrl: 'https://www.youtube.com/watch?v=tT8O9O2cZ6s',
+        trailerUrl: 'https://youtu.be/7LH-TIcPqks?si=DxC-0yQl8e7ISm4P',
         posterUrl:
-          'https://images.unsplash.com/photo-1509281373149-e957c6296406',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791733902/700x1000_exhuma-min.jpg',
         bannerUrl:
-          'https://images.unsplash.com/photo-1518709268805-4e9042af9f23',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791733902/700x1000_exhuma-min.jpg',
         releaseDate: new Date('2026-03-15'),
         endDate: new Date('2026-06-15'),
         status: MovieStatus.SHOWING || 'SHOWING',
@@ -112,11 +112,11 @@ export class MovieSeeder {
         country: 'Nhật Bản',
         originalLanguage: 'Tiếng Nhật',
         revenueShareRatio: 48.0,
-        trailerUrl: 'https://www.youtube.com/watch?v=34211111111',
+        trailerUrl: 'https://youtu.be/C4pG3GbhQZw?si=KtmMfVypwh8yyQYK',
         posterUrl:
-          'https://images.unsplash.com/photo-1578632767115-351597cf2477',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791734114/470x700-deadpool.jpg',
         bannerUrl:
-          'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791734114/470x700-deadpool.jpg',
         releaseDate: new Date('2026-10-01'),
         endDate: new Date('2026-12-31'),
         status: MovieStatus.UPCOMING || 'UPCOMING',
@@ -135,11 +135,11 @@ export class MovieSeeder {
         country: 'Mỹ',
         originalLanguage: 'Tiếng Anh',
         revenueShareRatio: 50.0,
-        trailerUrl: 'https://www.youtube.com/watch?v=73_1biulk6s',
+        trailerUrl: 'https://youtu.be/FGIQ97mhqNE?si=Ze8Q5rD4jKHoVuzN',
         posterUrl:
-          'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791734114/470x700-deadpool.jpg',
         bannerUrl:
-          'https://images.unsplash.com/photo-1534447677768-be436bb09401',
+          'https://res.cloudinary.com/verolisd/image/upload/v1791734114/470x700-deadpool.jpg',
         releaseDate: new Date('2026-11-15'),
         endDate: new Date('2027-02-15'),
         status: MovieStatus.UPCOMING || 'UPCOMING',

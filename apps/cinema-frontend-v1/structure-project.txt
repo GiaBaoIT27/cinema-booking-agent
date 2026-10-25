@@ -1,0 +1,120 @@
+cinema-frontend-v1/
+├── app/
+│   ├── (customer)/                   # Route Group riêng cho Khách hàng
+│   │   ├── layout.tsx                # Chứa Layout chung (Header & Footer cố định ở đây)
+│   │   ├── page.tsx                  # 1. Trang chủ
+│   │   ├── movies/
+│   │   │   ├── page.tsx              # 2. Danh sách Phim
+│   │   │   └── [slug]/
+│   │   │       └── page.tsx          # 3. Chi tiết Phim & Lịch chiếu
+│   │   ├── cinemas/
+│   │   │   ├── page.tsx              # 4. Cụm Rạp & Giá vé
+│   │   │   └── [cinemaId]/
+│   │   │       └── page.tsx          # Chi tiết rạp
+│   │   ├── booking/
+│   │   │   └── [showtimeId]/
+│   │   │       ├── page.tsx          # 5. Quy trình Đặt vé (Chọn ghế -> Combo -> Thanh toán)
+│   │   │       └── confirmation/
+│   │   │           └── page.tsx      # Trang hoàn tất đơn hàng / Vé điện tử
+│   │   ├── promotions/
+│   │   │   ├── page.tsx              # 6. Khuyến mãi & Ưu đãi
+│   │   │   └── [slug]/
+│   │   │       └── page.tsx          # Chi tiết KM
+│   │   └── profile/                  # 7. Tài khoản cá nhân
+│   │       ├── page.tsx              # Thông tin cá nhân
+│   │       └── tickets/
+│   │           └── page.tsx          # Quản lý vé đã đặt (Lịch sử)
+│   │
+│   ├── (auth)/                       # Route Group cho Login/Register (Nếu muốn trang rời)
+│   │   ├── login/page.tsx
+│   │   └── register/page.tsx
+│   │
+│   ├── api/                          # Route Handlers / Webhook (VNPAY, ZaloPay, Momo)
+│   │   └── payment/
+│   │       └── callback/route.ts
+│   │
+│   ├── layout.tsx                    # Root Layout (Chỉ chứa Providers, Fonts, Toast, SEO Metadata)
+│   ├── globals.css                   # Tailwind / CSS Global
+│   ├── loading.tsx                   # UI Loading toàn trang
+│   └── not-found.tsx                 # Trang 404
+│
+├── components/                       # Shared UI Components (Dùng chung cho toàn hệ thống)
+│   ├── ui/                           # Base UI Components (Button, Dialog, Modal, Drawer, Tabs...)
+│   ├── common/                       # Các widget chung (MovieCard, CountdownTimer, StarRating, QrCode)
+│   └── layout/                       # Thành phần của Layout
+│       ├── header/
+│       │   ├── header.tsx            # Header chính
+│       │   ├── nav-menu.tsx          # Menu điều hướng
+│       │   ├── quick-booking-bar.tsx # Thanh đặt vé nhanh
+│       │   └── user-menu.tsx         # Menu avatar/đăng nhập
+│       ├── footer/
+│       │   ├── footer.tsx            # Footer chính
+│       │   └── footer-links.tsx
+│       └── container.tsx             # Component căn lề Container
+│
+├── features/                         # Core Business Logic (Modular Domain-driven)
+│   ├── auth/                         # Quản lý Đăng nhập / Đăng ký
+│   │   ├── components/               # LoginForm, RegisterForm, AuthModal
+│   │   ├── hooks/                    # useAuth, useLogin
+│   │   └── services/                 # auth.service.ts
+│   │
+│   ├── movie/                        # Logic liên quan đến Phim
+│   │   ├── components/               # MovieGrid, MovieFilter, TrailerModal, MovieSchedule
+│   │   ├── hooks/                    # useMovies, useShowtimes
+│   │   ├── services/                 # movie.service.ts
+│   │   └── types/                    # movie.type.ts
+│   │
+│   ├── cinema/                       # Logic liên quan đến Rạp
+│   │   ├── components/               # CinemaSelector, CinemaMap, PriceTable
+│   │   └── services/                 # cinema.service.ts
+│   │
+│   ├── booking/                      # Logic cốt lõi: Đặt vé & Sơ đồ ghế (PHỨC TẠP NHẤT)
+│   │   ├── components/
+│   │   │   ├── step-indicator.tsx    # Thanh tiến trình (Ghế -> Thức ăn -> Thanh toán)
+│   │   │   ├── seat-matrix/          # Sơ đồ ghế ngồi
+│   │   │   │   ├── seat-matrix.tsx   # Matrix render lưới ghế
+│   │   │   │   ├── seat-item.tsx     # Ghế VIP, Thường, Sweetbox, Ghế đã bán
+│   │   │   │   └── seat-legend.tsx   # Chú thích loại ghế
+│   │   │   ├── combo-selector/       # Chọn Bắp & Nước
+│   │   │   └── booking-summary/      # Sidebar thông tin vé & tổng tiền tạm tính
+│   │   ├── hooks/                    # useSeatSelection, useBookingTimer, useSocketSeat
+│   │   ├── store/                    # Zustand Store riêng cho quy trình Đặt vé
+│   │   │   └── use-booking-store.ts
+│   │   └── types/                    # booking.type.ts
+│   │
+│   ├── payment/                      # Thanh toán (Momo, VNPay, Thẻ ATM/Credit)
+│   │   ├── components/               # PaymentMethodPicker, CheckoutForm
+│   │   └── services/                 # payment.service.ts
+│   │
+│   └── profile/                      # Quản lý cá nhân & Lịch sử vé
+│       ├── components/               # TicketCard, TicketDetailModal, ProfileForm
+│       └── services/                 # user.service.ts
+│
+├── config/                           # Cấu hình dự án
+│   ├── site.ts                       # Tên web, SEO mặc định, Links
+│   ├── routes.ts                     # Khai báo hằng số đường dẫn (ROUTES.MOVIE_DETAIL,...)
+│   └── constants.ts                  # Hằng số (Thời gian giữ ghế: 5 phút, Tỷ lệ điểm...)
+│
+├── hooks/                            # Hooks dùng chung cho toàn bộ App
+│   ├── use-countdown.ts              # Hook đếm ngược giữ ghế
+│   ├── use-media-query.ts            # Responsive hook
+│   └── use-debounce.ts
+│
+├── lib/                              # Thư viện & Utility Helpers
+│   ├── fetcher.ts                    # Axios hoặc Fetch Client custom (Xử lý Bearer Token, Refresh Token)
+│   ├── utils.ts                      # Format giá tiền (VND), format ngày tháng, cn()
+│   └── socket.ts                     # Kết nối Socket.io / WebSocket (Real-time ghế)
+│   ├── react-query.ts                # Cấu hình React Query / TanStack Query
+│
+├── providers/                        # Wrappers cho App (Root Layout sử dụng)
+│   ├── query-provider.tsx            # Tanstack Query Provider
+│   ├── auth-provider.tsx             # Context xác thực người dùng
+│   └── toast-provider.tsx            # Thông báo Sonner / Toast
+│
+├── stores/                           # Global Zustand Stores (Lưu User State, Global UI State)
+│   └── use-user-store.ts
+│
+├── styles/                           # CSS Modules / Custom Animations
+└── types/                            # Typescript definitions dùng chung toàn hệ thống
+    ├── api.type.ts                   # Response DTO chuẩn từ Backend
+    └── user.type.ts

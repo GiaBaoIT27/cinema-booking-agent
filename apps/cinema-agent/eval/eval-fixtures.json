@@ -1,0 +1,443 @@
+{
+  "generatedAt": "2026-10-19T15:52:45.527Z",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "evalDate": "2026-10-20",
+  "password": "Eval123@Password",
+  "users": [
+    {
+      "key": "user1",
+      "id": "6",
+      "email": "eval.user1@cinema.com"
+    },
+    {
+      "key": "user2",
+      "id": "7",
+      "email": "eval.user2@cinema.com"
+    }
+  ],
+  "showtimes": [
+    {
+      "key": "mai-morning",
+      "id": "1916",
+      "movieId": "1",
+      "movieTitle": "Mai",
+      "startTime": "2026-10-20T03:00:00.000Z",
+      "localStart": "10:00",
+      "auditoriumId": "16",
+      "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
+      "screenType": "STANDARD"
+    },
+    {
+      "key": "quatmo-afternoon",
+      "id": "1917",
+      "movieId": "3",
+      "movieTitle": "Quật Mộ Trùng Phùng",
+      "startTime": "2026-10-20T07:00:00.000Z",
+      "localStart": "14:00",
+      "auditoriumId": "16",
+      "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
+      "screenType": "STANDARD"
+    },
+    {
+      "key": "mai-evening",
+      "id": "1918",
+      "movieId": "1",
+      "movieTitle": "Mai",
+      "startTime": "2026-10-20T12:30:00.000Z",
+      "localStart": "19:30",
+      "auditoriumId": "16",
+      "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
+      "screenType": "STANDARD"
+    },
+    {
+      "key": "dune-afternoon",
+      "id": "1919",
+      "movieId": "2",
+      "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
+      "startTime": "2026-10-20T07:00:00.000Z",
+      "localStart": "14:00",
+      "auditoriumId": "8",
+      "auditoriumCode": "CPX-HCM-BENNGHE-HALL-02",
+      "screenType": "IMAX"
+    },
+    {
+      "key": "dune-evening",
+      "id": "1920",
+      "movieId": "2",
+      "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
+      "startTime": "2026-10-20T13:00:00.000Z",
+      "localStart": "20:00",
+      "auditoriumId": "8",
+      "auditoriumCode": "CPX-HCM-BENNGHE-HALL-02",
+      "screenType": "IMAX"
+    }
+  ],
+  "seatsByAuditorium": {
+    "CPX-HCM-BENNGHE-HALL-01": {
+      "NORMAL": [
+        {
+          "id": "1402",
+          "seatNumber": "A1"
+        },
+        {
+          "id": "1403",
+          "seatNumber": "A2"
+        },
+        {
+          "id": "1404",
+          "seatNumber": "A3"
+        },
+        {
+          "id": "1405",
+          "seatNumber": "A4"
+        },
+        {
+          "id": "1406",
+          "seatNumber": "A5"
+        },
+        {
+          "id": "1407",
+          "seatNumber": "A6"
+        },
+        {
+          "id": "1408",
+          "seatNumber": "A7"
+        },
+        {
+          "id": "1409",
+          "seatNumber": "A8"
+        }
+      ],
+      "VIP": [
+        {
+          "id": "1438",
+          "seatNumber": "D1"
+        },
+        {
+          "id": "1439",
+          "seatNumber": "D2"
+        },
+        {
+          "id": "1440",
+          "seatNumber": "D3"
+        },
+        {
+          "id": "1441",
+          "seatNumber": "D4"
+        },
+        {
+          "id": "1442",
+          "seatNumber": "D5"
+        },
+        {
+          "id": "1443",
+          "seatNumber": "D6"
+        },
+        {
+          "id": "1444",
+          "seatNumber": "D7"
+        },
+        {
+          "id": "1445",
+          "seatNumber": "D8"
+        }
+      ],
+      "SWEETBOX": [
+        {
+          "id": "1510",
+          "seatNumber": "J1-J2"
+        },
+        {
+          "id": "1511",
+          "seatNumber": "J3-J4"
+        },
+        {
+          "id": "1512",
+          "seatNumber": "J5-J6"
+        },
+        {
+          "id": "1513",
+          "seatNumber": "J7-J8"
+        },
+        {
+          "id": "1514",
+          "seatNumber": "J9-J10"
+        },
+        {
+          "id": "1515",
+          "seatNumber": "J11-J12"
+        }
+      ]
+    },
+    "CPX-HCM-BENNGHE-HALL-02": {
+      "NORMAL": [
+        {
+          "id": "682",
+          "seatNumber": "A1"
+        },
+        {
+          "id": "683",
+          "seatNumber": "A2"
+        },
+        {
+          "id": "684",
+          "seatNumber": "A3"
+        },
+        {
+          "id": "685",
+          "seatNumber": "A4"
+        },
+        {
+          "id": "686",
+          "seatNumber": "A5"
+        },
+        {
+          "id": "687",
+          "seatNumber": "A6"
+        },
+        {
+          "id": "688",
+          "seatNumber": "A7"
+        },
+        {
+          "id": "689",
+          "seatNumber": "A8"
+        }
+      ],
+      "VIP": [
+        {
+          "id": "702",
+          "seatNumber": "C1"
+        },
+        {
+          "id": "703",
+          "seatNumber": "C2"
+        },
+        {
+          "id": "704",
+          "seatNumber": "C3"
+        },
+        {
+          "id": "705",
+          "seatNumber": "C4"
+        },
+        {
+          "id": "706",
+          "seatNumber": "C5"
+        },
+        {
+          "id": "707",
+          "seatNumber": "C6"
+        },
+        {
+          "id": "708",
+          "seatNumber": "C7"
+        },
+        {
+          "id": "709",
+          "seatNumber": "C8"
+        }
+      ],
+      "SWEETBOX": [
+        {
+          "id": "752",
+          "seatNumber": "H1-H2"
+        },
+        {
+          "id": "753",
+          "seatNumber": "H3-H4"
+        },
+        {
+          "id": "754",
+          "seatNumber": "H5-H6"
+        },
+        {
+          "id": "755",
+          "seatNumber": "H7-H8"
+        },
+        {
+          "id": "756",
+          "seatNumber": "H9-H10"
+        }
+      ]
+    }
+  },
+  "prices": {
+    "mai-morning": {
+      "NORMAL": 65000,
+      "VIP": 88000,
+      "SWEETBOX": 150000
+    },
+    "quatmo-afternoon": {
+      "NORMAL": 80000,
+      "VIP": 106000,
+      "SWEETBOX": 180000
+    },
+    "mai-evening": {
+      "NORMAL": 95000,
+      "VIP": 124000,
+      "SWEETBOX": 210000
+    },
+    "dune-afternoon": {
+      "NORMAL": 160000,
+      "VIP": 202000,
+      "SWEETBOX": 340000
+    },
+    "dune-evening": {
+      "NORMAL": 160000,
+      "VIP": 202000,
+      "SWEETBOX": 340000
+    }
+  },
+  "fnb": [
+    {
+      "id": "7",
+      "sku": "SKU-PEPSI-33OZ",
+      "name": "Nước Ngọt Coca 33oz",
+      "isActive": false
+    },
+    {
+      "id": "6",
+      "sku": "SKU-FANTA-32OZ",
+      "name": "Nước Ngọt Fanta Lớn 33oz",
+      "isActive": true
+    },
+    {
+      "id": "8",
+      "sku": "SKU-COMBO01-33OZ",
+      "name": "CAT IN THE HAT COMBO01 Ly Cat In The Hat",
+      "isActive": true
+    },
+    {
+      "id": "1",
+      "sku": "FNB-POP-SWE",
+      "name": "Bắp Rang Ngọt (Cỡ Vừa) + 1 Nước Nhỏ",
+      "isActive": true
+    },
+    {
+      "id": "2",
+      "sku": "FNB-POP-CHE",
+      "name": "Bắp Rang Phô Mai (Cỡ Vừa) + 1 Nước Nhỏ",
+      "isActive": true
+    },
+    {
+      "id": "3",
+      "sku": "FNB-DRK-COCA",
+      "name": "Coca Cola (Cỡ Lớn)",
+      "isActive": true
+    },
+    {
+      "id": "4",
+      "sku": "FNB-CBO-SOLO",
+      "name": "Combo Solo (1 Bắp + 1 Nước Lớn)",
+      "isActive": true
+    },
+    {
+      "id": "5",
+      "sku": "FNB-CBO-COUPLE",
+      "name": "Combo Couple (1 Bắp Lớn + 2 Nước)",
+      "isActive": true
+    }
+  ],
+  "promotions": [
+    {
+      "code": "EXPIRED5",
+      "discountType": "PERCENTAGE",
+      "discountValue": 5,
+      "minOrderAmount": 50000,
+      "usageLimit": 10,
+      "startDate": "2023-01-01T07:00:00.000Z",
+      "endDate": "2023-02-01T07:00:00.000Z"
+    },
+    {
+      "code": "FIXED40K",
+      "discountType": "FIXED_AMOUNT",
+      "discountValue": 50000,
+      "minOrderAmount": 200000,
+      "usageLimit": 101,
+      "startDate": "2026-09-10T07:00:00.000Z",
+      "endDate": "2026-09-21T06:59:59.000Z"
+    },
+    {
+      "code": "SALE10",
+      "discountType": "PERCENTAGE",
+      "discountValue": 10,
+      "minOrderAmount": 100000,
+      "usageLimit": 100,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    },
+    {
+      "code": "WELCOME20",
+      "discountType": "PERCENTAGE",
+      "discountValue": 20,
+      "minOrderAmount": 0,
+      "usageLimit": 500,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    },
+    {
+      "code": "BLACKFRIDAY",
+      "discountType": "PERCENTAGE",
+      "discountValue": 50,
+      "minOrderAmount": 300000,
+      "usageLimit": 50,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    },
+    {
+      "code": "MIDYEAR",
+      "discountType": "PERCENTAGE",
+      "discountValue": 15,
+      "minOrderAmount": 150000,
+      "usageLimit": null,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    },
+    {
+      "code": "REDUCE20K",
+      "discountType": "FIXED_AMOUNT",
+      "discountValue": 20000,
+      "minOrderAmount": 50000,
+      "usageLimit": 200,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    },
+    {
+      "code": "REDUCE50K",
+      "discountType": "FIXED_AMOUNT",
+      "discountValue": 50000,
+      "minOrderAmount": 200000,
+      "usageLimit": 100,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    },
+    {
+      "code": "REDUCE100K",
+      "discountType": "FIXED_AMOUNT",
+      "discountValue": 100000,
+      "minOrderAmount": 500000,
+      "usageLimit": 50,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    },
+    {
+      "code": "VIP1M",
+      "discountType": "FIXED_AMOUNT",
+      "discountValue": 1000000,
+      "minOrderAmount": 5000000,
+      "usageLimit": 5,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    },
+    {
+      "code": "FREESHIP25K",
+      "discountType": "FIXED_AMOUNT",
+      "discountValue": 25000,
+      "minOrderAmount": 99000,
+      "usageLimit": 1000,
+      "startDate": "2026-10-15T22:00:11.157Z",
+      "endDate": "2027-01-15T22:00:11.157Z"
+    }
+  ]
+}

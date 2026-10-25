@@ -16,6 +16,7 @@ import redisConfig from './config/redis.config.js';
 import mailConfig from './config/mail.config.js';
 import queueConfig from './config/queue.config.js';
 import cloudinaryConfig from './config/cloudinary.config.js';
+import paymentConfig from './config/payment.config.js';
 import { validateEnv } from './config/env.validation.js';
 
 // Hạ tầng dùng chung: Redis, EventBus, Queue, Mailer, Storage, Logger — xem core/core.module.ts
@@ -47,6 +48,7 @@ import { SalesModule } from './modules/aggregators/sales.module.js';
         queueConfig,
         mailConfig,
         cloudinaryConfig,
+        paymentConfig,
       ],
     }),
 

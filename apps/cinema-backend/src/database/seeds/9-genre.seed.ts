@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Genre } from '#modules/genres/entities/genre.entity.js'; // Bạn nhớ kiểm tra lại đường dẫn import entity này nhé
+import { Genre } from '#modules/genres/domain/entities/genre.entity.js'; // Bạn nhớ kiểm tra lại đường dẫn import entity này nhé
 
 export class GenreSeeder {
   async run(dataSource: DataSource): Promise<void> {

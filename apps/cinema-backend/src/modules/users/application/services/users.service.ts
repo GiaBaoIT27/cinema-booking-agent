@@ -1,13 +1,5 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  ConflictException,
-  UnprocessableEntityException,
-  ForbiddenException,
-  BadRequestException,
-} from '@nestjs/common';
-import { DataSource, QueryRunner } from 'typeorm';
+import { Injectable, Inject } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { USER_REPOSITORY } from '../../domain/repositories/user.repository.interface.js';
@@ -40,7 +32,10 @@ export class UsersService {
   private async findUserEntity(userId: string): Promise<User> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new BusinessException(ErrorCode.USER_NOT_FOUND, 'Không tìm thấy hồ sơ người dùng trong hệ thống.');
+      throw new BusinessException(
+        ErrorCode.USER_NOT_FOUND,
+        'Không tìm thấy hồ sơ người dùng trong hệ thống.',
+      );
     }
     return user;
   }
@@ -70,15 +65,22 @@ export class UsersService {
     const user = await this.findUserEntity(userId);
 
     if (dto.phoneNumber && dto.phoneNumber !== user.phoneNumber) {
-      const existingPhone = await this.userRepository.findByPhone(dto.phoneNumber);
+      const existingPhone = await this.userRepository.findByPhone(
+        dto.phoneNumber,
+      );
       if (existingPhone && existingPhone.id !== userId) {
-        throw new BusinessException(ErrorCode.AUTH_PHONE_ALREADY_EXISTS, 'Số điện thoại này đã được sử dụng bởi một tài khoản khác.');
+        throw new BusinessException(
+          ErrorCode.AUTH_PHONE_ALREADY_EXISTS,
+          'Số điện thoại này đã được sử dụng bởi một tài khoản khác.',
+        );
       }
     }
 
     user.fullName = dto.fullName ?? user.fullName;
     user.phoneNumber = dto.phoneNumber ?? user.phoneNumber;
-    user.dateOfBirth = dto.dateOfBirth ? new Date(dto.dateOfBirth) : user.dateOfBirth;
+    user.dateOfBirth = dto.dateOfBirth
+      ? new Date(dto.dateOfBirth)
+      : user.dateOfBirth;
 
     const updatedUser = await this.userRepository.save(user);
 
@@ -98,19 +100,8 @@ export class UsersService {
 
   // GET /api/v1/users
   async findAll(query: QueryUsersDto) {
-    // Note: To match old pagination logic nicely, we can use the repository directly if we want
-    // But since the interface returns { items, total }, we'll use that.
-    // The previous implementation used queryBuilder directly. Let's assume the repository
-    // implementation handles this.
-    // We didn't fully implement findAll with query in IUserRepository, but let's assume it does,
-    // or we can implement it using TypeORM repository in infrastructure.
-    // Since IUserRepository interface we created earlier has `findAll(query)` we can just call it.
-    
-    // Quick fix: The repository implementation might not have `findAll`, let's check its definition.
-    // Let me just fall back to standard pagination using TypeOrm if needed, but since we are bounded
-    // by DDD, we should delegate to repository.
     const result = await this.userRepository.findAll(query);
-    
+
     const formattedData = result.items.map((user: User) => ({
       id: user.id,
       fullName: user.fullName,
@@ -139,11 +130,17 @@ export class UsersService {
 
     const existingEmail = await this.userRepository.findByEmail(email);
     if (existingEmail) {
-      throw new BusinessException(ErrorCode.AUTH_EMAIL_ALREADY_EXISTS, 'Địa chỉ email này đã được đăng ký sử dụng trong hệ thống.');
+      throw new BusinessException(
+        ErrorCode.AUTH_EMAIL_ALREADY_EXISTS,
+        'Địa chỉ email này đã được đăng ký sử dụng trong hệ thống.',
+      );
     }
     const existingPhone = await this.userRepository.findByPhone(phoneNumber);
     if (existingPhone) {
-      throw new BusinessException(ErrorCode.AUTH_PHONE_ALREADY_EXISTS, 'Số điện thoại này đã được đăng ký sử dụng trong hệ thống.');
+      throw new BusinessException(
+        ErrorCode.AUTH_PHONE_ALREADY_EXISTS,
+        'Số điện thoại này đã được đăng ký sử dụng trong hệ thống.',
+      );
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -151,9 +148,14 @@ export class UsersService {
     await queryRunner.startTransaction();
 
     try {
-      const roles = await queryRunner.query("SELECT id, code FROM roles WHERE code = 'CUSTOMER'");
+      const roles = await queryRunner.query(
+        "SELECT id, code FROM roles WHERE code = 'CUSTOMER'",
+      );
       if (!roles || roles.length === 0) {
-        throw new BusinessException(ErrorCode.DEFAULT_ROLE_NOT_FOUND, 'Không tìm thấy vai trò mặc định CUSTOMER trong hệ thống.');
+        throw new BusinessException(
+          ErrorCode.DEFAULT_ROLE_NOT_FOUND,
+          'Không tìm thấy vai trò mặc định CUSTOMER trong hệ thống.',
+        );
       }
       const role = roles[0];
 
@@ -175,12 +177,20 @@ export class UsersService {
 
       await queryRunner.query(
         'INSERT INTO user_roles (user_id, role_id, cineplex_id) VALUES ($1, $2, $3)',
-        [savedUser.id, role.id, null]
+        [savedUser.id, role.id, null],
       );
 
       await queryRunner.commitTransaction();
 
-      this.eventEmitter.emit('user.registered', new UserRegisteredEvent(savedUser.id, savedUser.email, savedUser.fullName, savedUser.phoneNumber));
+      this.eventEmitter.emit(
+        'user.registered',
+        new UserRegisteredEvent(
+          savedUser.id,
+          savedUser.email,
+          savedUser.fullName,
+          savedUser.phoneNumber,
+        ),
+      );
 
       return {
         id: savedUser.id,
@@ -208,11 +218,17 @@ export class UsersService {
 
     const existingEmail = await this.userRepository.findByEmail(email);
     if (existingEmail) {
-      throw new BusinessException(ErrorCode.AUTH_EMAIL_ALREADY_EXISTS, 'Email đã tồn tại trên hệ thống.');
+      throw new BusinessException(
+        ErrorCode.AUTH_EMAIL_ALREADY_EXISTS,
+        'Email đã tồn tại trên hệ thống.',
+      );
     }
     const existingPhone = await this.userRepository.findByPhone(phoneNumber);
     if (existingPhone) {
-      throw new BusinessException(ErrorCode.AUTH_PHONE_ALREADY_EXISTS, 'Số điện thoại đã tồn tại trên hệ thống.');
+      throw new BusinessException(
+        ErrorCode.AUTH_PHONE_ALREADY_EXISTS,
+        'Số điện thoại đã tồn tại trên hệ thống.',
+      );
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -221,24 +237,29 @@ export class UsersService {
 
     try {
       // Cross-module query for Role
-      const roles = await queryRunner.query('SELECT id, code FROM roles WHERE id = $1', [roleId]);
+      const roles = await queryRunner.query(
+        'SELECT id, code FROM roles WHERE id = $1',
+        [roleId],
+      );
       if (!roles || roles.length === 0) {
-        throw new BusinessException(ErrorCode.RBAC_ROLE_NOT_FOUND, 'Vai trò phân quyền không tồn tại trong hệ thống.');
+        throw new BusinessException(
+          ErrorCode.RBAC_ROLE_NOT_FOUND,
+          'Vai trò phân quyền không tồn tại trong hệ thống.',
+        );
       }
       const role = roles[0];
 
       const internalRoleCodes = ['CINEMA_STAFF', 'CINEMA_MANAGER'];
       if (internalRoleCodes.includes(role.code) && !cineplexId) {
-        throw new BusinessException(ErrorCode.CINEPLEX_SCOPE_REQUIRED, `Mã cụm rạp (cineplexId) là bắt buộc đối với vai trò ${role.code}.`);
+        throw new BusinessException(
+          ErrorCode.CINEPLEX_SCOPE_REQUIRED,
+          `Mã cụm rạp (cineplexId) là bắt buộc đối với vai trò ${role.code}.`,
+        );
       }
 
       const costFactor = 12;
       const hashedPassword = await bcrypt.hash(password, costFactor);
 
-      // Raw insert for User (we could also use userRepo with queryRunner but repository is abstracted)
-      // Since we need to insert in transaction and our repository might not expose transaction,
-      // we'll insert user manually. But wait, `typeorm-user.repository.ts` might support `.save()`.
-      // The cleanest way is to use `queryRunner.manager.getRepository(User)`.
       const userRepo = queryRunner.manager.getRepository(User);
       const userInstance = userRepo.create({
         fullName,
@@ -254,12 +275,20 @@ export class UsersService {
       // Insert user_role raw SQL (since user_role belongs to rbac module)
       await queryRunner.query(
         'INSERT INTO user_roles (user_id, role_id, cineplex_id) VALUES ($1, $2, $3)',
-        [savedUser.id, role.id, cineplexId ? String(cineplexId) : null]
+        [savedUser.id, role.id, cineplexId ? String(cineplexId) : null],
       );
 
       await queryRunner.commitTransaction();
 
-      this.eventEmitter.emit('user.registered', new UserRegisteredEvent(savedUser.id, savedUser.email, savedUser.fullName, savedUser.phoneNumber));
+      this.eventEmitter.emit(
+        'user.registered',
+        new UserRegisteredEvent(
+          savedUser.id,
+          savedUser.email,
+          savedUser.fullName,
+          savedUser.phoneNumber,
+        ),
+      );
 
       return {
         id: savedUser.id,
@@ -286,17 +315,23 @@ export class UsersService {
   async findById(id: string): Promise<any> {
     const user = await this.userRepository.findById(id);
     if (!user) {
-      throw new BusinessException(ErrorCode.USER_NOT_FOUND, `Không tìm thấy tài khoản người dùng có mã ID: ${id} trong hệ thống.`);
+      throw new BusinessException(
+        ErrorCode.USER_NOT_FOUND,
+        `Không tìm thấy tài khoản người dùng có mã ID: ${id} trong hệ thống.`,
+      );
     }
 
     // Cross-module query for Roles and Cineplex using raw SQL to avoid coupling
-    const rawRoles = await this.dataSource.query(`
+    const rawRoles = await this.dataSource.query(
+      `
       SELECT ur.role_id, r.code AS role_code, r.name AS role_name, ur.cineplex_id, c.name AS cineplex_name
       FROM user_roles ur
       JOIN roles r ON ur.role_id = r.id
       LEFT JOIN cineplexes c ON ur.cineplex_id = c.id
       WHERE ur.user_id = $1
-    `, [id]);
+    `,
+      [id],
+    );
 
     const formattedRoles = rawRoles.map((row: any) => ({
       roleId: row.role_id,
@@ -334,17 +369,28 @@ export class UsersService {
 
     const targetUser = await this.userRepository.findById(targetUserIdStr);
     if (!targetUser) {
-      throw new BusinessException(ErrorCode.USER_NOT_FOUND, 'Tài khoản người dùng cần thay đổi quyền không tồn tại.');
+      throw new BusinessException(
+        ErrorCode.USER_NOT_FOUND,
+        'Tài khoản người dùng cần thay đổi quyền không tồn tại.',
+      );
     }
 
     // Load current roles to check hierarchy constraint
-    const currentRoles = await this.dataSource.query(`
+    const currentRoles = await this.dataSource.query(
+      `
       SELECT r.code FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = $1
-    `, [targetUserIdStr]);
-    
-    const hasSuperAdmin = currentRoles.some((r: any) => r.code === 'SUPER_ADMIN');
+    `,
+      [targetUserIdStr],
+    );
+
+    const hasSuperAdmin = currentRoles.some(
+      (r: any) => r.code === 'SUPER_ADMIN',
+    );
     if (hasSuperAdmin && caller.role !== 'SUPER_ADMIN') {
-      throw new BusinessException(ErrorCode.CANNOT_MODIFY_SUPER_ADMIN_ROLE, 'Bạn không có quyền hạ cấp hoặc thay đổi vai trò của tài khoản quản trị tối cao.');
+      throw new BusinessException(
+        ErrorCode.CANNOT_MODIFY_SUPER_ADMIN_ROLE,
+        'Bạn không có quyền hạ cấp hoặc thay đổi vai trò của tài khoản quản trị tối cao.',
+      );
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -352,21 +398,35 @@ export class UsersService {
     await queryRunner.startTransaction();
 
     try {
-      const roles = await queryRunner.query('SELECT id, code FROM roles WHERE id = $1', [roleId]);
+      const roles = await queryRunner.query(
+        'SELECT id, code FROM roles WHERE id = $1',
+        [roleId],
+      );
       if (!roles || roles.length === 0) {
-        throw new BusinessException(ErrorCode.RBAC_ROLE_NOT_FOUND, 'Vai trò mới muốn gán không tồn tại trên hệ thống.');
+        throw new BusinessException(
+          ErrorCode.RBAC_ROLE_NOT_FOUND,
+          'Vai trò mới muốn gán không tồn tại trên hệ thống.',
+        );
       }
       const newRole = roles[0];
 
-      if (['CINEMA_STAFF', 'CINEMA_MANAGER'].includes(newRole.code) && !cineplexId) {
-        throw new BusinessException(ErrorCode.CINEPLEX_SCOPE_REQUIRED, `Mã cụm rạp (cineplexId) là bắt buộc đối với vai trò nội bộ ${newRole.code}.`);
+      if (
+        ['CINEMA_STAFF', 'CINEMA_MANAGER'].includes(newRole.code) &&
+        !cineplexId
+      ) {
+        throw new BusinessException(
+          ErrorCode.CINEPLEX_SCOPE_REQUIRED,
+          `Mã cụm rạp (cineplexId) là bắt buộc đối với vai trò nội bộ ${newRole.code}.`,
+        );
       }
 
-      await queryRunner.query('DELETE FROM user_roles WHERE user_id = $1', [targetUserIdStr]);
+      await queryRunner.query('DELETE FROM user_roles WHERE user_id = $1', [
+        targetUserIdStr,
+      ]);
 
       await queryRunner.query(
         'INSERT INTO user_roles (user_id, role_id, cineplex_id) VALUES ($1, $2, $3)',
-        [targetUserIdStr, roleId, cineplexId ? String(cineplexId) : null]
+        [targetUserIdStr, roleId, cineplexId ? String(cineplexId) : null],
       );
 
       await queryRunner.commitTransaction();
@@ -396,13 +456,22 @@ export class UsersService {
     const { status, reason } = dto;
     const targetUserIdStr = String(targetUserId);
 
-    if (status === UserStatus.BLOCKED && targetUserIdStr === String(caller.userId)) {
-      throw new BusinessException(ErrorCode.CANNOT_BLOCK_SELF, 'Thao tác không hợp lệ. Hệ thống không cho phép bạn tự khóa tài khoản của chính mình.');
+    if (
+      status === UserStatus.BLOCKED &&
+      targetUserIdStr === String(caller.userId)
+    ) {
+      throw new BusinessException(
+        ErrorCode.CANNOT_BLOCK_SELF,
+        'Thao tác không hợp lệ. Hệ thống không cho phép bạn tự khóa tài khoản của chính mình.',
+      );
     }
 
     const user = await this.userRepository.findById(targetUserIdStr);
     if (!user) {
-      throw new BusinessException(ErrorCode.USER_NOT_FOUND, 'Tài khoản người dùng cần thay đổi trạng thái không tồn tại trên hệ thống.');
+      throw new BusinessException(
+        ErrorCode.USER_NOT_FOUND,
+        'Tài khoản người dùng cần thay đổi trạng thái không tồn tại trên hệ thống.',
+      );
     }
 
     user.status = status;
@@ -411,7 +480,10 @@ export class UsersService {
     let revokedSessionsCount = 0;
 
     if (status === UserStatus.BLOCKED) {
-      this.eventEmitter.emit('user.blocked', new UserBlockedEvent(user.id, reason || 'Banned by admin'));
+      this.eventEmitter.emit(
+        'user.blocked',
+        new UserBlockedEvent(user.id, reason || 'Banned by admin'),
+      );
       revokedSessionsCount = 2; // Giả lập
     }
 

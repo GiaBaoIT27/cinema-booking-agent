@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CinemasModule } from '../cinemas/cinemas.module.js';
 import { LocationsModule } from '../locations/locations.module.js';
-import { SeatTypeModule } from '../seat-types/seat-types.module.js';
+import { SeatTypesModule } from '../seat-types/seat-types.module.js';
 import { ShowtimesModule } from '../showtimes/showtimes.module.js';
 
 /**
@@ -13,6 +13,6 @@ import { ShowtimesModule } from '../showtimes/showtimes.module.js';
  * CatalogModule hay CinemaCoreModule.
  */
 @Module({
-  imports: [LocationsModule, SeatTypeModule, CinemasModule, ShowtimesModule],
+  imports: [LocationsModule, SeatTypesModule, CinemasModule, ShowtimesModule],
 })
 export class CinemaCoreModule {}

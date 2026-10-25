@@ -1,0 +1,4 @@
+{
+  "extends": "../tsconfig.json", // Kế thừa cấu hình từ file chính ngoài thư mục gốc
+  "include": ["**/*.ts"] // Quét tất cả file ts trong thư mục test này
+}

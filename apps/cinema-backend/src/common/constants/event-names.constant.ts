@@ -16,9 +16,16 @@ export const EventNames = {
   // ─── RBAC ────────────────────────────────────────────────
   RBAC_ROLE_PERMISSIONS_CHANGED: 'rbac.role.permissions_changed',
 
+  // ─── MOVIE ───────────────────────────────────────────────
+  MOVIE_CATALOG_CHANGED: 'movie.catalog.changed',
+
   // ─── SHOWTIME ────────────────────────────────────────────
   SHOWTIME_CREATED: 'showtime.created',
   SHOWTIME_CANCELLED: 'showtime.cancelled',
+
+  // ─── CINEMA (cinemas module → showtimes lắng nghe) ───────
+  CINEPLEX_DEACTIVATED: 'cinema.cineplex.deactivated',
+  AUDITORIUM_DEACTIVATED: 'cinema.auditorium.deactivated',
 
   // ─── BOOKING ─────────────────────────────────────────────
   BOOKING_SEATS_HELD: 'booking.seats.held',

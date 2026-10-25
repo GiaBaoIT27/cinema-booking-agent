@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { SeatType } from '#modules/seat-types/entities/seat-type.entity.js'; // Bạn nhớ điều chỉnh lại đường dẫn import cho đúng nhé
+import { SeatType } from '#src/modules/seat-types/domain/entities/seat-type.entity.js'; // Bạn nhớ điều chỉnh lại đường dẫn import cho đúng nhé
 
 export class SeatTypeSeeder {
   async run(dataSource: DataSource): Promise<void> {

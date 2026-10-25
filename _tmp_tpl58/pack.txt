@@ -1,0 +1,65 @@
+npm notice
+npm notice 📦  expo-template-default@58.0.26
+npm notice Tarball Contents
+npm notice 50B _vscode/extensions.json
+npm notice 152B _vscode/settings.json
+npm notice 1.1kB LICENSE
+npm notice 2.2kB README.md
+npm notice 1.1kB app.json
+npm notice 608B assets/expo.icon/Assets/expo-symbol 2.svg
+npm notice 53.7kB assets/expo.icon/Assets/grid.png
+npm notice 780B assets/expo.icon/icon.json
+npm notice 17.5kB assets/images/android-icon-background.png
+npm notice 78.8kB assets/images/android-icon-foreground.png
+npm notice 4.1kB assets/images/android-icon-monochrome.png
+npm notice 4.1kB assets/images/expo-badge-white.png
+npm notice 4.1kB assets/images/expo-badge.png
+npm notice 3.3kB assets/images/expo-logo.png
+npm notice 1.1kB assets/images/favicon.png
+npm notice 799.0kB assets/images/icon.png
+npm notice 331.6kB assets/images/logo-glow.png
+npm notice 6.3kB assets/images/react-logo.png
+npm notice 14.2kB assets/images/react-logo@2x.png
+npm notice 21.3kB assets/images/react-logo@3x.png
+npm notice 3.3kB assets/images/splash-icon.png
+npm notice 215B assets/images/tabIcons/explore.png
+npm notice 347B assets/images/tabIcons/explore@2x.png
+npm notice 468B assets/images/tabIcons/explore@3x.png
+npm notice 253B assets/images/tabIcons/home.png
+npm notice 343B assets/images/tabIcons/home@2x.png
+npm notice 479B assets/images/tabIcons/home@3x.png
+npm notice 59.0kB assets/images/tutorial-web.png
+npm notice 449B gitignore
+npm notice 1.4kB package.json
+npm notice 4.8kB scripts/reset-project.js
+npm notice 567B src/app/_layout.tsx
+npm notice 6.5kB src/app/explore.tsx
+npm notice 2.8kB src/app/index.tsx
+npm notice 143B src/components/animated-icon.module.css
+npm notice 3.4kB src/components/animated-icon.tsx
+npm notice 2.4kB src/components/animated-icon.web.tsx
+npm notice 1.0kB src/components/app-tabs.tsx
+npm notice 3.1kB src/components/app-tabs.web.tsx
+npm notice 794B src/components/external-link.tsx
+npm notice 900B src/components/hint-row.tsx
+npm notice 1.3kB src/components/themed-text.tsx
+npm notice 496B src/components/themed-view.tsx
+npm notice 1.9kB src/components/ui/collapsible.tsx
+npm notice 1.0kB src/components/web-badge.tsx
+npm notice 1.6kB src/constants/theme.ts
+npm notice 429B src/global.css
+npm notice 47B src/hooks/use-color-scheme.ts
+npm notice 480B src/hooks/use-color-scheme.web.ts
+npm notice 347B src/hooks/use-theme.ts
+npm notice 298B tsconfig.json
+npm notice Tarball Details
+npm notice name: expo-template-default
+npm notice version: 58.0.26
+npm notice filename: expo-template-default-58.0.26.tgz
+npm notice package size: 1.4 MB
+npm notice unpacked size: 1.4 MB
+npm notice shasum: c0eda140581667170b3db8fc48b4ab130c1c44ff
+npm notice integrity: sha512-f48fFUrkb/L3z[...]6Jd9/7MLO1rTw==
+npm notice total files: 51
+npm notice
+expo-template-default-58.0.26.tgz

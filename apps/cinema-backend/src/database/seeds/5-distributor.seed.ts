@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
-import { Distributor } from '#modules/distributors/entities/distributor.entity.js'; // Điều chỉnh lại đường dẫn cho đúng entity của bạn
-import { DistributorStatus } from '#modules/distributors/enums/distributor-status.enum.js';
+import { Distributor } from '#modules/distributors/domain/entities/distributor.entity.js'; // Điều chỉnh lại đường dẫn cho đúng entity của bạn
+import { DistributorStatus } from '#modules/distributors/domain/enums/distributor-status.enum.js';
 
 export class DistributorSeeder {
   async run(dataSource: DataSource): Promise<void> {

@@ -1,8 +1,9 @@
 import { DataSource } from 'typeorm';
-import { Auditorium } from '#modules/cinemas/entities/auditorium.entity.js';
-import { Cineplex } from '#modules/cinemas/entities/cineplex.entity.js';
-import { AuditoriumStatus } from '#modules/cinemas/enums/auditorium-status.enum.js';
-import { ScreenType } from '#modules/cinemas/enums/screen-type.enum.js';
+import { Auditorium } from '#modules/cinemas/domain/entities/auditorium.entity.js';
+import { Cineplex } from '#modules/cinemas/domain/entities/cineplex.entity.js';
+import { AuditoriumStatus } from '#modules/cinemas/domain/enums/auditorium-status.enum.js';
+import { ScreenType } from '#modules/cinemas/domain/enums/screen-type.enum.js';
+import { AudioType } from '#modules/cinemas/domain/enums/audio-type.enum.js';
 
 export class AuditoriumSeeder {
   async run(dataSource: DataSource): Promise<void> {
@@ -28,7 +29,7 @@ export class AuditoriumSeeder {
           code: `${cineplex.code}-HALL-01`,
           name: 'Phòng 01 - Standard Surround',
           screenType: ScreenType.STANDARD || 'STANDARD',
-          audioType: '7.1_SURROUND',
+          audioType: AudioType.SURROUND_7_1 || '7.1_SURROUND',
           totalSeats: 120,
           status: AuditoriumStatus.ACTIVE || 'ACTIVE',
           cineplexId: cineplex.id,
@@ -46,7 +47,7 @@ export class AuditoriumSeeder {
             cineplex.code.includes('PHUCXA')
               ? ScreenType.IMAX || 'IMAX'
               : ScreenType.DX || '4DX',
-          audioType: 'DOLBY_ATMOS',
+          audioType: AudioType.DOLBY_ATMOS || 'DOLBY_ATMOS',
           totalSeats: 80,
           status: AuditoriumStatus.ACTIVE || 'ACTIVE',
           cineplexId: cineplex.id,

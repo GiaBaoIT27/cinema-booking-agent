@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { Seat } from '#modules/cinemas/entities/seat.entity.js'; // Điều chỉnh đường dẫn theo dự án của bạn
-import { Auditorium } from '#modules/cinemas/entities/auditorium.entity.js';
-import { SeatType } from '#modules/seat-types/entities/seat-type.entity.js';
-import { SeatStatus } from '#modules/cinemas/enums/seat-status.enum.js';
+import { Seat } from '#modules/cinemas/domain/entities/seat.entity.js'; // Điều chỉnh đường dẫn theo dự án của bạn
+import { Auditorium } from '#modules/cinemas/domain/entities/auditorium.entity.js';
+import { SeatType } from '#src/modules/seat-types/domain/entities/seat-type.entity.js';
+import { SeatStatus } from '#modules/cinemas/domain/enums/seat-status.enum.js';
 
 export class SeatSeeder {
   async run(dataSource: DataSource): Promise<void> {

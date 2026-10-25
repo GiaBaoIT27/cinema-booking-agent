@@ -11,8 +11,8 @@ import {
   OneToMany,
 } from 'typeorm';
 import type { Relation } from 'typeorm';
-import { Auditorium } from '#modules/cinemas/entities/auditorium.entity.js';
-import { Movie } from '#modules/movies/entities/movie.entity.js';
+import type { Auditorium } from '#modules/cinemas/domain/entities/auditorium.entity.js';
+import type { Movie } from '#modules/movies/domain/entities/movie.entity.js';
 import { ShowtimeSeat } from './showtime-seat.entity.js';
 import { PriceRule } from './price-rules.entity.js';
 import { ProjectionType } from '../enums/projection-type.enum.js';
@@ -120,11 +120,11 @@ export class Showtime {
   updatedAt: Date;
 
   // Mối quan hệ Khóa ngoại
-  @ManyToOne(() => Auditorium, { onDelete: 'RESTRICT' })
+  @ManyToOne('Auditorium', { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'auditorium_id' })
   auditorium: Relation<Auditorium>;
 
-  @ManyToOne(() => Movie, { onDelete: 'RESTRICT' })
+  @ManyToOne('Movie', { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'movie_id' })
   movie: Relation<Movie>;
 

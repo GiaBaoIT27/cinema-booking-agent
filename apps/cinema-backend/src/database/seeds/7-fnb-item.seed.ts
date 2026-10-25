@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
-import { FnbItem } from '#modules/fnb/entities/fnb-item.entities.js'; // Bạn nhớ kiểm tra lại đường dẫn import entity này nhé
-import { FnbItemType } from '#modules/fnb/enums/fnb-item-type.enum.js';
-import { FnbCategory } from '#modules/fnb/enums/fnb-category.enum.js';
+import { FnbItem } from '#modules/fnb/domain/entities/fnb-item.entities.js';
+import { FnbItemType } from '#modules/fnb/domain/enums/fnb-item-type.enum.js';
+import { FnbCategory } from '#modules/fnb/domain/enums/fnb-category.enum.js';
 
 export class FnbItemSeeder {
   async run(dataSource: DataSource): Promise<void> {
@@ -12,24 +12,26 @@ export class FnbItemSeeder {
       {
         id: '1',
         sku: 'FNB-POP-SWE',
-        name: 'Bắp Rang Ngọt (Cỡ Vừa)',
+        name: 'Bắp Rang Ngọt (Cỡ Vừa) + 1 Nước Nhỏ',
         type: FnbItemType.SINGLE || 'SINGLE',
         category: FnbCategory.POPCORN || 'POPCORN',
         unit: 'HỘP',
         basePrice: 45000.0,
-        imageUrl: 'https://example.com',
+        imageUrl:
+          'https://res.cloudinary.com/verolisd/image/upload/v1791567949/cinema/fnb/ijtwhezvyrnwledg36b4.png',
         description: 'Bắp rang bơ vị ngọt truyền thống thơm lừng, giòn rụm.',
         isActive: true,
       },
       {
         id: '2',
         sku: 'FNB-POP-CHE',
-        name: 'Bắp Rang Phô Mai (Cỡ Vừa)',
+        name: 'Bắp Rang Phô Mai (Cỡ Vừa) + 1 Nước Nhỏ',
         type: FnbItemType.SINGLE || 'SINGLE',
         category: FnbCategory.POPCORN || 'POPCORN',
         unit: 'HỘP',
         basePrice: 55000.0,
-        imageUrl: 'https://example.com',
+        imageUrl:
+          'https://res.cloudinary.com/verolisd/image/upload/v1791567949/cinema/fnb/ijtwhezvyrnwledg36b4.png',
         description: 'Bắp rang lắc bột phô mai nhập khẩu đậm đà.',
         isActive: true,
       },
@@ -41,19 +43,21 @@ export class FnbItemSeeder {
         category: FnbCategory.BEVERAGE || 'BEVERAGE',
         unit: 'LY',
         basePrice: 35000.0,
-        imageUrl: 'https://example.com',
+        imageUrl:
+          'https://res.cloudinary.com/verolisd/image/upload/v1791567763/cinema/fnb/afrrmnq8k3irgcfut6td.png',
         description: 'Nước ngọt có ga Coca Cola mát lạnh sảng khoái.',
         isActive: true,
       },
       {
         id: '4',
         sku: 'FNB-CBO-SOLO',
-        name: 'Combo Solo (1 Bắp + 1 Nước)',
+        name: 'Combo Solo (1 Bắp + 1 Nước Lớn)',
         type: FnbItemType.COMBO || 'COMBO',
         category: FnbCategory.COMBO || 'COMBO',
         unit: 'PHẦN',
         basePrice: 75000.0,
-        imageUrl: 'https://example.com',
+        imageUrl:
+          'https://res.cloudinary.com/verolisd/image/upload/v1791567479/cinema/fnb/vaj4edvccbmrzi4rpg3b.png',
         description:
           'Phần ăn tiết kiệm dành cho 1 người gồm: 1 bắp ngọt vừa và 1 ly nước tùy chọn.',
         isActive: true,
@@ -66,7 +70,8 @@ export class FnbItemSeeder {
         category: FnbCategory.COMBO || 'COMBO',
         unit: 'PHẦN',
         basePrice: 109000.0,
-        imageUrl: 'https://example.com',
+        imageUrl:
+          'https://res.cloudinary.com/verolisd/image/upload/v1791568034/cinema/fnb/cszht4lozxzz99fgqvjj.png',
         description:
           'Combo hoàn hảo cho cặp đôi gồm: 1 bắp lớn tùy chọn vị và 2 ly nước ngọt lớn.',
         isActive: true,

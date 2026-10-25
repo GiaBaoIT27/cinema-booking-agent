@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { Showtime } from '#modules/showtimes/domain/entities/showtime.entity.js';
-import { SeatType } from '#modules/seat-types/entities/seat-type.entity.js';
+import { SeatType } from '#src/modules/seat-types/domain/entities/seat-type.entity.js';
 import { PriceRule } from '#modules/showtimes/domain/entities/price-rules.entity.js';
 import { ShowtimeSeatPrice } from '#modules/showtimes/domain/entities/showtime-seat-price.entity.js';
 import { DayType } from '#src/modules/showtimes/domain/enums/day-type.enum.js';
@@ -77,7 +77,7 @@ export class ShowtimeSeatPriceSeeder {
       const currentSeatTypes = new Map<string, SeatType>();
       for (const seat of showtime.auditorium?.seats ?? []) {
         if (seat.seatType && !currentSeatTypes.has(String(seat.seatTypeId))) {
-          currentSeatTypes.set(String(seat.seatTypeId), seat.seatType);
+          currentSeatTypes.set(String(seat.seatTypeId), seat.seatType as SeatType);
         }
       }
 

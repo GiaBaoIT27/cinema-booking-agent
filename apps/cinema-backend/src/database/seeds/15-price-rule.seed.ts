@@ -1,6 +1,6 @@
 import { DataSource, IsNull } from 'typeorm';
 import { PriceRule } from '#modules/showtimes/domain/entities/price-rules.entity.js'; // Điều chỉnh đường dẫn theo dự án của bạn
-import { Cineplex } from '#modules/cinemas/entities/cineplex.entity.js';
+import { Cineplex } from '#modules/cinemas/domain/entities/cineplex.entity.js';
 import { ProjectionType } from '#src/modules/showtimes/domain/enums/projection-type.enum.js';
 import { DayType } from '#src/modules/showtimes/domain/enums/day-type.enum.js'; // Điều chỉnh đường dẫn enum DayType của bạn
 
