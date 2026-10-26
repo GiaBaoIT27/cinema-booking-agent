@@ -15,6 +15,7 @@ import { orderService } from "@/features/orders/services/order.service";
 import { PAYMENT_RETURN_URL } from "@/features/payments/config";
 import { paymentService } from "@/features/payments/services/payment.service";
 import { openPaymentPage } from "@/features/payments/utils/open-payment";
+import { useSeatLabels } from "@/features/seats/hooks/use-seat-labels";
 import { useBookingStore } from "@/store/booking.store";
 import { Button } from "@/shared/ui/button";
 import { ErrorView, LoadingView } from "@/shared/ui/state-views";
@@ -24,7 +25,13 @@ const formatVnd = (n: number) => `${Number(n).toLocaleString("vi-VN")} đ`;
 
 export default function BookingResultScreen() {
   const router = useRouter();
-  const { orderId: param } = useLocalSearchParams<{ orderId: string }>();
+  const { orderId: param, source } = useLocalSearchParams<{
+    orderId: string;
+    source?: string;
+  }>();
+  // Mở từ danh sách "Vé của tôi": cho phép quay lại, không dọn giỏ đặt vé.
+  const fromList = source === "orders";
+  const homeLabel = fromList ? "Quay lại" : "Về trang chủ";
   const orderId = Number(param);
 
   const {
@@ -41,6 +48,8 @@ export default function BookingResultScreen() {
   const [activeTicket, setActiveTicket] = useState(0);
 
   const status = order?.status;
+  // Chi tiết đơn chỉ có seatId: tra nhãn ghế từ sơ đồ ghế của suất chiếu (nếu còn lấy được).
+  const { data: seatLabelMap } = useSeatLabels(order?.showtimeId);
 
   // Đơn đã ngã ngũ (không còn chờ thanh toán): bỏ bản lưu tạm.
   useEffect(() => {
@@ -49,6 +58,10 @@ export default function BookingResultScreen() {
   }, [status]);
 
   const goHome = () => {
+    if (fromList) {
+      router.back();
+      return;
+    }
     useBookingStore.getState().resetBooking();
     router.dismissAll();
     router.replace("/(tabs)");
@@ -104,8 +117,8 @@ export default function BookingResultScreen() {
     <Stack.Screen
       options={{
         title: "Kết quả đặt vé",
-        headerBackVisible: false,
-        gestureEnabled: false,
+        headerBackVisible: fromList,
+        gestureEnabled: fromList,
       }}
     />
   );
@@ -124,7 +137,7 @@ export default function BookingResultScreen() {
         {header}
         <ErrorView message={error.message} onRetry={() => refetch()} />
         <Button
-          title="Về trang chủ"
+          title={homeLabel}
           variant="outline"
           onPress={goHome}
           style={styles.homeBtn}
@@ -134,7 +147,7 @@ export default function BookingResultScreen() {
   }
 
   const labels =
-    pendingOrder?.orderId === orderId ? pendingOrder.seatLabels : undefined;
+    pendingOrder?.orderId === orderId ? pendingOrder.seatLabels : seatLabelMap;
   const orderExpired = new Date(order.expiresAt).getTime() <= Date.now();
 
   if (order.status === "PAID") {
@@ -195,7 +208,7 @@ export default function BookingResultScreen() {
           Đưa mã QR này cho nhân viên tại rạp để vào phòng chiếu.
         </Text>
 
-        <Button title="Về trang chủ" onPress={goHome} />
+        <Button title={homeLabel} onPress={goHome} />
       </ScrollView>
     );
   }
@@ -243,7 +256,7 @@ export default function BookingResultScreen() {
             disabled={busy}
           />
         ) : null}
-        <Button title="Về trang chủ" variant="outline" onPress={goHome} />
+        <Button title={homeLabel} variant="outline" onPress={goHome} />
       </ScrollView>
     );
   }
@@ -268,7 +281,7 @@ export default function BookingResultScreen() {
         {"\n"}
         {failText[order.status] ?? `Trạng thái: ${order.status}`}
       </Text>
-      <Button title="Về trang chủ" onPress={goHome} />
+      <Button title={homeLabel} onPress={goHome} />
     </ScrollView>
   );
 }

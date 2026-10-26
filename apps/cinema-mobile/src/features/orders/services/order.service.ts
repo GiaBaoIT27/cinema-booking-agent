@@ -26,4 +26,7 @@ export const orderService = {
   },
 };
 
-export type OrderApi = Pick<typeof orderService, "createOrder" | "getOrder" | "cancelOrder" | "getMyOrders">;
+export type OrderApi = Pick<
+  typeof orderService,
+  "createOrder" | "getOrder" | "cancelOrder" | "getMyOrders"
+>;
