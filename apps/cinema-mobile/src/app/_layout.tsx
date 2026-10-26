@@ -36,6 +36,7 @@ export default function RootLayout() {
           name="booking/[showtimeId]"
           options={{ title: "Đặt vé" }}
         />
+        <Stack.Screen name="agent" options={{ title: "Trợ lý AI" }} />
       </Stack>
     </QueryClientProvider>
   );
