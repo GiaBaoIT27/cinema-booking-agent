@@ -18,19 +18,49 @@ interface Props {
   onSelectShowtime?: (showtime: CineplexShowtimeItem) => void;
 }
 
+interface RawFlatShowtime {
+  id?: number | string;
+  showtimeId?: number | string;
+  auditoriumId?: number;
+  roomName?: string;
+  auditoriumName?: string;
+  projectionType?: string;
+  startTime: string;
+  endTime?: string;
+  status?: string;
+  movie?: {
+    id: number | string;
+    title?: string;
+    posterUrl?: string | null;
+  };
+}
+
+interface RawGroupedShowtime {
+  movieId: number | string;
+  movieTitle?: string;
+  posterUrl?: string | null;
+  durationMinutes?: number;
+  ageRating?: string | null;
+  showtimes: CineplexShowtimeItem[];
+}
+
 function normalizeGroups(raw: unknown): CineplexMovieShowtimeGroup[] {
   if (!Array.isArray(raw)) return [];
 
   const groups: CineplexMovieShowtimeGroup[] = [];
 
   for (const item of raw) {
-    if (!item) continue;
+    if (!item || typeof item !== "object") continue;
 
     // Trường hợp 1: Backend trả về group sẵn: { movieId, movieTitle, posterUrl, showtimes: [...] }
-    if ("movieId" in item && Array.isArray((item as any).showtimes)) {
-      const g = item as CineplexMovieShowtimeGroup;
+    if (
+      "movieId" in item &&
+      "showtimes" in item &&
+      Array.isArray((item as RawGroupedShowtime).showtimes)
+    ) {
+      const g = item as RawGroupedShowtime;
       groups.push({
-        movieId: g.movieId,
+        movieId: Number(g.movieId) || 0,
         movieTitle: g.movieTitle || "Phim chưa đặt tên",
         posterUrl: g.posterUrl ?? null,
         durationMinutes: g.durationMinutes || 0,
@@ -43,25 +73,26 @@ function normalizeGroups(raw: unknown): CineplexMovieShowtimeGroup[] {
     }
 
     // Trường hợp 2: Flat item với s.movie: { movie: { id, title }, startTime }
-    if ((item as any).movie && typeof (item as any).movie === "object") {
-      const m = (item as any).movie;
-      const existing = groups.find((g) => g.movieId === m.id);
+    const flat = item as RawFlatShowtime;
+    if (flat.movie && typeof flat.movie === "object") {
+      const m = flat.movie;
+      const movieIdNum = Number(m.id) || 0;
+      const existing = groups.find((g) => g.movieId === movieIdNum);
       const showtimeItem: CineplexShowtimeItem = {
-        showtimeId: (item as any).id || (item as any).showtimeId,
-        auditoriumId: (item as any).auditoriumId || 0,
-        auditoriumName:
-          (item as any).roomName || (item as any).auditoriumName || "",
-        projectionType: (item as any).projectionType,
-        startTime: (item as any).startTime,
-        endTime: (item as any).endTime || (item as any).startTime,
-        status: (item as any).status,
+        showtimeId: Number(flat.id || flat.showtimeId) || 0,
+        auditoriumId: Number(flat.auditoriumId) || 0,
+        auditoriumName: flat.roomName || flat.auditoriumName || "",
+        projectionType: flat.projectionType,
+        startTime: flat.startTime,
+        endTime: flat.endTime || flat.startTime,
+        status: flat.status,
       };
 
       if (existing) {
         existing.showtimes.push(showtimeItem);
       } else {
         groups.push({
-          movieId: m.id,
+          movieId: movieIdNum,
           movieTitle: m.title || "",
           posterUrl: m.posterUrl ?? null,
           durationMinutes: 0,

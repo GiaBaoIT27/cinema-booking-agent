@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LogOut, User as UserIcon, Search } from "lucide-react";
 import { useAuthStore } from "@/stores/use-auth-store";
+import { useMounted } from "@/hooks/use-mounted";
 
 export function HeaderActions() {
   const { user, isAuthenticated, logout, initAuth } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     initAuth();
-    setMounted(true);
   }, [initAuth]);
 
   return (

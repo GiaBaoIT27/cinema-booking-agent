@@ -33,7 +33,7 @@ export function RegisterForm() {
     try {
       // TODO: Gọi API Đăng ký tại đây
       console.log("Register Payload:", data);
-    } catch (error) {
+    } catch {
       // Handle error
     }
   };
@@ -207,3 +207,4 @@ export function RegisterForm() {
     </form>
   );
 }
+
