@@ -40,11 +40,19 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
+        options={{ title: "Trang chủ", tabBarIcon: icon("home-outline") }}
+      />
+      <Tabs.Screen
+        name="movies"
         options={{ title: "Phim", tabBarIcon: icon("film-outline") }}
       />
       <Tabs.Screen
         name="cineplexes"
         options={{ title: "Rạp", tabBarIcon: icon("location-outline") }}
+      />
+      <Tabs.Screen
+        name="tickets"
+        options={{ title: "Vé của tôi", tabBarIcon: icon("ticket-outline") }}
       />
       <Tabs.Screen
         name="account"
