@@ -5,6 +5,7 @@ import { MailerModule } from './mailer/mailer.module.js';
 import { QueueModule } from './queue/queue.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { StorageModule } from './storage/storage.module.js';
+import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { StorageModule } from './storage/storage.module.js';
     QueueModule,
     MailerModule,
     StorageModule,
+    HealthModule,
   ],
 })
 export class CoreModule {}
