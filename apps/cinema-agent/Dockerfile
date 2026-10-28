@@ -3,7 +3,7 @@
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
@@ -11,7 +11,7 @@ RUN npm run build
 FROM node:24-bookworm-slim AS runner
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 
 EXPOSE 3002

@@ -26,7 +26,8 @@ export default function GlobalErrorPage({
       </h1>
 
       <p className="mt-2 max-w-md text-sm text-[#9CA3AF] leading-relaxed">
-        Hệ thống không thể tải dữ liệu trang này. Xin lỗi vì sự bất tiện này, bạn có thể thử tải lại hoặc quay về trang chủ.
+        Hệ thống không thể tải dữ liệu trang này. Xin lỗi vì sự bất tiện này,
+        bạn có thể thử tải lại hoặc quay về trang chủ.
       </p>
 
       {error.digest && (
@@ -56,4 +57,3 @@ export default function GlobalErrorPage({
     </div>
   );
 }
-
