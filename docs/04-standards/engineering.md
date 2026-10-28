@@ -1,39 +1,53 @@
-# Engineering Standards
+# 04 — Standards: Engineering Standards
 
-Status: technical constraints observed in source, with proposed development practices for team review. New conventions below are not recorded as jointly approved.
+Tài liệu này quy định các tiêu chuẩn kỹ thuật, kiến trúc mã nguồn và quy ước làm việc áp dụng cho toàn bộ monorepo **Cinema Booking Agent**.
 
-## Boundaries
+---
 
-- Preserve existing controller/DTO/response contracts unless a scoped task changes them.
-- Aggregators MUST remain application composition modules. Feature-to-feature dependencies MUST NOT be routed through an aggregator.
-- Use existing exported module contracts/facades when available. Follow the target module's actual layout; do not invent facades or normalize unrelated modules.
-- Backend TypeScript internal imports MUST preserve the `.js` suffix required by its ESM/NodeNext configuration. Existing aliases are `#src/*` and `#modules/*`.
+## 🏛️ Ranh Giới Kiến Trúc (Architectural Boundaries)
 
-## API and data
+1. **Domain-Driven Design (DDD) trong Backend:**
+   - **Tầng Domain:** Là trung tâm của nghiệp vụ, tuyệt đối độc lập và không phụ thuộc vào framework, ORM (TypeORM) hay hạ tầng ngoài.
+   - **Giao tiếp liên-module:** Nghiêm cấm import repository hoặc entity trực tiếp giữa các module khác nhau. Mọi tương tác phải đi qua **Facade Interface** đã được công khai trong module mục tiêu.
+   - **ESM NodeNext Imports:** Các file TypeScript trong backend tuân thủ quy chuẩn NodeNext (sử dụng hậu tố `.js` trong đường dẫn import tương đối).
 
-- Preserve global authentication/permission enforcement. Public routes require explicit metadata and review.
-- Preserve the existing response envelope and 422 validation behavior. Do not double-wrap success responses.
-- Client and AI code MUST NOT fabricate server holds, successful payments or valid tickets.
-- Seat geometry and availability MUST be driven by auditorium/showtime data, not a fixed Figma grid.
-- Account for Redis and database state together when changing booking/order/payment behavior.
-- Entity changes require inspection of consumers, seeds and synchronization/migration impact before execution against a database.
+2. **Feature-Driven Architecture trong Frontend:**
+   - Nhóm các component, hook, service và type liên quan chặt chẽ theo từng tính năng trong `features/<feature-name>`.
+   - Tránh việc đặt toàn bộ component vào thư mục chung `components/` gây khó khăn khi scale ứng dụng.
 
-## UI implementation
+---
 
-These frontend practices are proposals based on the design. Confirm them in the relevant team specification before treating them as requirements.
+## 🔒 Quy Chuẩn Dữ Liệu & Concurrency
 
-- Theme and locale are independent concerns. Avoid four copies of page code for Light/Dark × VI/EN.
-- Use Figma assets and token semantics for visual fidelity; adapt reference code to the project's chosen component/layout system.
-- Loading, empty, disabled, validation and recovery states belong in the slice that needs them.
-- Communicate important seat/payment states with text or markers as well as color; preserve keyboard and focus behavior.
-- Establish responsive behavior in the slice specification; do not silently claim responsive parity from a desktop screenshot.
+1. **Nhất quán trạng thái ghế (Seat Hold Consistency):**
+   - Không tin cậy trạng thái ghế từ phía Client gửi lên. Mọi thao tác giữ ghế đều phải kiểm tra và khóa thông qua **Redlock** trên Redis.
+   - Trạng thái đơn hàng trong PostgreSQL và khóa giữ ghế trong Redis phải luôn được đồng bộ hóa vòng đời.
+2. **Xác thực dữ liệu (Strict Validation):**
+   - Tất cả request body gửi vào API đều phải được định nghĩa bằng DTO kèm các decorator kiểm tra của `class-validator`.
+   - Sử dụng `Zod` schema ở cả Frontend Web và Mobile để đảm bảo type-safety từ phía Client trước khi gửi request.
 
-## Verification and documentation
+---
 
-The following practices are proposed for team review.
+## 📝 Quy Ước Commit (Conventional Commits)
 
-- Behavior changes need verification of observable behavior. Prefer focused regression/contract tests for transactional and auth changes; visual checks cover layout.
-- A test runner finding no tests is not passing behavior verification.
-- Report the actual cwd, command, result and unverified conditions. A successful docs checker does not prove that an application builds or runs.
-- Update the canonical owner of changed durable knowledge; link to it instead of duplicating it.
-- Secrets and customer data MUST NOT appear in tracked examples, logs or documentation.
+Toàn bộ lịch sử commit của dự án tuân theo chuẩn **Conventional Commits**:
+
+| Tiền tố | Mục đích sử dụng | Ví dụ |
+| :--- | :--- | :--- |
+| `feat:` | Thêm tính năng mới | `feat(backend): add typeorm cli datasource and health check` |
+| `fix:` | Sửa lỗi hệ thống | `fix(frontend): resolve react 19 cascading renders` |
+| `test:` | Thêm mới hoặc cập nhật unit tests | `test(backend): add vitest test suite covering domain rules` |
+| `docs:` | Cập nhật tài liệu hoặc README | `docs(root): rewrite professional portfolio showcase readme` |
+| `refactor:` | Tái cấu trúc mã nguồn (không đổi hành vi) | `refactor(mobile): restructure expo router stack navigation` |
+| `chore:` | Cập nhật config, dependencies, tooling | `chore(docker): update dockerfile to resilient npm install` |
+
+---
+
+## 🧪 Quy Chuẩn Kiểm Thử (Testing & Quality Control)
+
+1. **Backend Unit Testing (Vitest):**
+   - Mọi quy tắc nghiệp vụ trong `domain/rules/` và các service quan trọng (`payments.service.ts`, `seat-reservations.service.ts`) bắt buộc phải có unit test bao phủ.
+   - Mục tiêu: 100% test pass trước khi tạo Pull Request vào nhánh `main`.
+2. **Frontend Quality Check:**
+   - Đảm bảo **0 ESLint errors/warnings** khi chạy `npm run lint`.
+   - Đảm bảo **0 TypeScript errors** khi chạy `npx tsc --noEmit`.

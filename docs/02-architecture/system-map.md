@@ -1,44 +1,107 @@
-# System Map
+# 02 — Architecture: System Map
 
-Verified against source on 2026-10-01. Runtime operation has not been verified in this checkout.
+Tài liệu này mô tả chi tiết kiến trúc tổng thể, ranh giới các thành phần dịch vụ và luồng dữ liệu của hệ sinh thái **Cinema Booking Agent**.
 
-## Application boundaries
+---
 
-The repository uses app directory boundaries, with npm dependencies managed per initialized app. It has no root workspace package configuration. Only the backend is initialized. The frontend direction is recorded in [ADR 0001](../06-decisions/0001-nextjs-typescript-frontend.md).
+## 🏛️ Sơ Đồ Kiến Trúc Toàn Hệ Thống
 
-## Backend composition
+```mermaid
+graph TD
+    subgraph Clients["Lớp Khách Hàng (Client Tier)"]
+        Web["🌐 Next.js 16 Web Client<br/>(React 19, Tailwind, TanStack Query)<br/>Port 3001"]
+        Mobile["📱 Expo / React Native App<br/>(iOS & Android, Expo Router v3)"]
+    end
 
-Read `apps/cinema-backend/src/main.ts` for HTTP setup, then `src/app.module.ts` for application wiring.
+    subgraph Intelligence["Lớp Trí Tuệ Nhân Tạo (AI Tier)"]
+        Agent["🤖 LangGraph AI Agent<br/>(Google Gemini, SSE Streaming)<br/>Port 3002"]
+    end
 
-| Composition module | Owns |
-| --- | --- |
-| `src/core/core.module.ts` | Event bus, logger, Redis, queue, mailer and storage infrastructure |
-| `modules/aggregators/identity.module.ts` | Users, RBAC, Auth |
-| `modules/aggregators/catalog.module.ts` | Genres, Distributors, Movies |
-| `modules/aggregators/cinema-core.module.ts` | Locations, Seat Types, Cinemas, Showtimes |
-| `modules/aggregators/sales.module.ts` | F&B, Promotions, Bookings, Orders, Payments, Notifications |
+    subgraph CoreBackend["Lớp Backend Cốt Lõi (NestJS DDD Tier)"]
+        Backend["⚡ NestJS Core Application (Port 3000)<br/>Domain-Driven Design (4 Layers)"]
+        
+        subgraph Domains["Các Phân Vùng Nghiệp Vụ (DDD Modules)"]
+            AuthMod["Identity & RBAC<br/>(JWT, Passport, Roles)"]
+            MovieMod["Catalog & Movies<br/>(Films, Genres, Casts)"]
+            ShowtimeMod["Cinema & Showtimes<br/>(Halls, Seat Matrices)"]
+            BookingMod["Bookings & Holds<br/>(Redlock, BullMQ)"]
+            PaymentMod["Payments & Gateways<br/>(VNPay IPN, Idempotency)"]
+            HealthMod["Health & Observability<br/>(Postgres, Redis Metrics)"]
+        end
+    end
 
-Aggregators assemble feature modules for the application. They do not re-export those modules for cross-feature dependency access.
+    subgraph Infrastructure["Lớp Dữ Liệu & Hạ Tầng (Infra Tier)"]
+        DB[("🐘 PostgreSQL 16<br/>(Relational Storage)")]
+        RedisCore[("🔴 Redis 7<br/>Cache + Redlock + BullMQ Queue")]
+        RedisUI["🖥️ RedisInsight Dashboard<br/>Port 5540"]
+        Cloudinary["☁️ Cloudinary Storage<br/>(Posters, Backdrops)"]
+    end
 
-## Navigation within a feature
+    Web -->|REST API v1| Backend
+    Mobile -->|REST API v1| Backend
+    Web -->|SSE Stream /chat| Agent
+    Mobile -->|SSE Stream /chat| Agent
+    
+    Agent -->|Tool Calling via Internal HTTP| Backend
+    
+    Backend --> DB
+    Backend --> RedisCore
+    Backend --> Cloudinary
+    RedisUI --> RedisCore
+```
 
-Follow module registration → controller → DTO → service/use case → entity/repository. Inspect actual imports before describing dependencies.
+---
 
-- Auth and Showtimes use layered application/domain/infrastructure/presentation directories and `public/` entrypoints.
-- Users and RBAC expose `public-api/` entrypoints.
-- Several other modules retain flat or controller/service/entity layouts.
-- Reuse existing public facade contracts when present. Comments mentioning a facade are not proof that it exists.
-- `src/config/` owns configuration. `src/common/` owns cross-cutting HTTP concerns. `src/core/` owns infrastructure.
-- `src/database/seeds/` owns seed scripts; seeding bootstraps application modules and changes database contents.
+## 🧩 Cấu Trúc Các Ứng Dụng (Application Boundaries)
 
-Do not force every module into a new directory pattern as part of a feature implementation.
+### 1. `apps/cinema-backend` (NestJS 11 + DDD)
+Tổ chức theo mô hình **Domain-Driven Design** với 4 tầng nghiêm ngặt:
+- **Domain Layer (`domain/`):** Chứa các Entity, Value Objects, Domain Rules (ví dụ: quy tắc không cho đặt ghế quá khứ, quy tắc tính giá vé). Không phụ thuộc bất kỳ framework hay ORM nào.
+- **Application Layer (`application/`):** Chứa Use Cases, Application Services, DTOs, Event Listeners, và các Facade điều phối giữa các module.
+- **Infrastructure Layer (`infrastructure/`):** Triển khai TypeORM Repositories, Redis Adapters, Redlock, BullMQ Queues, cổng thanh toán VNPay, và Mailer (Nodemailer).
+- **Presentation Layer (`presentation/`):** Controllers, API DTOs (có validation bằng `class-validator`), Swagger Decorators.
 
-## Data and runtime
+**Module Facade Pattern:** Các module không import repository của nhau mà chỉ tương tác thông qua Facade Interface (ví dụ: `OrdersFacade`, `MoviesFacade`), ngăn ngừa hoàn toàn phụ thuộc vòng.
 
-- Root `docker-compose.yml` starts PostgreSQL 16 and Redis 7, not application processes.
-- TypeORM entities load from registered modules. `src/config/database.config.ts` controls schema synchronization, which is enabled outside production.
-- Source inspection did not establish a migration workflow or production deployment configuration.
-- Redis stores session/hold data; database seat/order state must be considered together with Redis for transactional changes.
-- Payment currently includes a mock gateway. Production integrations are not established by a listed gateway enum.
+### 2. `apps/cinema-frontend-v1` (Next.js 16 + React 19)
+- **Kiến trúc Feature-Driven (`features/`):** Phân chia theo nghiệp vụ: `auth/`, `movie/`, `cinema/`, `cineplex/`, `booking/`, `ai-agent/`.
+- **Server State Management:** Dùng **TanStack Query v5** với cơ chế `staleTime`, `optimisticUpdates` và prefetching trên Server Components.
+- **Client State:** **Zustand** quản lý trạng thái chọn ghế, giỏ bắp nước và bước thanh toán.
+- **GIS Map & Charts:** Tích hợp **React Leaflet** định vị rạp chiếu phim trực quan.
 
-See [HTTP contracts](http-contracts.md), [cinema domain](../03-product/cinema-domain.md) and [design gaps](../03-product/design-contract-gaps.md) before frontend integration.
+### 3. `apps/cinema-mobile` (React Native + Expo SDK)
+- **Expo Router v3:** Định tuyến dựa trên cấu trúc file (`(tabs)/`, `agent.tsx`, `booking/`).
+- **Bảo mật:** Lưu trữ JWT Access Token và Refresh Token qua phần cứng bảo mật `Expo SecureStore`.
+- **Real-time AI Chat:** Nhận phản hồi dạng dòng (Streaming Response) từ AI Agent với hiệu ứng gõ chữ mượt mà và bubble chat tối ưu giao diện dark mode.
+
+### 4. `apps/cinema-agent` (LangGraph + Gemini LLM)
+- **Stateful Graph Architecture:** Sử dụng mô hình đồ thị trạng thái của LangGraph để theo dõi trạng thái cuộc trò chuyện của người dùng theo từng `session_id`.
+- **Tool Calling:** Khi người dùng hỏi *"Tối nay có phim kinh dị nào chiếu ở rạp Landmark không?"*, Agent tự động gọi công cụ `search_showtimes` truyền tham số vào Backend NestJS để lấy kết quả chính xác 100%.
+
+---
+
+## 🔒 Cơ Chế Chống Đặt Trùng Ghế (Concurrency Architecture)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor UserA as Khách hàng A
+    actor UserB as Khách hàng B
+    participant API as Backend (Seat Service)
+    participant Redis as Redis (Redlock Engine)
+    participant Queue as BullMQ (Delay Queue)
+    participant DB as PostgreSQL
+
+    UserA->>API: Click chọn ghế E10 (Showtime 12)
+    UserB->>API: Click chọn ghế E10 (Showtime 12)
+    
+    API->>Redis: Thử acquire Redlock: "lock:showtime:12:seat:E10"
+    Note over API,Redis: Khách hàng A đến trước 10ms -> Lock thành công!
+    Redis-->>API: Lock granted cho User A (TTL: 5 phút)
+    
+    API->>Redis: User B thử acquire Lock -> THẤT BẠI (Ghế đã bị giữ)
+    API-->>UserB: HTTP 409 Conflict: "Ghế E10 đang được giữ bởi người khác"
+    
+    API->>Queue: Lên lịch BullMQ Job "auto-cancel-order" (Delay 5 phút)
+    API-->>UserA: HTTP 200: Giữ ghế thành công, chuyển sang chọn Combo & Thanh toán
+```
