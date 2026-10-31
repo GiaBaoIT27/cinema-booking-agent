@@ -13,8 +13,6 @@ function FilePlayer({ uri }: { uri: string }) {
     <VideoView
       player={player}
       style={styles.fill}
-      allowsFullscreen
-      allowsPictureInPicture
       nativeControls
     />
   );

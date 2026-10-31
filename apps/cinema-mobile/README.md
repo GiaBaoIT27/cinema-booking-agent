@@ -1,56 +1,136 @@
-# Welcome to your Expo app 👋
+# 📱 Cinema Mobile (React Native & Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20Android-000000?style=for-the-badge&logo=apple&logoColor=white" alt="iOS & Android" />
+  <img src="https://img.shields.io/badge/Framework-React%20Native%200.88-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native" />
+  <img src="https://img.shields.io/badge/SDK-Expo%2058-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo SDK 58" />
+  <img src="https://img.shields.io/badge/Router-Expo%20Router%20v3-4630EB?style=for-the-badge&logo=expo" alt="Expo Router" />
+  <img src="https://img.shields.io/badge/Language-TypeScript%20Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/State-Zustand%205%20%7C%20TanStack%20Query%20v5-FF4154?style=for-the-badge" alt="State Management" />
+</p>
 
-## Get started
+---
 
-1. Install dependencies
+> **Cinema Mobile** là ứng dụng di động khách hàng đa nền tảng (iOS & Android) thuộc hệ sinh thái monorepo **Cinema Booking Agent**. Ứng dụng cung cấp trải nghiệm đặt vé xem phim trực quan theo thời gian thực, lưu trữ vé điện tử mã QR, tích hợp thanh toán trực tuyến và trò chuyện trực tiếp với Trợ lý ảo AI thông minh qua Server-Sent Events (SSE).
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## 📸 Hình Ảnh Giao Diện Thực Tế
 
-   ```bash
-   npx expo start
-   ```
+|                              🏠 Trang Chủ & Lịch Chiếu                              |                            🎟️ Chi Tiết Đặt Vé & Combo                            |                               📱 Vé Điện Tử QR Check-in                               |                               🤖 Trợ Lý Ảo AI Đàm Thoại                               |
+| :---------------------------------------------------------------------------------: | :------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: |
+| <img src="../../docs/assets/mobile-home.jpg" alt="Trang chủ Mobile" width="100%" /> | <img src="../../docs/assets/mobile-ticket.jpg" alt="Chi tiết vé" width="100%" /> | <img src="../../docs/assets/mobile-ticket-qr.jpg" alt="Vé điện tử QR" width="100%" /> | <img src="../../docs/assets/mobile-ai-chat.jpg" alt="AI Agent Mobile" width="100%" /> |
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🌟 Điểm Nhấn Kiến Trúc & Tính Năng
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 1. File-based Navigation (Expo Router v3)
 
-## Get a fresh project
+- Quản lý điều hướng dạng cây thư mục tương tự Next.js App Router:
+  - `(tabs)/`: 5 Tab chính (`index.tsx` - Trang chủ, `movies.tsx` - Danh sách phim, `cineplexes.tsx` - Cụm rạp, `tickets.tsx` - Vé của tôi, `account.tsx` - Tài khoản).
+  - Dynamic Routes: `app/movies/[id].tsx`, `app/cineplexes/[id].tsx`, `app/booking/[showtimeId].tsx`.
+  - Stack Navigation: `app/agent.tsx` (Màn hình chat AI chuyên biệt), `app/booking/checkout.tsx` (Thanh toán).
 
-When you're ready, run:
+### 2. Quản Lý State & Caching Đa Tầng
 
-```bash
-npm run reset-project
+- **Server State (TanStack Query v5):** Tự động cache danh sách phim, lịch chiếu và trạng thái ghế; hỗ trợ refetch thông minh khi người dùng quay lại app (`refetchOnWindowFocus`).
+- **Client State (Zustand v5):** Quản lý giỏ vé (`booking.store`), thông tin phiên đăng nhập (`auth.store`), và lịch sử hội thoại AI (`agent-chat.store`).
+- **Hardware Security:** Lưu trữ JWT Access Token và Refresh Token an toàn qua phần cứng mã hóa với `expo-secure-store`.
+
+### 3. Quy Trình Đặt Vé Real-Time Liền Mạch
+
+- **Sơ đồ ma trận ghế (`seat-grid.tsx`):** Trực quan hóa ghế Standard, VIP, Sweetbox; trạng thái trống, đang giữ và đã bán.
+- **Giữ ghế tức thời (Distributed Seat Hold):** Kết nối trực tiếp với giải thuật Redlock trên Redis ở backend để giữ ghế 5 phút.
+- **Thanh toán:** Mở cổng thanh toán an toàn trong app qua `expo-web-browser` với xử lý callback tự động.
+- **Vé điện tử Offline:** Tạo mã QR vé số hóa cục bộ bằng `react-native-qrcode-svg` để nhân viên rạp quét check-in.
+
+### 4. Trợ Lý AI Đàm Thoại Thời Gian Thực
+
+- Kết nối tới `apps/cinema-agent` qua giao thức **Server-Sent Events (SSE)**.
+- Gợi ý câu hỏi nhanh (Prompt Suggestions), hiệu ứng bong bóng chat đa năng (Bubble), và chỉ báo gõ chữ động (Typing Indicator).
+
+---
+
+## 🏛️ Cấu Trúc Mã Nguồn (Feature-Driven Modular)
+
+```
+apps/cinema-mobile/
+├── src/
+│   ├── app/                    # 🗺️ Expo Router v3 (Pages & Routes)
+│   │   ├── (tabs)/             # Tab navigator (Home, Movies, Cineplexes, Tickets, Account)
+│   │   ├── booking/            # Quy trình đặt vé: [showtimeId] -> fnb -> checkout -> result
+│   │   ├── movies/             # Chi tiết phim & Trailer player
+│   │   ├── cineplexes/         # Chi tiết rạp & Lịch chiếu
+│   │   ├── agent.tsx           # Màn hình AI Chatbot Agent
+│   │   └── _layout.tsx         # Root layout & providers setup
+│   ├── features/               # 🧩 9 Feature Modules độc lập
+│   │   ├── ai-agent/           # Components chat, hooks SSE stream, types
+│   │   ├── auth/               # Đăng nhập, đăng ký, validate form
+│   │   ├── booking/            # Countdown giữ ghế, store giỏ hàng
+│   │   ├── cineplex/           # Danh sách rạp, định vị GIS
+│   │   ├── fnb/                # Danh mục bắp nước, combo
+│   │   ├── home/               # Hero banner slider, phim hot, ưu đãi
+│   │   ├── movie/              # Movie cards, chi tiết phim, YouTube trailer
+│   │   ├── orders/             # Tra cứu lịch sử đơn hàng & trạng thái thanh toán
+│   │   ├── payments/           # Tích hợp WebBrowser thanh toán VNPay
+│   │   └── seats/              # Ma trận sơ đồ ghế & tính giá vé
+│   ├── lib/                    # ⚙️ Axios instance, Token storage, Query client
+│   ├── store/                  # 📦 Global Zustand stores (Auth, Booking, Agent)
+│   └── theme/                  # 🎨 Dark mode colors, typography & spacing
+└── app.json                    # Cấu hình Expo, icon, splash screen, permissions
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+---
 
-### Other setup steps
+## 🚀 Hướng Dẫn Cài Đặt & Khởi Chạy
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### 1. Chuẩn Bị Môi Trường
 
-## Learn more
+Đảm bảo đã cài đặt Node.js (`>= 20.x`) và các dependencies:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+cd apps/cinema-mobile
+npm install
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Tạo file `.env` từ `.env.example`:
 
-## Join the community
+```env
+EXPO_PUBLIC_API_URL=http://localhost:3000/api/v1
+EXPO_PUBLIC_AGENT_URL=http://localhost:3002
+```
 
-Join our community of developers creating universal apps.
+_(Lưu ý: Nếu chạy trên máy ảo Android Studio, đổi `localhost` thành `10.0.2.2`)._
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+### 2. Khởi Chạy Ứng Dụng
+
+#### Khởi động Expo Bundler:
+
+```bash
+npm start
+# hoặc npx expo start
+```
+
+- **Trên điện thoại thật (iOS / Android):** Cài app **Expo Go** từ App Store / Google Play và quét mã QR trên màn hình terminal.
+- **Trên máy ảo Android:** Nhấn phím **`a`** trên terminal.
+- **Trên máy ảo iOS Simulator (macOS):** Nhấn phím **`i`** trên terminal.
+- **Trên trình duyệt Web:** Nhấn phím **`w`** trên terminal.
+
+---
+
+## 🧪 Kiểm Tra Chất Lượng Mã Nguồn (Code Quality)
+
+Ứng dụng đáp ứng chuẩn kiểm thử nghiêm ngặt không lỗi:
+
+```bash
+# Kiểm tra TypeScript Compile (Strict Mode)
+npx tsc --noEmit
+# Kết quả: 0 errors (100% Pass)
+
+# Quét lỗi quy chuẩn mã nguồn ESLint
+npx eslint "src/**/*.{ts,tsx}"
+# Kết quả: 0 errors, 0 warnings
+```

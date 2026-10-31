@@ -70,7 +70,7 @@ export function HeroCarousel({ movies, onPressMovie }: Props) {
 
 const styles = StyleSheet.create({
   noImage: { alignItems: "center", justifyContent: "center", backgroundColor: colors.card },
-  shade: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(8,12,21,0.45)" },
+  shade: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(8,12,21,0.45)" },
   info: { position: "absolute", left: 0, right: 0, bottom: 0, padding: spacing.lg, paddingBottom: 36, gap: 8, backgroundColor: "rgba(8,12,21,0.6)" },
   meta: { flexDirection: "row", alignItems: "center", gap: 8 },
   age: {

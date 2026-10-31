@@ -67,7 +67,7 @@ export type AgentWidget =
         | {
             mode: "HELD";
             showtimeId: number;
-            heldSeats: Array<{ seatId: number; label: string }>;
+            heldSeats: { seatId: number; label: string }[];
             holdExpiresAt: string;
             holdMinutes: number;
             totalSeatPrice: number;
@@ -93,7 +93,7 @@ export interface AgentStateSync {
   movieId: number | null;
   movieTitle: string | null;
   showtimeId: number | null;
-  selectedSeats: Array<{ seatId: number; label: string }>;
+  selectedSeats: { seatId: number; label: string }[];
   holdExpiresAt: string | null;
   orderId: number | null;
 }

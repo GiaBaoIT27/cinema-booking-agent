@@ -92,7 +92,7 @@ export default function AgentScreen() {
                 </Pressable>
               ))}
             </View>
-          ) : null
+          ) : undefined
         }
       />
 
@@ -174,10 +174,10 @@ function Bubble({
               color={user ? colors.text : "#E5E7EB"}
             />
           </View>
-        ) : null}
+        ) : undefined}
         {message.status ? (
           <Text style={styles.status}>{message.status}</Text>
-        ) : null}
+        ) : undefined}
         {message.widgets.map((w, i) => (
           <AgentWidgetView
             key={i}
@@ -188,7 +188,7 @@ function Bubble({
         ))}
         {message.error ? (
           <Text style={styles.error}>{message.error}</Text>
-        ) : null}
+        ) : undefined}
         <Text style={styles.time}>{message.timestamp}</Text>
       </View>
     </View>
