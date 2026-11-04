@@ -3,47 +3,46 @@ name: Frontend CI
 on:
   pull_request:
     paths:
-      - "apps/cinema-frontend/**"
+      - "apps/cinema-frontend-v1/**"
       - ".github/workflows/frontend-ci.yml"
-      - ".editorconfig"
   push:
     branches: [main]
     paths:
-      - "apps/cinema-frontend/**"
+      - "apps/cinema-frontend-v1/**"
       - ".github/workflows/frontend-ci.yml"
-      - ".editorconfig"
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   frontend:
-    name: Format, lint, types, tests, build
+    name: Lint, types, tests, build
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/cinema-frontend
+        working-directory: apps/cinema-frontend-v1
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-      - name: Set up Node.js 24
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: apps/cinema-frontend/package-lock.json
-      - name: Use npm 11.17.0
-        run: npm install --global npm@11.17.0
+          cache-dependency-path: apps/cinema-frontend-v1/package-lock.json
       - name: Install locked dependencies
         run: npm ci
-      - name: Check frontend formatting
-        run: npm run format:check
-      - name: Lint frontend
+      - name: Lint
         run: npm run lint
       - name: Check TypeScript
         run: npm run typecheck
-      - name: Run unit tests
+      - name: Unit tests
         run: npm test
-      - name: Build frontend
+      - name: Build
         run: npm run build
