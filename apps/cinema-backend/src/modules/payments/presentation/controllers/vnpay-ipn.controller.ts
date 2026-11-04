@@ -8,11 +8,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { SkipThrottle } from '@nestjs/throttler';
 import { PaymentsService } from '../../application/services/payments.service.js';
 import { VnPayIpnQueryDto } from '../../application/dto/vnpay-ipn-query.dto.js';
 import { PaymentMethod } from '../../domain/enums/payment-method.enum.js';
 import { Public } from '#src/common/decorators/public.decorator.js';
 
+// Server VNPay gọi IPN (có thể gọi lặp nhiều lần) – không được chặn vì rate limit
+@SkipThrottle()
 @Controller('payments/vnpay')
 export class VnPayIpnController {
   private readonly logger = new Logger(VnPayIpnController.name);

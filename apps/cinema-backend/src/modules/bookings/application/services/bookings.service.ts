@@ -1,7 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 
 import {
+  MAX_SEATS_PER_USER_PER_SHOWTIME,
   SEAT_HOLD_DURATION_MS,
+  remainingHoldQuota,
   isSeatSellable,
   isShowtimeHoldable,
 } from '../../domain/rules/booking-rules.js';
@@ -85,6 +87,19 @@ export class BookingsService {
       throw new BusinessException(
         ErrorCode.SEATS_NOT_AVAILABLE,
         `Ghế [${unsellable.map((seat) => seat.seatNumber).join(', ')}] đang bảo trì hoặc vô hiệu hóa`,
+      );
+    }
+
+    // 2b. Giới hạn số ghế mỗi người được giữ cho một suất chiếu (tính cả ghế đã gắn đơn)
+    const myHeldSeatIds = (
+      await this.seatInventory.findActiveHoldsByUser(userId, new Date())
+    )
+      .filter((hold) => hold.showtimeId === showtimeId)
+      .map((hold) => hold.seatId);
+    if (remainingHoldQuota(myHeldSeatIds, seatIds) < 0) {
+      throw new BusinessException(
+        ErrorCode.BOOKING_EXCEED_MAX_SEATS,
+        `Mỗi khách chỉ được giữ tối đa ${MAX_SEATS_PER_USER_PER_SHOWTIME} ghế cho một suất chiếu (bạn đang giữ ${myHeldSeatIds.length} ghế)`,
       );
     }
 

@@ -5,6 +5,8 @@ export interface AgentConfig {
   model: string;
   corsOrigins: string[];
   jwtSecret?: string;
+  /** Token gửi kèm mọi request tới backend để không bị rate limit theo IP. */
+  backendInternalToken?: string;
   databaseUrl?: string;
   rateLimitPerMinute: number;
   backendTimeoutMs: number;
@@ -43,6 +45,7 @@ export function loadConfig(env: EnvLike): AgentConfig {
       .map((s) => s.trim())
       .filter(Boolean),
     jwtSecret: env.JWT_SECRET?.trim() || undefined,
+    backendInternalToken: env.BACKEND_INTERNAL_TOKEN?.trim() || undefined,
     databaseUrl: env.AGENT_DATABASE_URL?.trim() || undefined,
     rateLimitPerMinute: toInt(env.RATE_LIMIT_PER_MINUTE, 20),
     backendTimeoutMs: toInt(env.BACKEND_TIMEOUT_MS, 10_000),

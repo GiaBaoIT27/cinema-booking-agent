@@ -23,9 +23,12 @@
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:int": "vitest run --config ./vitest.config.int.ts",
-    "typeorm": "typeorm-ts-node-esm -d ./src/config/data-source.ts",
-    "migration:run": "npm run typeorm -- migration:run",
-    "migration:revert": "npm run typeorm -- migration:revert"
+    "typeorm": "typeorm -d dist/config/data-source.js",
+    "migration:run": "npm run build && npm run typeorm -- migration:run",
+    "migration:revert": "npm run build && npm run typeorm -- migration:revert",
+    "migration:baseline": "npm run build && npm run typeorm -- migration:run --fake",
+    "migration:generate": "npm run build && typeorm migration:generate --esm -d dist/config/data-source.js",
+    "migration:check": "npm run build && typeorm migration:generate --check -d dist/config/data-source.js src/database/migrations/Check"
   },
   "imports": {
     "#src/*": "./dist/*",
@@ -43,6 +46,7 @@
     "@nestjs/passport": "^12.0.0",
     "@nestjs/platform-express": "^12.0.1",
     "@nestjs/swagger": "^12.0.2",
+    "@nestjs/throttler": "6.7.1",
     "@nestjs/typeorm": "^12.0.1",
     "bcrypt": "^6.0.0",
     "bullmq": "^6.3.9",
@@ -50,6 +54,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "cloudinary": "^2.11.0",
+    "helmet": "8.3.0",
     "ioredis": "^5.11.1",
     "multer": "^2.3.0",
     "nest-winston": "^2.0.0",

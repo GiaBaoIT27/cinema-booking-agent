@@ -7,6 +7,22 @@ import { randomInt } from 'node:crypto';
  */
 export const SEAT_HOLD_DURATION_MS = 11 * 60 * 1000;
 
+/**
+ * Số ghế tối đa một người được giữ cùng lúc cho MỘT suất chiếu (kể cả ghế đã gắn đơn chờ
+ * thanh toán). Chống chiếm toàn bộ ghế của suất chiếu bằng một tài khoản.
+ */
+export const MAX_SEATS_PER_USER_PER_SHOWTIME = 10;
+
+/** Số ghế còn được giữ thêm, tính cả các ghế đang giữ của chính user (giữ lại không tính 2 lần). */
+export function remainingHoldQuota(
+  alreadyHeldSeatIds: string[],
+  requestedSeatIds: string[],
+): number {
+  const held = new Set(alreadyHeldSeatIds);
+  const newSeats = requestedSeatIds.filter((id) => !held.has(id)).length;
+  return MAX_SEATS_PER_USER_PER_SHOWTIME - held.size - newSeats;
+}
+
 /** Trạng thái suất chiếu cho phép giữ ghế (từ vựng của module showtimes). */
 const HOLDABLE_SHOWTIME_STATUSES: readonly string[] = ['OPEN', 'SCHEDULED'];
 

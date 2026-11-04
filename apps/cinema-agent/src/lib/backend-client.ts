@@ -27,6 +27,11 @@ export interface BackendClient {
 interface ClientConfig {
   baseUrl: string;
   timeoutMs?: number;
+  /**
+   * Token dịch vụ nội bộ (header x-internal-service-token). Backend bỏ qua rate limit theo IP
+   * cho request có token này – agent gọi thay cho MỌI người dùng từ cùng một IP.
+   */
+  internalToken?: string;
   fetchImpl?: typeof fetch;
 }
 
@@ -60,6 +65,7 @@ export function createBackendClient(config: ClientConfig): BackendClient {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (o.body !== undefined) headers["Content-Type"] = "application/json";
     if (o.token) headers.Authorization = `Bearer ${o.token}`;
+    if (config.internalToken) headers["x-internal-service-token"] = config.internalToken;
 
     const signals = [AbortSignal.timeout(timeoutMs)];
     if (o.signal) signals.push(o.signal);
