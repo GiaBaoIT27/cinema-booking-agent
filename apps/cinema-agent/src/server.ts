@@ -11,6 +11,8 @@ import { buildAgentGraph } from "./graph/agent-graph.js";
 import type { ModelLike } from "./graph/nodes.js";
 import { handleChat } from "./chat-handler.js";
 
+const LLM_TEMPERATURE = 0.2;
+
 async function main() {
   const config = loadConfig(process.env);
   const backend = createBackendClient({
@@ -21,7 +23,7 @@ async function main() {
   const llm = new ChatGoogleGenerativeAI({
     model: config.model,
     apiKey: config.googleApiKey,
-    temperature: 0.2,
+    temperature: LLM_TEMPERATURE,
     maxRetries: 2,
   });
   const model = llm.bindTools(createLangchainTools(backend));
@@ -50,6 +52,7 @@ async function main() {
       status: "ok",
       service: "cinema-agent-service",
       model: config.model,
+      temperature: LLM_TEMPERATURE,
       sessionStore: kind,
     });
   });

@@ -7,6 +7,12 @@ import {
   type StateExpect,
 } from "./eval-dataset.js";
 import { checkState, type Fixtures, type Snapshot } from "./eval-expect.js";
+import {
+  renderMarkdownReport,
+  summarize,
+  toolFailures,
+  type CaseResult,
+} from "./eval-scoring.js";
 
 // Cấu hình URL dịch vụ
 const AGENT_URL =
@@ -22,17 +28,7 @@ const cyan = (t: string) => `\x1b[36m${t}\x1b[0m`;
 const bold = (t: string) => `\x1b[1m${t}\x1b[0m`;
 const gray = (t: string) => `\x1b[90m${t}\x1b[0m`;
 
-interface RunResult {
-  caseId: string;
-  group: string;
-  title: string;
-  pass: boolean;
-  latencyMs: number;
-  toolsCalled: string[];
-  widgetsEmitted: string[];
-  failures: string[];
-  responseText: string;
-}
+type RunResult = CaseResult;
 
 // 1. Tải fixtures
 function loadFixtures(): Fixtures {
@@ -322,25 +318,8 @@ async function executeCase(
 
   const failures: string[] = [];
 
-  // Kiểm tra expectTools
-  if (c.expectTools) {
-    for (const tool of c.expectTools) {
-      if (!allTools.includes(tool)) {
-        failures.push(
-          `Thiếu tool bắt buộc '${tool}' (Đã gọi: [${allTools.join(", ")}])`,
-        );
-      }
-    }
-  }
-
-  // Kiểm tra forbidTools
-  if (c.forbidTools) {
-    for (const tool of c.forbidTools) {
-      if (allTools.includes(tool)) {
-        failures.push(`Gọi tool cấm '${tool}'`);
-      }
-    }
-  }
+  // Tool: thiếu tool bắt buộc, gọi tool cấm, tự ý gọi tool hành động (giữ ghế/tạo đơn)
+  failures.push(...toolFailures(c, allTools));
 
   // Kiểm tra expectWidgets
   if (c.expectWidgets) {
@@ -384,17 +363,75 @@ async function executeCase(
     }
   }
 
+  const pass = failures.length === 0;
   return {
     caseId: c.id,
     group: c.group,
     title: c.title,
-    pass: failures.length === 0,
+    status: pass ? "PASS" : "FAIL",
+    pass,
     latencyMs: totalLatency,
     toolsCalled: allTools,
     widgetsEmitted: allWidgets,
     failures,
     responseText: combinedText,
+    runs: 1,
+    passedRuns: pass ? 1 : 0,
   };
+}
+
+/**
+ * Chạy case `repeat` lần (mặc định 1) để đo độ nhất quán: chỉ ĐẠT khi đạt ở MỌI lần.
+ * Kết quả đại diện là lần chạy thất bại đầu tiên (nếu có), độ trễ lấy trung bình.
+ */
+async function executeCaseRepeated(
+  c: EvalCase,
+  fixtures: Fixtures,
+  tokens: { user1?: string; user2?: string },
+  verbose = false,
+): Promise<RunResult> {
+  const runs = Math.max(1, c.repeat ?? 1);
+  const all: RunResult[] = [];
+  for (let k = 0; k < runs; k++) {
+    if (runs > 1 && verbose) console.log(gray(`  [Lần ${k + 1}/${runs}]`));
+    all.push(await executeCase(c, fixtures, tokens, verbose));
+  }
+  if (runs === 1) return all[0];
+
+  const passedRuns = all.filter((r) => r.pass).length;
+  const representative = all.find((r) => !r.pass) ?? all[all.length - 1];
+  const pass = passedRuns === runs;
+  return {
+    ...representative,
+    status: pass ? "PASS" : "FAIL",
+    pass,
+    latencyMs: Math.round(all.reduce((a, r) => a + r.latencyMs, 0) / runs),
+    failures: all.flatMap((r, k) =>
+      r.failures.map((f) => `Lần ${k + 1}/${runs}: ${f}`),
+    ),
+    runs,
+    passedRuns,
+  };
+}
+
+/** Đọc model đang chạy từ /health của agent – báo cáo ghi đúng model thực tế. */
+async function fetchAgentInfo(): Promise<{ model: string; temperature: string }> {
+  try {
+    const res = await fetch(`${new URL(AGENT_URL).origin}/health`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    const j = (await res.json()) as { model?: string; temperature?: number };
+    return {
+      model: j.model ?? "không rõ",
+      temperature:
+        j.temperature !== undefined ? String(j.temperature) : "không rõ",
+    };
+  } catch {
+    return {
+      model: "không rõ (không đọc được /health của agent)",
+      temperature: "không rõ",
+    };
+  }
 }
 
 // 8. Hàm chính điều phối toàn bộ đánh giá
@@ -448,6 +485,32 @@ async function main() {
     testCases = testCases.filter((c) => c.id === targetCase);
     console.log(yellow(`-> Lọc case đơn: ${targetCase}`));
   }
+  // --from=<caseId>: chạy tiếp từ một case (VD: sau khi hết quota hôm trước)
+  const fromCase = args.find((a) => a.startsWith("--from="))?.split("=")[1];
+  if (fromCase) {
+    const idx = testCases.findIndex((c) => c.id === fromCase);
+    if (idx < 0) {
+      console.error(red(`Không tìm thấy case --from=${fromCase}`));
+      process.exit(1);
+    }
+    testCases = testCases.slice(idx);
+    console.log(
+      yellow(`-> Chạy tiếp từ case ${fromCase} (${testCases.length} cases)`),
+    );
+  }
+  const filterDesc = [
+    targetGroup && `--group=${targetGroup}`,
+    targetCase && `--case=${targetCase}`,
+    fromCase && `--from=${fromCase}`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const agentInfo = await fetchAgentInfo();
+  console.log(
+    cyan(
+      `3. Mô hình đang chạy: ${agentInfo.model} (temperature ${agentInfo.temperature})`,
+    ),
+  );
 
   const interCaseDelay = Number(
     args.find((a) => a.startsWith("--delay="))?.split("=")[1] || "3000",
@@ -459,10 +522,6 @@ async function main() {
   );
 
   const results: RunResult[] = [];
-  const groupStats: Record<
-    string,
-    { total: number; pass: number; totalLatencyMs: number }
-  > = {};
 
   let quotaExhausted = false;
   for (let i = 0; i < testCases.length; i++) {
@@ -478,7 +537,7 @@ async function main() {
     let lastErr = "";
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        res = await executeCase(
+        res = await executeCaseRepeated(
           c,
           fixtures,
           { user1: token1, user2: token2 },
@@ -505,36 +564,34 @@ async function main() {
       }
     }
 
-    if (!groupStats[c.group]) {
-      groupStats[c.group] = { total: 0, pass: 0, totalLatencyMs: 0 };
-    }
-    groupStats[c.group].total += 1;
-
     if (res) {
       results.push(res);
+      const runsInfo = res.runs > 1 ? `, đạt ${res.passedRuns}/${res.runs} lần` : "";
       if (res.pass) {
-        console.log(green("PASS") + gray(` (${res.latencyMs}ms)`));
-        groupStats[c.group].pass += 1;
+        console.log(green("PASS") + gray(` (${res.latencyMs}ms${runsInfo})`));
       } else {
-        console.log(red("FAIL") + gray(` (${res.latencyMs}ms)`));
+        console.log(red("FAIL") + gray(` (${res.latencyMs}ms${runsInfo})`));
         for (const f of res.failures) {
           console.log(red(`    ✖ ${f}`));
         }
       }
-      groupStats[c.group].totalLatencyMs += res.latencyMs;
     } else {
-      console.log(red("ERROR"));
-      console.error(red(`    Lỗi thực thi case: ${lastErr}`));
+      // Lỗi hạ tầng (LLM hết quota, mạng…): KHÔNG phải agent trả lời sai => không tính vào TCR
+      console.log(yellow("ERROR"));
+      console.error(yellow(`    Lỗi hạ tầng, không chấm được: ${lastErr}`));
       results.push({
         caseId: c.id,
         group: c.group,
         title: c.title,
+        status: "ERROR",
         pass: false,
         latencyMs: 0,
         toolsCalled: [],
         widgetsEmitted: [],
-        failures: [`RUNTIME_ERROR: ${lastErr}`],
+        failures: [lastErr],
         responseText: "",
+        runs: 0,
+        passedRuns: 0,
       });
     }
 
@@ -554,306 +611,56 @@ async function main() {
   // Reset database sạch sau khi kết thúc
   resetDatabaseState();
 
-  // 9. Báo cáo tổng hợp
-  // Danh sách các công cụ hỗ trợ
-  const ALL_AGENT_TOOLS = [
-    "search_movies",
-    "get_movie_details",
-    "get_showtimes",
-    "get_available_seats",
-    "get_fnb_items",
-    "hold_seats",
-    "release_seats",
-    "create_order_and_payment",
-    "get_my_orders",
-    "get_order_status",
-  ];
-
-  // Tính ma trận nhầm lẫn (Confusion Matrix) cho từng tool
-  const toolStats: Record<
-    string,
-    { tp: number; fp: number; fn: number; tn: number }
-  > = {};
-  for (const t of ALL_AGENT_TOOLS) {
-    toolStats[t] = { tp: 0, fp: 0, fn: 0, tn: 0 };
-  }
-
-  for (let i = 0; i < testCases.length; i++) {
-    const c = testCases[i];
-    const res = results[i];
-    const expected = new Set(c.expectTools || []);
-    const called = new Set(res.toolsCalled);
-    const forbidden = new Set(c.forbidTools || []);
-    const lookupTools = new Set([
-      "search_movies",
-      "get_movie_details",
-      "get_showtimes",
-      "get_available_seats",
-      "get_fnb_items",
-      "get_my_orders",
-      "get_order_status",
-    ]);
-
-    for (const tool of ALL_AGENT_TOOLS) {
-      const isExp = expected.has(tool);
-      const isCal = called.has(tool);
-      const isForbid = forbidden.has(tool);
-
-      if (isExp && isCal) {
-        toolStats[tool].tp += 1;
-      } else if (isExp && !isCal) {
-        toolStats[tool].fn += 1;
-      } else if (!isExp && isCal) {
-        if (isForbid) {
-          toolStats[tool].fp += 1;
-        } else if (lookupTools.has(tool)) {
-          // Là công cụ tra cứu bổ trợ hợp lệ trong luồng hội thoại
-          toolStats[tool].tp += 1;
-        } else {
-          // Gọi đột biến ngoài ý muốn (hold_seats, create_order...)
-          toolStats[tool].fp += 1;
-        }
-      } else {
-        toolStats[tool].tn += 1;
-      }
-    }
-  }
-
-  // Tính toán phân vị độ trễ (Latency Percentiles)
-  const sortedLatencies = results.map((r) => r.latencyMs).sort((a, b) => a - b);
-  const getPercentile = (arr: number[], p: number) => {
-    if (arr.length === 0) return 0;
-    const index = Math.ceil((p / 100) * arr.length) - 1;
-    return arr[Math.max(0, Math.min(index, arr.length - 1))];
-  };
-
-  const p50 = getPercentile(sortedLatencies, 50);
-  const p90 = getPercentile(sortedLatencies, 90);
-  const p95 = getPercentile(sortedLatencies, 95);
-  const minLatency = sortedLatencies[0] || 0;
-  const maxLatency = sortedLatencies[sortedLatencies.length - 1] || 0;
-
-  // 9. Báo cáo tổng hợp
-  console.log(
-    bold("\n============================================================"),
-  );
-  console.log(
-    bold("                  BÁO CÁO KẾT QUẢ ĐÁNH GIÁ                  "),
-  );
-  console.log(
-    bold("============================================================\n"),
-  );
+  // 9. Báo cáo – mọi số liệu và nhận định sinh từ dữ liệu (xem eval-scoring.ts)
+  const summary = summarize(testCases, results);
+  const pctText = (v: number | null) =>
+    v === null ? "N/A" : `${(v * 100).toFixed(1)}%`;
 
   console.log(
-    "| Nhóm kiểm thử (Category)       | Tổng số | Đạt (PASS) | Tỷ lệ (%) | Độ trễ TB  |",
+    bold("\n================ BÁO CÁO KẾT QUẢ ĐÁNH GIÁ ================\n"),
   );
-  console.log(
-    "| :----------------------------- | :-----: | :--------: | :-------: | :--------: |",
-  );
-
-  let totalAll = 0;
-  let passAll = 0;
-  let latencyAll = 0;
-
-  for (const [group, stat] of Object.entries(groupStats)) {
-    const rate = ((stat.pass / stat.total) * 100).toFixed(1);
-    const avgLatency = (stat.totalLatencyMs / stat.total / 1000).toFixed(2);
-    totalAll += stat.total;
-    passAll += stat.pass;
-    latencyAll += stat.totalLatencyMs;
-
-    const rateFormatted =
-      Number(rate) >= 90 ? green(`${rate}%`) : yellow(`${rate}%`);
+  console.log("| Nhóm             | Tổng | Đạt | Không đạt | Lỗi HT | TCR    |");
+  console.log("| :--------------- | :--: | :-: | :-------: | :----: | :----: |");
+  for (const g of summary.groups) {
+    const tcr = g.pass + g.fail > 0 ? g.pass / (g.pass + g.fail) : null;
     console.log(
-      `| ${group.padEnd(30)} | ${String(stat.total).padStart(7)} | ${String(stat.pass).padStart(10)} | ${rateFormatted.padStart(16)} | ${(avgLatency + "s").padStart(10)} |`,
+      `| ${g.group.padEnd(16)} | ${String(g.total).padStart(4)} | ${String(g.pass).padStart(3)} | ${String(g.fail).padStart(9)} | ${String(g.error).padStart(6)} | ${pctText(tcr).padStart(6)} |`,
     );
   }
-
-  const overallRate =
-    totalAll > 0 ? ((passAll / totalAll) * 100).toFixed(1) : "0";
-  const overallAvgLatency =
-    totalAll > 0 ? (latencyAll / totalAll / 1000).toFixed(2) : "0";
-
-  console.log("|" + "-".repeat(74) + "|");
   console.log(
-    `| ${bold("TỔNG CỘNG TOÀN DIỆN".padEnd(30))} | ${bold(String(totalAll).padStart(7))} | ${bold(String(passAll).padStart(10))} | ${bold(green(`${overallRate}%`)).padStart(20)} | ${bold((overallAvgLatency + "s").padStart(10))} |`,
-  );
-
-  // In bảng ma trận Tool Accuracy
-  console.log(
-    bold("\n[ĐÁNH GIÁ NĂNG LỰC GỌI CÔNG CỤ (TOOL INVOCATION METRICS)]"),
-  );
-  console.log(
-    "| Công cụ (Tool Name)       | TP | FP | FN | Precision | Recall  | F1-Score |",
-  );
-  console.log(
-    "| :------------------------ | :-: | :-: | :-: | :-------: | :-----: | :------: |",
-  );
-
-  let totalTp = 0;
-  let totalFp = 0;
-  let totalFn = 0;
-
-  const toolMetricsReport: Array<{
-    tool: string;
-    tp: number;
-    fp: number;
-    fn: number;
-    precision: string;
-    recall: string;
-    f1: string;
-  }> = [];
-
-  for (const [tool, s] of Object.entries(toolStats)) {
-    totalTp += s.tp;
-    totalFp += s.fp;
-    totalFn += s.fn;
-
-    const prec = s.tp + s.fp === 0 ? 1.0 : s.tp / (s.tp + s.fp);
-    const rec = s.tp + s.fn === 0 ? 1.0 : s.tp / (s.tp + s.fn);
-    const f1 = prec + rec === 0 ? 0 : (2 * (prec * rec)) / (prec + rec);
-
-    toolMetricsReport.push({
-      tool,
-      tp: s.tp,
-      fp: s.fp,
-      fn: s.fn,
-      precision: (prec * 100).toFixed(1) + "%",
-      recall: (rec * 100).toFixed(1) + "%",
-      f1: f1.toFixed(3),
-    });
-
-    console.log(
-      `| ${tool.padEnd(25)} | ${String(s.tp).padStart(2)} | ${String(s.fp).padStart(2)} | ${String(s.fn).padStart(2)} | ${((prec * 100).toFixed(1) + "%").padStart(9)} | ${((rec * 100).toFixed(1) + "%").padStart(7)} | ${f1.toFixed(3).padStart(8)} |`,
-    );
-  }
-
-  const microPrec =
-    totalTp + totalFp === 0 ? 1.0 : totalTp / (totalTp + totalFp);
-  const microRec =
-    totalTp + totalFn === 0 ? 1.0 : totalTp / (totalTp + totalFn);
-  const microF1 =
-    microPrec + microRec === 0
-      ? 0
-      : (2 * (microPrec * microRec)) / (microPrec + microRec);
-
-  console.log("|" + "-".repeat(74) + "|");
-  console.log(
-    `| ${bold("MICRO-AVERAGE".padEnd(25))} | ${bold(String(totalTp).padStart(2))} | ${bold(String(totalFp).padStart(2))} | ${bold(String(totalFn).padStart(2))} | ${bold((microPrec * 100).toFixed(1) + "%").padStart(9)} | ${bold((microRec * 100).toFixed(1) + "%").padStart(7)} | ${bold(microF1.toFixed(3)).padStart(8)} |`,
-  );
-
-  // Xuất file JSON & Markdown
-  const reportPath = "./eval/eval-results.json";
-  writeFileSync(
-    reportPath,
-    JSON.stringify(
-      {
-        summary: {
-          total: totalAll,
-          pass: passAll,
-          taskCompletionRate: overallRate,
-          avgLatencyMs: totalAll > 0 ? latencyAll / totalAll : 0,
-          latencyPercentiles: {
-            minMs: minLatency,
-            p50Ms: p50,
-            p90Ms: p90,
-            p95Ms: p95,
-            maxMs: maxLatency,
-          },
-          toolMetrics: {
-            microPrecision: (microPrec * 100).toFixed(1) + "%",
-            microRecall: (microRec * 100).toFixed(1) + "%",
-            microF1: microF1.toFixed(3),
-            perTool: toolMetricsReport,
-          },
-        },
-        groupStats,
-        results,
-      },
-      null,
-      2,
+    bold(
+      `\nTCR: ${pctText(summary.taskCompletionRate)} (${summary.pass} đạt / ${summary.pass + summary.fail} chấm được; ${summary.error} lỗi hạ tầng)`,
     ),
   );
+  const micro = summary.tools.micro;
+  console.log(
+    bold(
+      `Tool micro-average: precision ${pctText(micro.precision)}, recall ${pctText(micro.recall)}, FP ${micro.fp}, gọi thêm ${micro.extra}`,
+    ),
+  );
+
+  const meta = {
+    date: new Date(),
+    model: agentInfo.model,
+    temperature: agentInfo.temperature,
+    nodeVersion: process.version,
+    datasetSize: EVAL_DATASET.length,
+    stoppedEarly: quotaExhausted
+      ? "nhà cung cấp LLM hết quota theo ngày"
+      : undefined,
+    filter: filterDesc || undefined,
+  };
+
+  const reportPath = "./eval/eval-results.json";
+  writeFileSync(reportPath, JSON.stringify({ meta, summary, results }, null, 2));
   console.log(cyan(`\nĐã lưu kết quả chi tiết vào: ${reportPath}`));
 
-  // Tạo file Markdown Report cho luận văn tốt nghiệp
-  const mdReport = `# BÁO CÁO THỰC NGHIỆM ĐÁNH GIÁ HỆ THỐNG AI CINEMA BOOKING AGENT
-**Ngày thực nghiệm:** ${new Date().toLocaleString("vi-VN")}
-**Cấu hình mô hình:** Google Gemini 2.0 Flash (Temperature: 0.2, TopP: 0.95)
-**Môi trường thực thi:** Docker Compose, Node.js v20, PostgreSQL 16, Redis 7
-**Tổng số kịch bản kiểm thử (N):** ${totalAll}
-**Tỷ lệ hoàn thành tác vụ (Task Completion Rate - TCR):** ${overallRate}%
-**Độ trễ trung bình toàn hệ thống:** ${overallAvgLatency}s
-
----
-
-## 1. Kết quả thực nghiệm theo 7 nhóm năng lực cốt lõi
-
-| STT | Nhóm năng lực kiểm thử (Category) | Số kịch bản | Đạt (Pass) | Tỷ lệ thành công (%) | Độ trễ trung bình (s) |
-| :-: | :-------------------------------- | :---------: | :--------: | :------------------: | :-------------------: |
-${Object.entries(groupStats)
-  .map(
-    ([g, s], idx) =>
-      `| ${idx + 1} | **${g}** | ${s.total} | ${s.pass} | ${((s.pass / s.total) * 100).toFixed(1)}% | ${(s.totalLatencyMs / s.total / 1000).toFixed(2)}s |`,
-  )
-  .join("\n")}
-| **Σ** | **TỔNG HỢP TOÀN HỆ THỐNG** | **${totalAll}** | **${passAll}** | **${overallRate}%** | **${overallAvgLatency}s** |
-
----
-
-## 2. Đánh giá độ chính xác gọi công cụ (Tool-Calling Confusion Matrix & Metrics)
-
-| Tên công cụ (Tool Name) | TP | FP | FN | Precision | Recall | F1-Score |
-| :---------------------- | :-: | :-: | :-: | :-------: | :----: | :------: |
-${toolMetricsReport
-  .map(
-    (m) =>
-      `| \`${m.tool}\` | ${m.tp} | ${m.fp} | ${m.fn} | ${m.precision} | ${m.recall} | **${m.f1}** |`,
-  )
-  .join("\n")}
-| **Micro-Average** | **${totalTp}** | **${totalFp}** | **${totalFn}** | **${(microPrec * 100).toFixed(1)}%** | **${(microRec * 100).toFixed(1)}%** | **${microF1.toFixed(3)}** |
-
----
-
-## 3. Phân bố độ trễ phản hồi (End-to-End Latency Distribution)
-
-Độ trễ tính từ lúc gửi câu lệnh người dùng qua HTTP Server-Sent Events (SSE) đến khi Agent hoàn tất lượt xử lý (bao gồm suy luận LLM, gọi REST API Backend, truy vấn Redis Lock và PostgreSQL).
-
-| Chỉ số độ trễ (Latency Metric) | Giá trị (giây) | Giá trị (mili-giây) | Ghi chú kỹ thuật |
-| :------------------------------ | :------------: | :-----------------: | :--------------- |
-| **Giá trị nhỏ nhất (Min)**     | ${(minLatency / 1000).toFixed(2)}s | ${minLatency} ms | Phản hồi chào hỏi / Out-of-Domain không gọi tool |
-| **Trung vị (Median - P50)**     | ${(p50 / 1000).toFixed(2)}s | ${p50} ms | 50% yêu cầu phản hồi nhanh hơn mốc này |
-| **Phân vị 90 (P90)**            | ${(p90 / 1000).toFixed(2)}s | ${p90} ms | Tác vụ gọi 1-2 tool (tìm phim, xem suất chiếu) |
-| **Phân vị 95 (P95)**            | ${(p95 / 1000).toFixed(2)}s | ${p95} ms | Giao dịch phức tạp đa bước (giữ ghế + tạo đơn hàng) |
-| **Giá trị lớn nhất (Max)**     | ${(maxLatency / 1000).toFixed(2)}s | ${maxLatency} ms | Hội thoại đa lượt kết hợp giữ ghế và áp mã voucher |
-| **Trung bình (Mean)**           | ${overallAvgLatency}s | ${Math.round(totalAll > 0 ? latencyAll / totalAll : 0)} ms | Độ trễ trung bình trên toàn bộ tập dữ liệu |
-
----
-
-## 4. Báo cáo các trường hợp không đạt & phân tích lỗi (Error Analysis)
-
-${
-  results.filter((r) => !r.pass).length === 0
-    ? "> [!NOTE]\n> **Kết quả hoàn hảo:** 100% các kịch bản kiểm thử trong tập dữ liệu đều đạt yêu cầu định trước. Không ghi nhận hiện tượng ảo giác (hallucination), không rò rỉ dữ liệu nhạy cảm (prompt injection), và cơ chế giữ chỗ phân tán Redis Lock luôn duy trì tính toàn vẹn trạng thái."
-    : results
-        .filter((r) => !r.pass)
-        .map(
-          (r) => `### Kịch bản thất bại: [${r.caseId}] ${r.title}
-- **Nhóm năng lực:** \`${r.group}\`
-- **Nguyên nhân chi tiết:**
-${r.failures.map((f) => `  - ${f}`).join("\n")}
-- **Phản hồi thực tế từ Agent:**
-\`\`\`text
-${r.responseText.trim()}
-\`\`\`
-`,
-        )
-        .join("\n\n")
-}
-`;
-
-  writeFileSync("./eval/eval-report.md", mdReport, "utf8");
-  console.log(cyan(`Đã xuất báo cáo học thuật vào: ./eval/eval-report.md\n`));
+  writeFileSync(
+    "./eval/eval-report.md",
+    renderMarkdownReport(meta, summary, results),
+    "utf8",
+  );
+  console.log(cyan(`Đã xuất báo cáo vào: ./eval/eval-report.md\n`));
 }
 
 main().catch((err) => {

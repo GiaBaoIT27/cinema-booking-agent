@@ -42,7 +42,8 @@ export interface EvalCase {
   user: "user1" | "user2" | null; // null = khách vãng lai chưa đăng nhập
   turns: string[]; // Mảng chứa các câu thoại (lượt chat) đầu vào của người dùng để đưa cho AI xử lý.
   expectTools?: string[]; // Các công cụ (tool) mà AI được kỳ vọng sẽ gọi trong quá trình xử lý các lượt chat này.
-  forbidTools?: string[]; // Các công cụ (tool) mà AI KHÔNG được phép gọi trong quá trình xử lý các lượt chat này.
+  forbidTools?: string[];
+  allowTools?: string[]; // Tool hành động (hold_seats, release_seats, create_order_and_payment) được PHÉP gọi dù không bắt buộc. Mặc định: gọi tool hành động ngoài expectTools là FAIL. // Các công cụ (tool) mà AI KHÔNG được phép gọi trong quá trình xử lý các lượt chat này.
   expectWidgets?: string[]; // Các widget mà AI được kỳ vọng sẽ hiển thị trong giao diện người dùng (UI) dựa trên các lượt chat này.
   expectState?: StateExpect[]; // Các trạng thái kỳ vọng của hệ thống sau khi AI xử lý xong các lượt chat này, dùng để kiểm tra tính đúng đắn của luồng nghiệp vụ.
   expectNoLeak?: string[]; // Các thông tin nhạy cảm mà AI KHÔNG được phép tiết lộ trong quá trình xử lý các lượt chat này.
@@ -1105,6 +1106,7 @@ export const EVAL_DATASET: EvalCase[] = [
       "search_movies",
       "get_showtimes",
       "get_available_seats",
+      "hold_seats",
       "create_order_and_payment",
     ],
     expectWidgets: ["PAYMENT_SUMMARY"],
