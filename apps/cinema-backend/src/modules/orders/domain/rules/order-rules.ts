@@ -6,6 +6,18 @@ import { randomInt } from 'node:crypto';
  */
 export const ORDER_EXPIRY_MINUTES = 10;
 
+/**
+ * Khi tạo đơn, ghế được gia hạn giữ tới `expiresAt` của đơn + khoảng đệm này, để job hủy
+ * đơn quá hạn luôn chạy TRƯỚC khi ghế tự nhả – ghế không bao giờ trống trong lúc đơn còn PENDING.
+ */
+export const SEAT_CLAIM_BUFFER_MINUTES = 5;
+
+export function calculateSeatHoldUntil(orderExpiresAt: Date): Date {
+  return new Date(
+    orderExpiresAt.getTime() + SEAT_CLAIM_BUFFER_MINUTES * 60 * 1000,
+  );
+}
+
 /** Quyền được xem vé của mọi khách hàng (không có quyền này chỉ thấy vé của chính mình). */
 export const TICKET_VIEW_ALL_PERMISSION = 'ticket:view';
 

@@ -105,6 +105,17 @@ export class PaymentTransaction {
   })
   paidAt: Date | null;
 
+  /**
+   * Thời điểm giao dịch thành công đã được "chốt sổ": đơn đã xuất vé, hoặc đã chuyển sang
+   * hoàn tiền. SUCCESS mà settled_at NULL => cần đối soát lại (job định kỳ xử lý).
+   */
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+    name: 'settled_at',
+  })
+  settledAt: Date | null;
+
   @UpdateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',

@@ -173,4 +173,6 @@ export enum ErrorCode {
   // ─── ORDER ────────────────────────────────────────────────────────────────
   ORDER_NOT_PENDING = 'ORDER_NOT_PENDING',
   ORDER_ALREADY_PROCESSED = 'ORDER_ALREADY_PROCESSED',
+  /** Đã thanh toán nhưng ghế của đơn không còn được giữ cho đơn → cần hoàn tiền/đối soát. */
+  ORDER_SEATS_NO_LONGER_AVAILABLE = 'ORDER_SEATS_NO_LONGER_AVAILABLE',
 }

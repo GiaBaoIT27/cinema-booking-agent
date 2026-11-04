@@ -5,6 +5,8 @@ export interface CreatePaymentUrlParams {
   orderInfo: string;
   ipAddress?: string;
   returnUrl?: string;
+  /** Link thanh toán không được sống lâu hơn hạn thanh toán của đơn. */
+  expiresAt?: Date;
 }
 
 export interface VerifyIpnResult {

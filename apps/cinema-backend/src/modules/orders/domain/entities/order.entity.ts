@@ -128,6 +128,18 @@ export class Order {
   })
   paymentMethod: PaymentMethod | null;
 
+  /**
+   * Mã giao dịch cổng thanh toán đã chốt đơn này (PENDING -> PAID). Dùng để phân biệt
+   * giao dịch "chính chủ" với giao dịch trả trùng (khách thanh toán 2 lần) cần hoàn tiền.
+   */
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+    name: 'paid_txn_ref',
+  })
+  paidTxnRef: string | null;
+
   @Index('idx_orders_status')
   @Column({
     type: 'varchar',

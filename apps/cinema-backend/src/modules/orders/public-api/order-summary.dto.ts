@@ -5,6 +5,7 @@ export class OrderSummaryDto {
   showtimeId: number;
   status: string;
   paymentMethod: string | null;
+  paidTxnRef: string | null;
   finalAmount: number;
   expiresAt: Date;
 }

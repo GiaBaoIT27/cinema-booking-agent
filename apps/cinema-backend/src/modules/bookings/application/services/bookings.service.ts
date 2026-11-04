@@ -114,17 +114,28 @@ export class BookingsService {
       );
     }
 
-    // 5. Ghi DB (bản sao bền vững). Lỗi => hoàn trả khóa để không treo ghế tới khi hết TTL.
+    // 5. Ghi DB có điều kiện (nguồn sự thật): Redis chỉ là lớp chặn nhanh, nếu khóa Redis
+    //    đã mất (restart/hết TTL) mà ghế vẫn đang giữ/gắn đơn/đã bán trong DB thì từ chối.
+    //    Thất bại => hoàn trả khóa để không treo ghế tới khi hết TTL.
+    let held: boolean;
     try {
-      await this.seatInventory.saveHolds(
+      held = await this.seatInventory.tryHold(
         showtimeId,
         seatIds,
         userId,
         holdExpiresAt,
+        new Date(),
       );
     } catch (error) {
       await this.seatHoldStore.release(showtimeId, seatIds, userId);
       throw error;
+    }
+    if (!held) {
+      await this.seatHoldStore.release(showtimeId, seatIds, userId);
+      throw new BusinessException(
+        ErrorCode.SHOWTIME_SEATS_BEING_HELD,
+        'Một hoặc nhiều ghế đang được người khác giữ, vui lòng chọn ghế khác',
+      );
     }
 
     return toHoldSeatsResponse(dto.showtimeId, seats, holdExpiresAt);

@@ -15,6 +15,8 @@ import type {
   ValidateHoldingSeatsInput,
   ValidateHoldingSeatsResult,
   ReleaseSeatsForOrderInput,
+  ReserveSeatsForOrderInput,
+  OrderSeatsInput,
 } from '../dto/seat-reservation.dto.js';
 
 /**
@@ -95,35 +97,100 @@ export class SeatReservationsService {
   }
 
   /**
-   * HOLDING -> BOOKED (sau khi thanh toán thành công). Đồng thời dọn trạng thái giữ tạm thời,
-   * nếu không GET /showtimes/:id/seats vẫn đọc thấy bản ghi HOLDING cũ cho ghế đã bán.
-   * @returns Số ghế thực sự chuyển sang BOOKED.
+   * Gắn các ghế user đang giữ vào đơn `orderCode` và gia hạn giữ tới `holdUntil`
+   * (all-or-nothing). Sau bước này ghế không thể bị giữ lại hay dùng cho đơn khác,
+   * kể cả khi khóa Redis hết hạn.
+   * @returns false nếu có ghế không còn được user giữ / đã gắn đơn khác.
    */
-  async markSeatsAsBooked(
-    showtimeId: string,
-    seatIds: string[],
-    userId?: string,
-  ): Promise<number> {
-    const affected = await this.seatInventory.markBooked(showtimeId, seatIds);
+  async reserveSeatsForOrder(
+    input: ReserveSeatsForOrderInput,
+  ): Promise<boolean> {
+    const { showtimeId, seatIds, userId, orderCode, holdUntil } = input;
+    const now = new Date();
 
-    if (affected === 0) {
+    const claimed = await this.seatInventory.claimForOrder(
+      showtimeId,
+      seatIds,
+      userId,
+      orderCode,
+      holdUntil,
+      now,
+    );
+    if (!claimed) return false;
+
+    // Khóa Redis chỉ để chặn nhanh; lỗi Redis không làm hỏng đơn vì DB đã giữ ghế
+    try {
+      await this.seatHoldStore.extend(
+        showtimeId,
+        seatIds,
+        userId,
+        Math.max(holdUntil.getTime() - now.getTime(), 1),
+      );
+    } catch (error) {
       this.logger.warn(
-        `[markSeatsAsBooked] Không có ghế nào chuyển sang BOOKED (showtime=${showtimeId}, seats=[${seatIds.join(', ')}]). ` +
-          'Kiểm tra lại trạng thái HOLDING của các ghế trong bảng showtime_seats.',
+        `[reserveSeatsForOrder] Không gia hạn được khóa Redis cho đơn ${orderCode}: ${String(error)}`,
       );
     }
-
-    // Luôn dọn Redis để tự phục hồi cả khi DB đã lệch trạng thái
-    await this.seatHoldStore.release(showtimeId, seatIds, userId);
-    return affected;
+    return true;
   }
 
-  /** Giải phóng ghế về AVAILABLE khi hủy / hết hạn đơn hàng (cả DB lẫn Redis). */
+  /** Bù trừ khi tạo đơn thất bại sau khi đã gắn ghế: gỡ gắn đơn, ghế vẫn do user giữ. */
+  async cancelSeatReservationForOrder(input: OrderSeatsInput): Promise<void> {
+    const { showtimeId, seatIds, orderCode } = input;
+    await this.seatInventory.unclaimForOrder(showtimeId, seatIds, orderCode);
+  }
+
+  /**
+   * HOLDING -> BOOKED cho các ghế của đúng đơn `orderCode` (all-or-nothing), sau khi
+   * thanh toán thành công. Dọn trạng thái giữ tạm thời trên Redis khi thành công.
+   * @returns false nếu không chốt được TOÀN BỘ ghế (không ghế nào bị thay đổi).
+   */
+  async markSeatsAsBooked(input: OrderSeatsInput): Promise<boolean> {
+    const { showtimeId, seatIds, orderCode, userId } = input;
+    const booked = await this.seatInventory.markBooked(
+      showtimeId,
+      seatIds,
+      orderCode,
+    );
+
+    if (!booked) {
+      this.logger.warn(
+        `[markSeatsAsBooked] Không chốt được ghế cho đơn ${orderCode} (showtime=${showtimeId}, seats=[${seatIds.join(', ')}]): ` +
+          'ghế không còn được giữ cho đơn này.',
+      );
+      return false;
+    }
+
+    await this.seatHoldStore.release(showtimeId, seatIds, userId);
+    return true;
+  }
+
+  /** Toàn bộ ghế của đơn đã được chốt (BOOKED) cho chính đơn đó? */
+  isBookedForOrder(input: OrderSeatsInput): Promise<boolean> {
+    const { showtimeId, seatIds, orderCode } = input;
+    return this.seatInventory.isBookedForOrder(showtimeId, seatIds, orderCode);
+  }
+
+  /** BOOKED -> HOLDING cho ghế của đơn `orderCode` (bù trừ khi ghi đơn/vé thất bại). */
+  async revertSeatsBooked(input: OrderSeatsInput): Promise<void> {
+    const { showtimeId, seatIds, orderCode } = input;
+    await this.seatInventory.revertBooked(showtimeId, seatIds, orderCode);
+  }
+
+  /**
+   * Giải phóng ghế HOLDING của đơn về AVAILABLE khi hủy / hết hạn đơn hàng (cả DB lẫn Redis).
+   * Không bao giờ nhả ghế đã BOOKED.
+   */
   async releaseSeatsForOrder(input: ReleaseSeatsForOrderInput): Promise<void> {
-    const { showtimeId, seatIds, userId } = input;
+    const { showtimeId, seatIds, orderCode, userId } = input;
     if (seatIds.length === 0) return;
 
-    await this.seatInventory.releaseForOrder(showtimeId, seatIds, userId);
+    await this.seatInventory.releaseForOrder(
+      showtimeId,
+      seatIds,
+      orderCode,
+      userId,
+    );
     await this.seatHoldStore.release(showtimeId, seatIds, userId);
   }
 
