@@ -112,6 +112,7 @@ Dự án sử dụng **Vitest** với cấu hình tối ưu, cho tốc độ th�
 | :------------------- | :------------------------------------------------------------------ |
 | `npm run test`       | Chạy toàn bộ unit test                                              |
 | `npm run test:int`   | Integration test trên PostgreSQL thật (DB riêng `cinema_test`)       |
+| `npm run migration:run` / `migration:check` | Chạy migration / kiểm tra entity khớp migration (xem [runbook deploy](../../docs/08-runbooks/production-deploy.md)) |
 | `npm run test:cov`   | Chạy kiểm thử và xuất bảng thống kê độ bao phủ mã (Coverage report) |
 | `npm run test:watch` | Chạy kiểm thử ở chế độ theo dõi file thay đổi (Watch mode)          |
 

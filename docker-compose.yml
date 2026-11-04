@@ -53,8 +53,12 @@ services:
       DB_PORT: "5432"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      NODE_ENV: development # synchronize=true → tự tạo schema (dự án chưa có migration)
+      # development: synchronize tự tạo schema. Production dùng migration (src/database/migrations)
+      NODE_ENV: development
       PORT: "3000"
+      # Token để agent không bị rate limit theo IP (agent gọi thay cho mọi người dùng).
+      # Giá trị mặc định chỉ dùng cho dev – production phải đặt INTERNAL_SERVICE_TOKEN mạnh trong .env
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-dev-internal-token-change-me}
     ports:
       - "3000:3000"
     depends_on:
@@ -85,6 +89,8 @@ services:
     environment:
       # Trong compose network, backend không phải localhost
       BACKEND_API_URL: http://backend:3000/api/v1
+      # Phải trùng INTERNAL_SERVICE_TOKEN của backend
+      BACKEND_INTERNAL_TOKEN: ${INTERNAL_SERVICE_TOKEN:-dev-internal-token-change-me}
       # Origin của browser truy cập frontend qua host (đã map port 3001)
       CORS_ORIGINS: http://localhost:3001
       # Google API key lấy từ .env ở ROOT (compose tự đọc file .env cạnh compose.yml)

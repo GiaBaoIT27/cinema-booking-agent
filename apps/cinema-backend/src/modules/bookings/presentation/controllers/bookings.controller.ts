@@ -7,6 +7,7 @@ import {
   Post,
 } from '@nestjs/common';
 
+import { Throttle } from '@nestjs/throttler';
 import { ApiSuccessMessage } from '#src/common/decorators/api-message.decorator.js';
 import { CurrentUser } from '#src/common/decorators/current-user.decorator.js';
 import { BookingsService } from '../../application/services/bookings.service.js';
@@ -18,6 +19,8 @@ export class BookingsController {
   constructor(private readonly bookingService: BookingsService) {}
   // 1. POST api/v1/bookings/hold - Giữ ghế
   @Post('hold')
+  // Chống chiếm ghế hàng loạt bằng script: 30 lần giữ ghế mỗi phút mỗi IP
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @ApiSuccessMessage('Giữ ghế thành công')
   holdSeats(@CurrentUser('userId') userId: string, @Body() dto: HoldSeatsDto) {

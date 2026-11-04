@@ -80,3 +80,13 @@ jobs:
         run: npm ci
       - name: Integration tests
         run: npm run test:int
+      # Migration chạy được trên DB trống, và schema sau migration khớp entity
+      # (sửa entity mà quên sinh migration => job đỏ)
+      - name: Migrations apply on an empty database
+        run: npm run migration:run
+        env:
+          DB_NAME: cinema_db
+      - name: Entities and migrations are in sync
+        run: npm run migration:check
+        env:
+          DB_NAME: cinema_db

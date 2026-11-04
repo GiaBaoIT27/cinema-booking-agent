@@ -18,6 +18,7 @@ async function main() {
   const backend = createBackendClient({
     baseUrl: config.backendApiUrl,
     timeoutMs: config.backendTimeoutMs,
+    internalToken: config.backendInternalToken,
   });
 
   const llm = new ChatGoogleGenerativeAI({

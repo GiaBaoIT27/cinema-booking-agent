@@ -4,9 +4,12 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 // Cấu hình tập trung
 import appConfig from './config/app.config.js';
@@ -26,7 +29,10 @@ import { CoreModule } from './core/core.module.js';
 import { HeaderValidationMiddleware } from './common/middleware/header-validation.middleware.js';
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
+import { AppThrottlerGuard } from './common/guards/app-throttler.guard.js';
 import { PermissionsGuard } from './common/guards/permissions.guard.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 4 trục nghiệp vụ — app.module.ts chỉ biết đến đây, không biết Users/Movies/Bookings... tồn tại
 import { IdentityModule } from './modules/aggregators/identity.module.js';
@@ -63,7 +69,23 @@ import { SalesModule } from './modules/aggregators/sales.module.js';
         database: config.get<string>('database.name'),
         autoLoadEntities: true,
         synchronize: config.get<boolean>('database.synchronize'),
+        // Schema production do migration quản lý (src/database/migrations)
+        migrations: [join(__dirname, 'database/migrations/*.js')],
+        migrationsTableName: 'typeorm_migrations',
+        migrationsRun: config.get<boolean>('database.runMigrations'),
       }),
+    }),
+
+    // Rate limit mặc định theo IP; endpoint nhạy cảm siết chặt hơn bằng @Throttle.
+    // Bộ đếm lưu trong bộ nhớ: chạy NHIỀU instance thì cần storage Redis dùng chung.
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: 'default',
+          ttl: 60_000,
+          limit: Number(process.env.THROTTLE_LIMIT_PER_MINUTE ?? 120),
+        },
+      ],
     }),
 
     CoreModule,
@@ -73,6 +95,8 @@ import { SalesModule } from './modules/aggregators/sales.module.js';
     SalesModule,
   ],
   providers: [
+    // Thứ tự quan trọng: chặn spam TRƯỚC khi tốn công xác thực JWT
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
   ],

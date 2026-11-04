@@ -4,6 +4,8 @@ import {
   isShowtimeHoldable,
   isSeatSellable,
   generateTicketCode,
+  MAX_SEATS_PER_USER_PER_SHOWTIME,
+  remainingHoldQuota,
 } from './booking-rules.js';
 
 describe('BookingRules (Domain)', () => {
@@ -58,3 +60,21 @@ describe('BookingRules (Domain)', () => {
   });
 });
 
+
+describe('remainingHoldQuota (giới hạn ghế mỗi người mỗi suất chiếu)', () => {
+  const seats = (n: number, from = 1) =>
+    Array.from({ length: n }, (_, i) => String(from + i));
+
+  it('giữ đúng bằng hạn mức thì hợp lệ, vượt 1 ghế thì không', () => {
+    expect(remainingHoldQuota([], seats(MAX_SEATS_PER_USER_PER_SHOWTIME))).toBe(0);
+    expect(remainingHoldQuota([], seats(MAX_SEATS_PER_USER_PER_SHOWTIME + 1))).toBe(-1);
+  });
+
+  it('không né được hạn mức bằng nhiều request nhỏ', () => {
+    expect(remainingHoldQuota(seats(8), seats(3, 100))).toBe(-1);
+  });
+
+  it('giữ lại ghế mình đang giữ không bị tính hai lần', () => {
+    expect(remainingHoldQuota(seats(10), seats(10))).toBe(0);
+  });
+});

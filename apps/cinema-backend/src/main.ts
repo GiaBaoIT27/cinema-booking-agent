@@ -4,14 +4,38 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { Rfc7807ExceptionFilter } from './common/filters/rfc7807-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+/** CORS_ORIGINS="https://a.com,https://b.com". Trống => cho phép mọi origin (CHỈ dev; production bị env.validation chặn). */
+function corsOrigins(): string[] | true {
+  const list = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  return list.length > 0 ? list : true;
+}
 
-  app.enableCors();
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Đứng sau reverse proxy (nginx, load balancer): tin X-Forwarded-For để lấy IP thật
+  // của client – rate limit theo IP phụ thuộc vào đây. Số = số proxy phía trước.
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy) {
+    app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy);
+  }
+
+  // Header bảo mật mặc định (HSTS, nosniff, frameguard...). API chỉ trả JSON nên CSP
+  // của helmet không ảnh hưởng; Swagger UI (nếu bật) cần nới CSP riêng.
+  app.use(helmet());
+  app.enableCors({
+    origin: corsOrigins(),
+    credentials: true,
+  });
   app.setGlobalPrefix('api/v1');
 
   // Tự động validate dữ liệu DTO đầu vào
