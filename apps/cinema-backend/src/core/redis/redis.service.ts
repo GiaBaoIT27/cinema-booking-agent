@@ -100,6 +100,28 @@ export class RedisService implements OnApplicationShutdown {
   }
 
   /**
+   * Gia hạn Atomic Lock bằng Lua Script (chỉ người sở hữu mới gia hạn được).
+   * @returns false nếu lock không còn hoặc thuộc về người khác.
+   */
+  async extendLock(key: string, value: string, ttlMs: number): Promise<boolean> {
+    const luaScript = `
+      if redis.call("get", KEYS[1]) == ARGV[1] then
+          return redis.call("pexpire", KEYS[1], ARGV[2])
+      else
+          return 0
+      end
+    `;
+    const result = await this.redisClient.eval(
+      luaScript,
+      1,
+      key,
+      value,
+      String(ttlMs),
+    );
+    return result === 1;
+  }
+
+  /**
    * Pattern Cache-Aside: Lấy dữ liệu từ Cache, nếu không có sẽ gọi fetchFn để lấy từ DB và ghi ngược vào Cache.
    * Tự động parse/stringify JSON và fallback an toàn khi Redis có sự cố.
    */

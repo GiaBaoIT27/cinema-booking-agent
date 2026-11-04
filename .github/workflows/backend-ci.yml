@@ -1,0 +1,82 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/cinema-backend/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/cinema-backend/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/cinema-backend
+
+jobs:
+  checks:
+    name: Lint, types, unit tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/cinema-backend/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Check TypeScript
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
+
+  integration:
+    # Tranh chấp ghế đồng thời, IPN lặp, compare-and-set… trên PostgreSQL THẬT
+    name: Integration tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cinema_admin
+          POSTGRES_PASSWORD: cinema_password
+          POSTGRES_DB: cinema_db
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U cinema_admin -d cinema_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5433"
+      DB_USERNAME: cinema_admin
+      DB_PASSWORD: cinema_password
+      TEST_DB_NAME: cinema_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/cinema-backend/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Integration tests
+        run: npm run test:int

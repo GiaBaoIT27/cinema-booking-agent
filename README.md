@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Frontend-Next.js%2016%20%7C%20React%2019-000000?style=for-the-badge&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/Mobile-React%20Native%20%7C%20Expo-000020?style=for-the-badge&logo=expo" alt="Expo" />
   <img src="https://img.shields.io/badge/AI%20Agent-LangGraph%20%7C%20Gemini-4285f4?style=for-the-badge&logo=google" alt="AI Agent" />
-  <img src="https://img.shields.io/badge/Cache%20%26%20Lock-Redis%20%7C%20Redlock-dc382d?style=for-the-badge&logo=redis" alt="Redis" />
+  <img src="https://img.shields.io/badge/Cache%20%26%20Lock-Redis%20%7C%20SET%20NX-dc382d?style=for-the-badge&logo=redis" alt="Redis" />
   <img src="https://img.shields.io/badge/Database-PostgreSQL-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" />
 </p>
 
@@ -18,7 +18,7 @@
 
 > **Cinema Booking Agent** là nền tảng quản trị rạp và đặt vé xem phim trực tuyến đa kênh (Web, Mobile) ứng dụng kiến trúc **Monorepo (Turborepo)**, tích hợp **Trợ lý ảo AI (LangGraph + Google Gemini)** hỗ trợ tìm kiếm phim và đặt vé thông minh qua ngôn ngữ tự nhiên.
 >
-> Hệ thống giải quyết triệt để bài toán **High-Concurrency Seat Booking** (tránh trùng ghế đồng thời) bằng giải thuật **Distributed Locking (Redlock over Redis)** và quản lý hàng đợi bất đồng bộ với **BullMQ**.
+> Hệ thống xử lý bài toán **High-Concurrency Seat Booking** (tránh trùng ghế đồng thời) bằng **khóa ghế 2 lớp**: khóa nhanh trên Redis (`SET NX PX`) và ràng buộc nguyên tử trong PostgreSQL (upsert có điều kiện, gắn ghế theo mã đơn, unique index vé) – được kiểm chứng bằng integration test tranh chấp đồng thời; hàng đợi bất đồng bộ với **BullMQ**.
 
 ---
 
@@ -53,8 +53,11 @@
 
 ## Điểm Nổi Bật Hệ Thống
 
-1. **Khóa phân tán chống đặt trùng ghế (Distributed Locking with Redlock):**
-   - Đảm bảo tính nhất quán dữ liệu (Data Consistency) tuyệt đối khi hàng ngàn người dùng cùng click chọn một ghế tại cùng một miligiây.
+1. **Chống đặt trùng ghế 2 lớp (Redis lock + PostgreSQL là nguồn sự thật):**
+   - Redis `SET NX PX` chặn nhanh; PostgreSQL quyết định cuối cùng bằng upsert có điều kiện (all-or-nothing, khóa dòng theo thứ tự cố định để tránh deadlock).
+   - Khi tạo đơn, ghế được **gắn với mã đơn** và gia hạn giữ quá hạn thanh toán → không thể bị người khác lấy hay dùng cho đơn thứ hai; chỉ đúng đơn đó mới chốt (BOOKED) được ghế.
+   - Lớp bảo vệ cuối: unique index `(showtime_id, seat_id)` cho vé còn hiệu lực.
+   - Kiểm chứng: integration test trên Postgres thật (50 request cùng giữ 1 ghế → đúng 1 thành công; IPN lặp → chỉ chốt 1 lần) – `npm run test:int`.
    - Cơ chế tự động giải phóng ghế (Auto-release Hold) sau 5 phút nếu khách hàng không hoàn tất bước thanh toán.
 2. **Hàng đợi tác vụ bất đồng bộ (BullMQ + Redis):**
    - Tự động hủy đơn hàng quá hạn thanh toán mà không làm block luồng HTTP chính.
@@ -85,7 +88,7 @@ graph TD
     Backend["⚡ NestJS Core Backend<br/>(DDD Architecture | Port 3000)"]
 
     Postgres[("🐘 PostgreSQL DB<br/>(Port 5432)")]
-    RedisCache[("🔴 Redis Engine<br/>Cache + Redlock + BullMQ (Port 6379)")]
+    RedisCache[("🔴 Redis Engine<br/>Cache + Seat Lock + BullMQ (Port 6379)")]
     Cloudinary["☁️ Cloudinary Media Storage"]
 
     ClientWeb -->|REST API / SSE| Backend
@@ -113,7 +116,7 @@ graph TD
   - Quản lý phim, lịch chiếu, giá vé linh hoạt theo khung giờ và ngày lễ.
   - Thanh toán tích hợp cổng **VNPay** với xử lý IPN Idempotency.
   - Endpoint kiểm tra sức khỏe hệ thống: `/api/v1/health` (Postgres, Redis, Memory RAM).
-  - Bộ kiểm thử **Vitest 32 unit tests (100% pass)** bao phủ toàn bộ Domain Rules & Payment Service.
+  - Kiểm thử bằng **Vitest**: unit test (`npm test`) cho domain rules, đặt ghế, đơn hàng, thanh toán; integration test trên PostgreSQL thật cho tranh chấp ghế đồng thời (`npm run test:int`).
 
 ### 2. Web Customer Portal (`apps/cinema-frontend-v1`)
 
@@ -256,25 +259,23 @@ npm run dev
 
 ## Kiểm Thử & CI/CD
 
-### Chạy Unit Test Backend (Vitest)
+### Chạy kiểm thử
 
-```bash
-cd apps/cinema-backend
-npm run test
-```
+| App | Lệnh | Nội dung |
+| :-- | :-- | :-- |
+| Backend | `npm test` | Unit test (Vitest): domain rules, giữ ghế, đơn hàng, thanh toán/IPN, hoàn tiền |
+| Backend | `npm run test:int` | Integration test trên **PostgreSQL thật** (DB riêng `cinema_test`): tranh chấp ghế đồng thời, IPN lặp, compare-and-set trạng thái đơn/giao dịch |
+| Agent | `npm test` | Tool, luồng graph, chat handler (model + backend giả, không gọi LLM thật) |
+| Frontend | `npm test` | Luồng giữ ghế và checkout (Vitest) |
 
-<p align="center">
-  <img src="docs/assets/vitest-results.png" alt="Vitest 32 Unit Tests Passed (100%)" width="85%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-</p>
+### GitHub Actions CI
 
-_Kết quả: **32/32 tests pass (100%)** bao phủ toàn diện Booking Rules, Seat Reservations, Payment Idempotency, và Health Service._
+Mỗi Pull Request và commit lên `main` chạy workflow của app có thay đổi (lọc theo `paths`):
 
-### GitHub Actions CI Workflow
-
-Mỗi Pull Request và commit lên nhánh `main` đều tự động kích hoạt workflow:
-
-- `Backend CI`: Chạy lint, TypeScript compilation, và chạy toàn bộ bộ test Vitest.
-- `Frontend CI`: Kiểm tra format Prettier, ESLint (0 errors, 0 warnings), và Next.js production build.
+- **Backend CI**: lint (oxlint), TypeScript, unit test, build; job riêng chạy integration test với service PostgreSQL 16.
+- **Agent CI**: TypeScript, test, build. Bộ eval (`npm run eval`) cần Gemini key nên không chạy trong CI.
+- **Frontend CI**: ESLint, TypeScript, unit test, Next.js production build.
+- **Mobile CI**: Expo lint, TypeScript.
 
 ---
 

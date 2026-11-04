@@ -12,12 +12,22 @@ import type { OrderSummaryDto } from './order-summary.dto.js';
 export class OrdersFacade {
   constructor(private readonly ordersService: OrdersService) {}
 
-  /** Thanh toán thành công: PENDING -> PAID, sinh vé, chốt ghế sang BOOKED. */
+  /**
+   * Thanh toán thành công: PENDING -> PAID, sinh vé, chốt ghế sang BOOKED.
+   * `paidTxnRef` được ghi lên đơn để nhận diện giao dịch đã chốt đơn (chống trả trùng).
+   * Ném ORDER_ALREADY_PROCESSED nếu đơn không còn PENDING / đang được xử lý song song,
+   * ORDER_SEATS_NO_LONGER_AVAILABLE nếu ghế không còn được giữ cho đơn.
+   */
   fulfillOrder(
     orderId: string | number,
     paymentMethod: PaymentMethod,
+    paidTxnRef?: string,
   ): Promise<OrderSummaryDto> {
-    return this.ordersService.fulfillOrder(String(orderId), paymentMethod);
+    return this.ordersService.fulfillOrder(
+      String(orderId),
+      paymentMethod,
+      paidTxnRef ?? null,
+    );
   }
 
   /** Hủy các đơn PENDING quá hạn thanh toán và giải phóng ghế (gọi bởi cron/job). */

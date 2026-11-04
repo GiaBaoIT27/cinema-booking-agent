@@ -1,0 +1,41 @@
+name: Mobile CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/cinema-mobile/**"
+      - ".github/workflows/mobile-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/cinema-mobile/**"
+      - ".github/workflows/mobile-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile:
+    name: Lint, types
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/cinema-mobile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/cinema-mobile/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Check TypeScript
+        run: npm run typecheck

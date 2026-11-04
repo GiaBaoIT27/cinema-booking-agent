@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, IsNull, Repository } from 'typeorm';
 import { Payment } from '../../domain/entities/payment.entity.js';
 import { PaymentTransaction } from '../../domain/entities/payment-transaction.entity.js';
-import { IPaymentRepository } from '../../domain/repositories/payment.repository.interface.js';
+import { PaymentStatus } from '../../domain/enums/payment-status.enum.js';
+import type {
+  IPaymentRepository,
+  TransactionPatch,
+} from '../../domain/repositories/payment.repository.interface.js';
 
 @Injectable()
 export class TypeOrmPaymentRepository implements IPaymentRepository {
@@ -60,5 +64,51 @@ export class TypeOrmPaymentRepository implements IPaymentRepository {
       order: { createdAt: 'DESC' },
     });
   }
-}
 
+  async transitionTransaction(
+    txnRef: string,
+    from: PaymentStatus,
+    to: PaymentStatus,
+    patch: TransactionPatch = {},
+  ): Promise<boolean> {
+    const result = await this.txnRepo
+      .createQueryBuilder()
+      .update(PaymentTransaction)
+      .set({ ...patch, paymentStatus: to })
+      .where('txnRef = :txnRef', { txnRef })
+      .andWhere('paymentStatus = :from', { from })
+      .execute();
+    return (result.affected ?? 0) === 1;
+  }
+
+  async markTransactionSettled(txnRef: string, at: Date): Promise<void> {
+    await this.txnRepo.update({ txnRef }, { settledAt: at });
+  }
+
+  findUnsettledSuccessful(
+    paidBefore: Date,
+    limit: number,
+    paidAfter: Date,
+  ): Promise<PaymentTransaction[]> {
+    return this.txnRepo.find({
+      where: {
+        paymentStatus: PaymentStatus.SUCCESS,
+        settledAt: IsNull(),
+        paidAt: Between(paidAfter, paidBefore),
+      },
+      order: { paidAt: 'ASC' },
+      take: limit,
+    });
+  }
+
+  findTransactionsByStatus(
+    status: PaymentStatus,
+    limit: number,
+  ): Promise<PaymentTransaction[]> {
+    return this.txnRepo.find({
+      where: { paymentStatus: status },
+      order: { updatedAt: 'ASC' },
+      take: limit,
+    });
+  }
+}

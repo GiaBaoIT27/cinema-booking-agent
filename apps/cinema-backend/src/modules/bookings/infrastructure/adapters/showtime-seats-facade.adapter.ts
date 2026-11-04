@@ -37,17 +37,49 @@ export class ShowtimeSeatsFacadeAdapter implements ISeatInventory {
     return this.showtimesFacade.findExpiredSeatHolds(now);
   }
 
-  saveHolds(
+  tryHold(
     showtimeId: string,
     seatIds: string[],
     userId: string,
     expiresAt: Date,
-  ): Promise<void> {
-    return this.showtimesFacade.saveSeatHolds(
+    now: Date,
+  ): Promise<boolean> {
+    return this.showtimesFacade.tryHoldSeats(
       showtimeId,
       seatIds,
       userId,
       expiresAt,
+      now,
+    );
+  }
+
+  claimForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    orderCode: string,
+    holdUntil: Date,
+    now: Date,
+  ): Promise<boolean> {
+    return this.showtimesFacade.claimSeatsForOrder(
+      showtimeId,
+      seatIds,
+      userId,
+      orderCode,
+      holdUntil,
+      now,
+    );
+  }
+
+  unclaimForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<void> {
+    return this.showtimesFacade.unclaimSeatsForOrder(
+      showtimeId,
+      seatIds,
+      orderCode,
     );
   }
 
@@ -59,18 +91,48 @@ export class ShowtimeSeatsFacadeAdapter implements ISeatInventory {
     return this.showtimesFacade.releaseSeatHolds(showtimeId, seatIds, userId);
   }
 
-  markBooked(showtimeId: string, seatIds: string[]): Promise<number> {
-    return this.showtimesFacade.markSeatsBooked(showtimeId, seatIds);
+  markBooked(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<boolean> {
+    return this.showtimesFacade.markSeatsBooked(showtimeId, seatIds, orderCode);
+  }
+
+  isBookedForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<boolean> {
+    return this.showtimesFacade.areSeatsBookedForOrder(
+      showtimeId,
+      seatIds,
+      orderCode,
+    );
+  }
+
+  revertBooked(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<void> {
+    return this.showtimesFacade.revertSeatsBooked(
+      showtimeId,
+      seatIds,
+      orderCode,
+    );
   }
 
   releaseForOrder(
     showtimeId: string,
     seatIds: string[],
+    orderCode: string,
     userId?: string,
   ): Promise<void> {
     return this.showtimesFacade.releaseSeatsForOrder(
       showtimeId,
       seatIds,
+      orderCode,
       userId,
     );
   }

@@ -52,6 +52,46 @@ export class RedisSeatHoldStore implements ISeatHoldStore {
     return expiresAt;
   }
 
+  async extend(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    ttlMs: number,
+  ): Promise<void> {
+    if (seatIds.length === 0) return;
+
+    // 1. Gia hạn khóa của chính user; khóa đã mất (Redis restart / hết TTL) thì lấy lại
+    for (const seatId of seatIds) {
+      const key = BOOKING_REDIS_KEYS.SEAT_LOCK(showtimeId, seatId);
+      const ok =
+        (await this.redisService.extendLock(key, userId, ttlMs)) ||
+        (await this.redisService.acquireLock(key, userId, ttlMs));
+      if (!ok) {
+        this.logger.warn(
+          `Không gia hạn được khóa ghế ${seatId} (suất ${showtimeId}) cho user ${userId}; DB vẫn giữ ghế cho đơn hàng.`,
+        );
+      }
+    }
+
+    // 2. Cập nhật hạn giữ hiển thị trên sơ đồ ghế
+    const expiresAt = new Date(Date.now() + ttlMs);
+    const payload = JSON.stringify({
+      userId,
+      expiresAt: expiresAt.toISOString(),
+    });
+    const fields: Record<string, string> = {};
+    for (const seatId of seatIds) fields[seatId] = payload;
+
+    const client = this.redisService.getClient();
+    const holdsKey = BOOKING_REDIS_KEYS.HOLDS(showtimeId);
+    await client.hset(holdsKey, fields);
+    const neededTtlMs = ttlMs + 60_000;
+    const currentTtlMs = await client.pttl(holdsKey);
+    if (currentTtlMs < neededTtlMs) {
+      await client.pexpire(holdsKey, neededTtlMs);
+    }
+  }
+
   async release(
     showtimeId: string,
     seatIds: string[],

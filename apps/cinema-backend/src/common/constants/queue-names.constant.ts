@@ -14,6 +14,9 @@ export const QueueNames = {
   /** Gửi thông báo đẩy (push notification) */
   PUSH_NOTIFICATION: 'push-notification',
 
+  /** Job bảo trì định kỳ: hủy đơn quá hạn, nhả ghế hết hạn giữ, đối soát thanh toán */
+  MAINTENANCE: 'maintenance',
+
   /** Nhắc khách hàng trước giờ chiếu */
   SHOWTIME_REMINDER: 'showtime-reminder',
 } as const;

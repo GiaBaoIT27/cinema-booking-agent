@@ -34,6 +34,14 @@ export class ShowtimeSeat {
   @Column({ name: 'hold_expires_at', type: 'timestamp', nullable: true })
   holdExpiresAt: Date | null;
 
+  /**
+   * Mã đơn hàng đã "nhận" ghế đang giữ (gắn khi tạo đơn PENDING, giữ nguyên khi BOOKED).
+   * Ghế đã gắn đơn thì không thể bị giữ lại / dùng cho đơn khác, và chỉ đúng đơn đó
+   * mới chốt (BOOKED) hoặc nhả được ghế.
+   */
+  @Column({ name: 'order_code', type: 'varchar', length: 64, nullable: true })
+  orderCode: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
 

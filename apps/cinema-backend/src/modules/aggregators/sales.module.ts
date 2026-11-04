@@ -5,6 +5,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
 import { OrdersModule } from '../orders/orders.module.js';
 import { PaymentsModule } from '../payments/payments.module.js';
 import { PromotionsModule } from '../promotions/promotions.module.js';
+import { MaintenanceModule } from '../maintenance/maintenance.module.js';
 
 /**
  * Trục Sales: Bookings, Orders, Payments, Promotions, Fnb, Notifications.
@@ -27,6 +28,7 @@ import { PromotionsModule } from '../promotions/promotions.module.js';
     OrdersModule,
     PaymentsModule,
     NotificationsModule,
+    MaintenanceModule,
   ],
 })
 export class SalesModule {}

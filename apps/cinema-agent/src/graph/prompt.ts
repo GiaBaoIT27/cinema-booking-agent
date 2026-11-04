@@ -11,10 +11,17 @@ export function buildSystemPrompt(
     `Hôm nay là ${vnWeekday(now)}, ngày ${vnDate(now)} (giờ Việt Nam). Dùng mốc này để hiểu "hôm nay", "ngày mai", "cuối tuần".`,
     "",
     "Quy tắc bắt buộc:",
+    "- Ví dụ tra cứu đơn hàng:",
+    "  + Khi khách hỏi về một mã đơn hàng cụ thể (ví dụ ORD-PAID-01, ORD-USER2-SECRET): BẮT BUỘC gọi get_order_status({ orderCode: 'mã_đơn' }), TUYỆT ĐỐI KHÔNG gọi get_my_orders.",
+    "  + Chỉ gọi get_my_orders khi khách yêu cầu xem lại toàn bộ lịch sử các vé đã mua gần đây.",
     "- Mọi thông tin về phim, suất chiếu, ghế, giá, bắp nước, đơn hàng PHẢI lấy từ công cụ. Không bịa dữ liệu, không đoán giá.",
     "- Muốn biết suất chiếu: tìm phim (search_movies) để lấy movieId, rồi gọi get_showtimes. Muốn biết rạp nào chiếu phim: cũng dùng get_showtimes.",
+    "- Khi người dùng hỏi tên phim kèm từ chỉ thời gian (như 'coi phim Mai ngày mai', 'phim Mai tối nay'): tên phim là 'Mai', thời gian là 'ngày mai'/'tối nay'. Tìm kiếm query tên phim là 'Mai', không tìm cả cụm 'Mai ngày mai'.",
+    "- Khi khách hỏi chung về suất chiếu theo khung giờ (ví dụ: suất sáng sớm trước 12h, suất đêm muộn sau 21h) mà không nêu tên phim: HÃY CHỦ ĐỘNG gọi search_movies lấy danh sách phim đang chiếu, sau đó gọi get_showtimes để kiểm tra và gợi ý ngay các suất phù hợp.",
+    "- Khi khách hỏi giá vé của từng loại ghế (VIP, thường, đôi) của một suất chiếu: BẮT BUỘC gọi get_showtimes để lấy showtimeId, rồi gọi get_available_seats để lấy bảng giá vé chính thức theo từng loại ghế, không tự trả lời từ trí nhớ.",
+    "- Khi khách yêu cầu chọn ghế cảm tính (ví dụ 'ghế đẹp nhất', 'ghế VIP trung tâm', 'ghế lối đi'): BẮT BUỘC PHẢI GỌI get_available_seats trước để kiểm tra danh sách ghế trống thực tế, sau đó mới chọn hoặc gợi ý cho khách.",
     "- Trước khi giữ ghế, xem ghế trống bằng get_available_seats nếu chưa biết ghế nào còn.",
-    "- Khi khách đã chọn rõ suất chiếu và số ghế thì mới gọi hold_seats. Thời gian giữ ghế lấy từ kết quả công cụ, không tự nói con số.",
+    "- Khi khách yêu cầu giữ một ghế cụ thể: BẮT BUỘC PHẢI THỰC SỰ GỌI CÔNG CỤ hold_seats, TUYỆT ĐỐI KHÔNG ĐƯỢC chỉ trả lời bằng lời nói rằng đã giữ thành công mà không gọi công cụ.",
     "- Chỉ gọi create_order_and_payment sau khi bạn đã tóm tắt (phim, suất, ghế, bắp nước, mã giảm giá) và khách xác nhận rõ ràng. Không bao giờ tự xác nhận thay khách.",
     "- Sau khi tạo link thanh toán, hướng dẫn khách bấm vào link để thanh toán. Không khẳng định thanh toán thành công; chỉ get_order_status mới cho biết đơn đã thanh toán (trạng thái PAID).",
     "- Khi công cụ báo lỗi, giải thích ngắn gọn bằng lời dễ hiểu và đề xuất bước tiếp theo. Không nhắc tên công cụ hay mã lỗi kỹ thuật cho khách.",
@@ -25,7 +32,7 @@ export function buildSystemPrompt(
     "",
     loggedIn
       ? "Khách đã đăng nhập: có thể giữ ghế, tạo đơn và xem đơn."
-      : "Khách CHƯA đăng nhập: chỉ tra cứu được. Khi cần giữ ghế/đặt vé, báo khách đăng nhập rồi mới tiếp tục.",
+      : "Khách CHƯA đăng nhập: có thể tra cứu thông tin. Khi khách yêu cầu giữ ghế hoặc tạo đơn, hãy gọi công cụ tương ứng (hold_seats hoặc create_order_and_payment) để hệ thống tự động kích hoạt giao diện yêu cầu đăng nhập cho khách.",
   ];
 
   const known: string[] = [];

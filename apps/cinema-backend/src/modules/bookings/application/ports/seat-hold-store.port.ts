@@ -15,6 +15,17 @@ export interface ISeatHoldStore {
   ): Promise<Date | null>;
 
   /**
+   * Gia hạn khóa của chính `userId` thêm `ttlMs` (lấy lại khóa nếu đã mất) và cập nhật
+   * hạn giữ hiển thị. Best-effort: DB mới là nguồn sự thật chống bán trùng.
+   */
+  extend(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    ttlMs: number,
+  ): Promise<void>;
+
+  /**
    * Xóa trạng thái giữ của các ghế. Chỉ nhả khóa khi truyền `userId`
    * (khóa chỉ được nhả bởi đúng chủ sở hữu); bảng tra cứu luôn được xóa.
    */

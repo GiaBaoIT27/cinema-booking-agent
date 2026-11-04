@@ -1,0 +1,45 @@
+name: Agent CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/cinema-agent/**"
+      - ".github/workflows/agent-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/cinema-agent/**"
+      - ".github/workflows/agent-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  agent:
+    # Không gọi LLM thật: test dùng model giả + backend giả. Bộ eval (npm run eval)
+    # cần Gemini key và tốn quota nên KHÔNG chạy trong CI.
+    name: Types, tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/cinema-agent
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/cinema-agent/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check TypeScript
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build

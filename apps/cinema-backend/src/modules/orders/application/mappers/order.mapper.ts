@@ -82,6 +82,7 @@ export function toOrderSnapshot(order: Order): OrderSnapshot {
     showtimeId: Number(order.showtimeId),
     status: order.status,
     paymentMethod: order.paymentMethod,
+    paidTxnRef: order.paidTxnRef ?? null,
     finalAmount: Number(order.finalAmount),
     expiresAt: order.expiresAt,
   };

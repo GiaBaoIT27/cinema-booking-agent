@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Inject, Logger } from '@nestjs/common';
 
 import { Order } from '../../domain/entities/order.entity.js';
 import { OrderStatus } from '../../domain/enums/order-status.enum.js';
@@ -13,6 +13,7 @@ import type { ITicketRepository } from '../../domain/repositories/ticket.reposit
 import {
   calculateExpiresAt,
   calculateFinalAmount,
+  calculateSeatHoldUntil,
   generateOrderCode,
   generateTicketCode,
 } from '../../domain/rules/order-rules.js';
@@ -145,35 +146,65 @@ export class OrdersService {
       );
     }
 
-    // 4. Tạo đơn
+    // 4. Gắn ghế vào đơn (nguyên tử) + gia hạn giữ ghế quá hạn thanh toán của đơn.
+    //    Chặn: dùng một lượt giữ ghế cho 2 đơn, và ghế tự nhả khi đơn còn PENDING.
     const now = new Date();
-    const order = await this.unitOfWork.run((tx) =>
-      this.orderRepository.createPending(
-        {
-          order: {
-            orderCode: generateOrderCode(now),
-            userId,
-            showtimeId,
-            channel: dto.channel,
-            subtotalTickets: holding.subtotalTickets,
-            subtotalFnb: fnb.subtotal,
-            discountAmount,
-            finalAmount: calculateFinalAmount(
-              holding.subtotalTickets,
-              fnb.subtotal,
+    const orderCode = generateOrderCode(now);
+    const expiresAt = calculateExpiresAt(now);
+    const reserved = await this.seatReservation.reserveForOrder({
+      showtimeId,
+      seatIds,
+      userId,
+      orderCode,
+      holdUntil: calculateSeatHoldUntil(expiresAt),
+    });
+    if (!reserved) {
+      throw new BusinessException(
+        ErrorCode.SEATS_HOLD_EXPIRED_OR_INVALID,
+        'Ghế giữ chỗ không hợp lệ, đã hết hạn hoặc đã thuộc một đơn hàng khác. Vui lòng chọn ghế lại.',
+      );
+    }
+
+    // 5. Tạo đơn; thất bại => gỡ gắn đơn để user có thể thử lại với chính các ghế đó
+    let order: Order;
+    try {
+      order = await this.unitOfWork.run((tx) =>
+        this.orderRepository.createPending(
+          {
+            order: {
+              orderCode,
+              userId,
+              showtimeId,
+              channel: dto.channel,
+              subtotalTickets: holding.subtotalTickets,
+              subtotalFnb: fnb.subtotal,
               discountAmount,
-            ),
-            expiresAt: calculateExpiresAt(now),
+              finalAmount: calculateFinalAmount(
+                holding.subtotalTickets,
+                fnb.subtotal,
+                discountAmount,
+              ),
+              expiresAt,
+            },
+            seats: holding.seats.map((seat) => ({
+              seatId: seat.seatId,
+              price: seat.price,
+            })),
+            fnbItems: fnb.lines,
           },
-          seats: holding.seats.map((seat) => ({
-            seatId: seat.seatId,
-            price: seat.price,
-          })),
-          fnbItems: fnb.lines,
-        },
-        tx,
-      ),
-    );
+          tx,
+        ),
+      );
+    } catch (error) {
+      await this.seatReservation
+        .cancelReservationForOrder({ showtimeId, seatIds, orderCode })
+        .catch((compensateError: unknown) =>
+          this.logger.error(
+            `[createOrder] Không gỡ được gắn đơn ${orderCode} khỏi ghế: ${String(compensateError)}`,
+          ),
+        );
+      throw error;
+    }
 
     return toOrderCreatedResponse(order, seatIds);
   }
@@ -188,16 +219,30 @@ export class OrdersService {
   ): Promise<string[]> {
     const seatIds = await this.orderRepository.findSeatIds(order.id);
 
-    await this.unitOfWork.run(async (tx) => {
-      order.status = finalStatus;
-      await this.orderRepository.save(order, tx);
-      await this.orderRepository.cancelPendingFnbDetails(order.id, tx);
+    // CAS PENDING -> final: nếu thanh toán vừa chốt đơn (PAID) thì KHÔNG hủy, KHÔNG nhả ghế
+    const closed = await this.unitOfWork.run(async (tx) => {
+      const ok = await this.orderRepository.transitionStatus(
+        order.id,
+        OrderStatus.PENDING,
+        finalStatus,
+        tx,
+      );
+      if (ok) await this.orderRepository.cancelPendingFnbDetails(order.id, tx);
+      return ok;
     });
+    if (!closed) {
+      throw new BusinessException(
+        ErrorCode.ORDER_ALREADY_PROCESSED,
+        `Đơn hàng ${order.orderCode} đã được xử lý bởi một thao tác khác`,
+      );
+    }
+    order.status = finalStatus;
 
     if (seatIds.length > 0) {
       await this.seatReservation.release({
         showtimeId: order.showtimeId,
         seatIds,
+        orderCode: order.orderCode,
         userId: order.userId ?? undefined,
       });
     }
@@ -233,6 +278,16 @@ export class OrdersService {
         await this.closePendingOrder(order, OrderStatus.EXPIRED);
         count++;
       } catch (err) {
+        if (
+          err instanceof BusinessException &&
+          err.errorCode === ErrorCode.ORDER_ALREADY_PROCESSED
+        ) {
+          // Thanh toán vừa chốt đơn ngay trước khi job kịp hủy – đúng mong đợi
+          this.logger.log(
+            `[cleanupExpiredOrders] Bỏ qua đơn ${order.orderCode}: vừa được xử lý bởi thanh toán`,
+          );
+          continue;
+        }
         this.logger.error(
           `[cleanupExpiredOrders] Lỗi khi hủy đơn ${order.id}: ${err}`,
         );
@@ -269,6 +324,7 @@ export class OrdersService {
   async fulfillOrder(
     orderId: string,
     paymentMethod: PaymentMethod,
+    paidTxnRef: string | null = null,
   ): Promise<OrderSnapshot> {
     const order = await this.orderRepository.findByIdWithSeatDetails(orderId);
     if (!order) throw this.orderNotFound(orderId);
@@ -280,39 +336,91 @@ export class OrdersService {
       );
     }
 
-    const seatIds = order.seatDetails.map((seat) => seat.seatId);
+    const orderSeats = {
+      showtimeId: order.showtimeId,
+      seatIds: order.seatDetails.map((seat) => seat.seatId),
+      orderCode: order.orderCode,
+      userId: order.userId ?? undefined,
+    };
+    const hasSeats = orderSeats.seatIds.length > 0;
 
-    await this.unitOfWork.run(async (tx) => {
-      order.status = OrderStatus.PAID;
-      order.paymentMethod = paymentMethod;
-      await this.orderRepository.save(order, tx);
-
-      const now = new Date();
-      await this.ticketRepository.createMany(
-        order.seatDetails.map((seat) => ({
-          orderId: order.id,
-          showtimeId: order.showtimeId,
-          seatId: seat.seatId,
-          ticketCode: generateTicketCode(now),
-          price: seat.price,
-          status: TicketStatus.VALID,
-        })),
-        tx,
+    // 1. Chốt ghế TRƯỚC khi sinh vé (all-or-nothing, chỉ ghế đang gắn đúng đơn này).
+    //    Không chốt được => KHÔNG sinh vé, tránh 2 vé hợp lệ cho cùng một ghế.
+    if (hasSeats && !(await this.seatReservation.markBooked(orderSeats))) {
+      // Ghế đã BOOKED cho CHÍNH đơn này => một request song song (VD: IPN gửi lặp) đang/đã
+      // xử lý đơn. KHÔNG được coi là mất ghế, nếu không sẽ hoàn tiền oan cho đơn đã xuất vé.
+      const latest = await this.orderRepository.findById(orderId);
+      if (
+        (latest && latest.status !== OrderStatus.PENDING) ||
+        (await this.seatReservation.isBookedForOrder(orderSeats))
+      ) {
+        throw new BusinessException(
+          ErrorCode.ORDER_ALREADY_PROCESSED,
+          `Đơn hàng đã được xử lý (trạng thái: ${latest?.status ?? order.status})`,
+        );
+      }
+      this.logger.error(
+        `[fulfillOrder] Đơn ${order.orderCode} đã thanh toán nhưng ghế [${orderSeats.seatIds.join(', ')}] không còn được giữ cho đơn – cần hoàn tiền/đối soát.`,
       );
-    });
-
-    // Chốt ghế (kèm dọn trạng thái giữ tạm thời của người mua)
-    if (seatIds.length > 0) {
-      const bookedCount = await this.seatReservation.markBooked(
-        order.showtimeId,
-        seatIds,
-        order.userId ?? undefined,
-      );
-      this.logger.log(
-        `[Order] Đã chốt ${bookedCount}/${seatIds.length} ghế sang BOOKED cho đơn hàng ${order.orderCode}`,
+      throw new BusinessException(
+        ErrorCode.ORDER_SEATS_NO_LONGER_AVAILABLE,
+        'Ghế của đơn hàng không còn được giữ, không thể xuất vé.',
+        HttpStatus.CONFLICT,
       );
     }
 
+    // 2. Ghi đơn PAID + sinh vé trong một transaction; lỗi => trả ghế về HOLDING cho đơn
+    try {
+      await this.unitOfWork.run(async (tx) => {
+        // CAS PENDING -> PAID: thua job hủy đơn quá hạn / request song song => rollback
+        const paid = await this.orderRepository.transitionStatus(
+          order.id,
+          OrderStatus.PENDING,
+          OrderStatus.PAID,
+          tx,
+          { paymentMethod, paidTxnRef },
+        );
+        if (!paid) {
+          throw new BusinessException(
+            ErrorCode.ORDER_ALREADY_PROCESSED,
+            `Đơn hàng ${order.orderCode} đã được xử lý bởi một thao tác khác`,
+          );
+        }
+        order.status = OrderStatus.PAID;
+        order.paymentMethod = paymentMethod;
+        order.paidTxnRef = paidTxnRef;
+
+        const now = new Date();
+        await this.ticketRepository.createMany(
+          order.seatDetails.map((seat) => ({
+            orderId: order.id,
+            showtimeId: order.showtimeId,
+            seatId: seat.seatId,
+            ticketCode: generateTicketCode(now),
+            price: seat.price,
+            status: TicketStatus.VALID,
+          })),
+          tx,
+        );
+      });
+    } catch (error) {
+      order.status = OrderStatus.PENDING;
+      order.paidTxnRef = null;
+      if (hasSeats) {
+        await this.seatReservation
+          .revertBooked(orderSeats)
+          .catch((compensateError: unknown) =>
+            this.logger.error(
+              `[fulfillOrder] Không trả được ghế về HOLDING cho đơn ${order.orderCode}: ${String(compensateError)}`,
+            ),
+          );
+      }
+      throw error;
+    }
+
+    this.logger.log(
+      `[Order] Đã chốt ${orderSeats.seatIds.length} ghế sang BOOKED cho đơn hàng ${order.orderCode}`,
+    );
     return toOrderSnapshot(order);
   }
 

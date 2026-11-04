@@ -6,6 +6,7 @@ import { Order } from '../../domain/entities/order.entity.js';
 import { OrderSeatDetail } from '../../domain/entities/order-seat-details.entity.js';
 import { OrderFnbDetail } from '../../domain/entities/order-fnb-details.entity.js';
 import { OrderStatus } from '../../domain/enums/order-status.enum.js';
+import { PaymentMethod } from '../../domain/enums/payment-method.enum.js';
 import { FnbDetailStatus } from '../../domain/enums/fnb-detail-status.enum.js';
 import type { TransactionContext } from '../../domain/ports/transaction.port.js';
 import type {
@@ -102,6 +103,23 @@ export class TypeOrmOrderRepository implements IOrderRepository {
 
   save(order: Order, tx?: TransactionContext): Promise<Order> {
     return repositoryOf(Order, this.orders, tx).save(order);
+  }
+
+  async transitionStatus(
+    orderId: string,
+    from: OrderStatus,
+    to: OrderStatus,
+    tx: TransactionContext,
+    patch: { paymentMethod?: PaymentMethod; paidTxnRef?: string | null } = {},
+  ): Promise<boolean> {
+    const result = await managerOf(tx)
+      .createQueryBuilder()
+      .update(Order)
+      .set({ status: to, ...patch })
+      .where('id = :orderId', { orderId })
+      .andWhere('status = :from', { from })
+      .execute();
+    return (result.affected ?? 0) === 1;
   }
 
   async cancelPendingFnbDetails(

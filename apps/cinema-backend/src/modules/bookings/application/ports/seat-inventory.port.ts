@@ -27,28 +27,68 @@ export interface ISeatInventory {
   /** Ghế HOLDING đã quá hạn. */
   findExpiredHolds(now: Date): Promise<SeatHoldRecord[]>;
 
-  /** Upsert HOLDING cho các ghế. */
-  saveHolds(
+  /**
+   * Giữ ghế nguyên tử ở DB (all-or-nothing) – nguồn sự thật cuối cùng, kể cả khi Redis
+   * mất khóa. false => có ghế đang được người khác giữ / đã gắn đơn / đã bán.
+   */
+  tryHold(
     showtimeId: string,
     seatIds: string[],
     userId: string,
     expiresAt: Date,
+    now: Date,
+  ): Promise<boolean>;
+
+  /** Gắn ghế HOLDING (chưa gắn đơn) của user vào đơn + gia hạn giữ (all-or-nothing). */
+  claimForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    orderCode: string,
+    holdUntil: Date,
+    now: Date,
+  ): Promise<boolean>;
+
+  /** Gỡ gắn đơn (ghế vẫn HOLDING). */
+  unclaimForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
   ): Promise<void>;
 
-  /** HOLDING của `userId` -> AVAILABLE. Trả về số dòng ảnh hưởng. */
+  /** HOLDING (chưa gắn đơn) của `userId` -> AVAILABLE. Trả về số dòng ảnh hưởng. */
   releaseHolds(
     showtimeId: string,
     seatIds: string[],
     userId: string,
   ): Promise<number>;
 
-  /** HOLDING -> BOOKED. Trả về số dòng ảnh hưởng. */
-  markBooked(showtimeId: string, seatIds: string[]): Promise<number>;
+  /** HOLDING của đơn `orderCode` -> BOOKED (all-or-nothing). */
+  markBooked(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<boolean>;
 
-  /** BOOKED, hoặc HOLDING (của `userId` nếu có) -> AVAILABLE. */
+  /** Toàn bộ ghế đã BOOKED cho đúng đơn `orderCode`? */
+  isBookedForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<boolean>;
+
+  /** BOOKED của đơn `orderCode` -> HOLDING. */
+  revertBooked(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<void>;
+
+  /** HOLDING của đơn `orderCode` (hoặc HOLDING chưa gắn đơn của `userId`) -> AVAILABLE. */
   releaseForOrder(
     showtimeId: string,
     seatIds: string[],
+    orderCode: string,
     userId?: string,
   ): Promise<void>;
 

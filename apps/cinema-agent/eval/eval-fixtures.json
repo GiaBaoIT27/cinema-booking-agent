@@ -1,60 +1,60 @@
 {
-  "generatedAt": "2026-10-19T15:52:45.527Z",
+  "generatedAt": "2026-11-04T09:48:28.824Z",
   "timezone": "Asia/Ho_Chi_Minh",
-  "evalDate": "2026-10-20",
+  "evalDate": "2026-11-05",
   "password": "Eval123@Password",
   "users": [
     {
       "key": "user1",
-      "id": "6",
+      "id": "3",
       "email": "eval.user1@cinema.com"
     },
     {
       "key": "user2",
-      "id": "7",
+      "id": "4",
       "email": "eval.user2@cinema.com"
     }
   ],
   "showtimes": [
     {
       "key": "mai-morning",
-      "id": "1916",
+      "id": "669",
       "movieId": "1",
       "movieTitle": "Mai",
-      "startTime": "2026-10-20T03:00:00.000Z",
+      "startTime": "2026-11-05T03:00:00.000Z",
       "localStart": "10:00",
-      "auditoriumId": "16",
+      "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
       "screenType": "STANDARD"
     },
     {
       "key": "quatmo-afternoon",
-      "id": "1917",
+      "id": "670",
       "movieId": "3",
       "movieTitle": "Quật Mộ Trùng Phùng",
-      "startTime": "2026-10-20T07:00:00.000Z",
+      "startTime": "2026-11-05T07:00:00.000Z",
       "localStart": "14:00",
-      "auditoriumId": "16",
+      "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
       "screenType": "STANDARD"
     },
     {
       "key": "mai-evening",
-      "id": "1918",
+      "id": "671",
       "movieId": "1",
       "movieTitle": "Mai",
-      "startTime": "2026-10-20T12:30:00.000Z",
+      "startTime": "2026-11-05T12:30:00.000Z",
       "localStart": "19:30",
-      "auditoriumId": "16",
+      "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
       "screenType": "STANDARD"
     },
     {
       "key": "dune-afternoon",
-      "id": "1919",
+      "id": "672",
       "movieId": "2",
       "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-      "startTime": "2026-10-20T07:00:00.000Z",
+      "startTime": "2026-11-05T07:00:00.000Z",
       "localStart": "14:00",
       "auditoriumId": "8",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-02",
@@ -62,10 +62,10 @@
     },
     {
       "key": "dune-evening",
-      "id": "1920",
+      "id": "673",
       "movieId": "2",
       "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-      "startTime": "2026-10-20T13:00:00.000Z",
+      "startTime": "2026-11-05T13:00:00.000Z",
       "localStart": "20:00",
       "auditoriumId": "8",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-02",
@@ -76,95 +76,463 @@
     "CPX-HCM-BENNGHE-HALL-01": {
       "NORMAL": [
         {
-          "id": "1402",
+          "id": "568",
           "seatNumber": "A1"
         },
         {
-          "id": "1403",
+          "id": "569",
           "seatNumber": "A2"
         },
         {
-          "id": "1404",
+          "id": "570",
           "seatNumber": "A3"
         },
         {
-          "id": "1405",
+          "id": "571",
           "seatNumber": "A4"
         },
         {
-          "id": "1406",
+          "id": "572",
           "seatNumber": "A5"
         },
         {
-          "id": "1407",
+          "id": "573",
           "seatNumber": "A6"
         },
         {
-          "id": "1408",
+          "id": "574",
           "seatNumber": "A7"
         },
         {
-          "id": "1409",
+          "id": "575",
           "seatNumber": "A8"
+        },
+        {
+          "id": "576",
+          "seatNumber": "A9"
+        },
+        {
+          "id": "577",
+          "seatNumber": "A10"
+        },
+        {
+          "id": "578",
+          "seatNumber": "A11"
+        },
+        {
+          "id": "579",
+          "seatNumber": "A12"
+        },
+        {
+          "id": "580",
+          "seatNumber": "B1"
+        },
+        {
+          "id": "581",
+          "seatNumber": "B2"
+        },
+        {
+          "id": "582",
+          "seatNumber": "B3"
+        },
+        {
+          "id": "583",
+          "seatNumber": "B4"
+        },
+        {
+          "id": "584",
+          "seatNumber": "B5"
+        },
+        {
+          "id": "585",
+          "seatNumber": "B6"
+        },
+        {
+          "id": "586",
+          "seatNumber": "B7"
+        },
+        {
+          "id": "587",
+          "seatNumber": "B8"
+        },
+        {
+          "id": "588",
+          "seatNumber": "B9"
+        },
+        {
+          "id": "589",
+          "seatNumber": "B10"
+        },
+        {
+          "id": "590",
+          "seatNumber": "B11"
+        },
+        {
+          "id": "591",
+          "seatNumber": "B12"
+        },
+        {
+          "id": "592",
+          "seatNumber": "C1"
+        },
+        {
+          "id": "593",
+          "seatNumber": "C2"
+        },
+        {
+          "id": "594",
+          "seatNumber": "C3"
+        },
+        {
+          "id": "595",
+          "seatNumber": "C4"
+        },
+        {
+          "id": "596",
+          "seatNumber": "C5"
+        },
+        {
+          "id": "597",
+          "seatNumber": "C6"
+        },
+        {
+          "id": "598",
+          "seatNumber": "C7"
+        },
+        {
+          "id": "599",
+          "seatNumber": "C8"
+        },
+        {
+          "id": "600",
+          "seatNumber": "C9"
+        },
+        {
+          "id": "601",
+          "seatNumber": "C10"
+        },
+        {
+          "id": "602",
+          "seatNumber": "C11"
+        },
+        {
+          "id": "603",
+          "seatNumber": "C12"
+        },
+        {
+          "id": "652",
+          "seatNumber": "H1"
+        },
+        {
+          "id": "653",
+          "seatNumber": "H2"
+        },
+        {
+          "id": "654",
+          "seatNumber": "H3"
+        },
+        {
+          "id": "655",
+          "seatNumber": "H4"
+        },
+        {
+          "id": "656",
+          "seatNumber": "H5"
+        },
+        {
+          "id": "657",
+          "seatNumber": "H6"
+        },
+        {
+          "id": "658",
+          "seatNumber": "H7"
+        },
+        {
+          "id": "659",
+          "seatNumber": "H8"
+        },
+        {
+          "id": "660",
+          "seatNumber": "H9"
+        },
+        {
+          "id": "661",
+          "seatNumber": "H10"
+        },
+        {
+          "id": "662",
+          "seatNumber": "H11"
+        },
+        {
+          "id": "663",
+          "seatNumber": "H12"
+        },
+        {
+          "id": "664",
+          "seatNumber": "I1"
+        },
+        {
+          "id": "665",
+          "seatNumber": "I2"
+        },
+        {
+          "id": "666",
+          "seatNumber": "I3"
+        },
+        {
+          "id": "667",
+          "seatNumber": "I4"
+        },
+        {
+          "id": "668",
+          "seatNumber": "I5"
+        },
+        {
+          "id": "669",
+          "seatNumber": "I6"
+        },
+        {
+          "id": "670",
+          "seatNumber": "I7"
+        },
+        {
+          "id": "671",
+          "seatNumber": "I8"
+        },
+        {
+          "id": "672",
+          "seatNumber": "I9"
+        },
+        {
+          "id": "673",
+          "seatNumber": "I10"
+        },
+        {
+          "id": "674",
+          "seatNumber": "I11"
+        },
+        {
+          "id": "675",
+          "seatNumber": "I12"
         }
       ],
       "VIP": [
         {
-          "id": "1438",
+          "id": "604",
           "seatNumber": "D1"
         },
         {
-          "id": "1439",
+          "id": "605",
           "seatNumber": "D2"
         },
         {
-          "id": "1440",
+          "id": "606",
           "seatNumber": "D3"
         },
         {
-          "id": "1441",
+          "id": "607",
           "seatNumber": "D4"
         },
         {
-          "id": "1442",
+          "id": "608",
           "seatNumber": "D5"
         },
         {
-          "id": "1443",
+          "id": "609",
           "seatNumber": "D6"
         },
         {
-          "id": "1444",
+          "id": "610",
           "seatNumber": "D7"
         },
         {
-          "id": "1445",
+          "id": "611",
           "seatNumber": "D8"
+        },
+        {
+          "id": "612",
+          "seatNumber": "D9"
+        },
+        {
+          "id": "613",
+          "seatNumber": "D10"
+        },
+        {
+          "id": "614",
+          "seatNumber": "D11"
+        },
+        {
+          "id": "615",
+          "seatNumber": "D12"
+        },
+        {
+          "id": "616",
+          "seatNumber": "E1"
+        },
+        {
+          "id": "617",
+          "seatNumber": "E2"
+        },
+        {
+          "id": "618",
+          "seatNumber": "E3"
+        },
+        {
+          "id": "619",
+          "seatNumber": "E4"
+        },
+        {
+          "id": "620",
+          "seatNumber": "E5"
+        },
+        {
+          "id": "621",
+          "seatNumber": "E6"
+        },
+        {
+          "id": "622",
+          "seatNumber": "E7"
+        },
+        {
+          "id": "623",
+          "seatNumber": "E8"
+        },
+        {
+          "id": "624",
+          "seatNumber": "E9"
+        },
+        {
+          "id": "625",
+          "seatNumber": "E10"
+        },
+        {
+          "id": "626",
+          "seatNumber": "E11"
+        },
+        {
+          "id": "627",
+          "seatNumber": "E12"
+        },
+        {
+          "id": "628",
+          "seatNumber": "F1"
+        },
+        {
+          "id": "629",
+          "seatNumber": "F2"
+        },
+        {
+          "id": "630",
+          "seatNumber": "F3"
+        },
+        {
+          "id": "631",
+          "seatNumber": "F4"
+        },
+        {
+          "id": "632",
+          "seatNumber": "F5"
+        },
+        {
+          "id": "633",
+          "seatNumber": "F6"
+        },
+        {
+          "id": "634",
+          "seatNumber": "F7"
+        },
+        {
+          "id": "635",
+          "seatNumber": "F8"
+        },
+        {
+          "id": "636",
+          "seatNumber": "F9"
+        },
+        {
+          "id": "637",
+          "seatNumber": "F10"
+        },
+        {
+          "id": "638",
+          "seatNumber": "F11"
+        },
+        {
+          "id": "639",
+          "seatNumber": "F12"
+        },
+        {
+          "id": "640",
+          "seatNumber": "G1"
+        },
+        {
+          "id": "641",
+          "seatNumber": "G2"
+        },
+        {
+          "id": "642",
+          "seatNumber": "G3"
+        },
+        {
+          "id": "643",
+          "seatNumber": "G4"
+        },
+        {
+          "id": "644",
+          "seatNumber": "G5"
+        },
+        {
+          "id": "645",
+          "seatNumber": "G6"
+        },
+        {
+          "id": "646",
+          "seatNumber": "G7"
+        },
+        {
+          "id": "647",
+          "seatNumber": "G8"
+        },
+        {
+          "id": "648",
+          "seatNumber": "G9"
+        },
+        {
+          "id": "649",
+          "seatNumber": "G10"
+        },
+        {
+          "id": "650",
+          "seatNumber": "G11"
+        },
+        {
+          "id": "651",
+          "seatNumber": "G12"
         }
       ],
       "SWEETBOX": [
         {
-          "id": "1510",
+          "id": "676",
           "seatNumber": "J1-J2"
         },
         {
-          "id": "1511",
+          "id": "677",
           "seatNumber": "J3-J4"
         },
         {
-          "id": "1512",
+          "id": "678",
           "seatNumber": "J5-J6"
         },
         {
-          "id": "1513",
+          "id": "679",
           "seatNumber": "J7-J8"
         },
         {
-          "id": "1514",
+          "id": "680",
           "seatNumber": "J9-J10"
         },
         {
-          "id": "1515",
+          "id": "681",
           "seatNumber": "J11-J12"
         }
       ]
@@ -202,6 +570,94 @@
         {
           "id": "689",
           "seatNumber": "A8"
+        },
+        {
+          "id": "690",
+          "seatNumber": "A9"
+        },
+        {
+          "id": "691",
+          "seatNumber": "A10"
+        },
+        {
+          "id": "692",
+          "seatNumber": "B1"
+        },
+        {
+          "id": "693",
+          "seatNumber": "B2"
+        },
+        {
+          "id": "694",
+          "seatNumber": "B3"
+        },
+        {
+          "id": "695",
+          "seatNumber": "B4"
+        },
+        {
+          "id": "696",
+          "seatNumber": "B5"
+        },
+        {
+          "id": "697",
+          "seatNumber": "B6"
+        },
+        {
+          "id": "698",
+          "seatNumber": "B7"
+        },
+        {
+          "id": "699",
+          "seatNumber": "B8"
+        },
+        {
+          "id": "700",
+          "seatNumber": "B9"
+        },
+        {
+          "id": "701",
+          "seatNumber": "B10"
+        },
+        {
+          "id": "742",
+          "seatNumber": "G1"
+        },
+        {
+          "id": "743",
+          "seatNumber": "G2"
+        },
+        {
+          "id": "744",
+          "seatNumber": "G3"
+        },
+        {
+          "id": "745",
+          "seatNumber": "G4"
+        },
+        {
+          "id": "746",
+          "seatNumber": "G5"
+        },
+        {
+          "id": "747",
+          "seatNumber": "G6"
+        },
+        {
+          "id": "748",
+          "seatNumber": "G7"
+        },
+        {
+          "id": "749",
+          "seatNumber": "G8"
+        },
+        {
+          "id": "750",
+          "seatNumber": "G9"
+        },
+        {
+          "id": "751",
+          "seatNumber": "G10"
         }
       ],
       "VIP": [
@@ -236,6 +692,134 @@
         {
           "id": "709",
           "seatNumber": "C8"
+        },
+        {
+          "id": "710",
+          "seatNumber": "C9"
+        },
+        {
+          "id": "711",
+          "seatNumber": "C10"
+        },
+        {
+          "id": "712",
+          "seatNumber": "D1"
+        },
+        {
+          "id": "713",
+          "seatNumber": "D2"
+        },
+        {
+          "id": "714",
+          "seatNumber": "D3"
+        },
+        {
+          "id": "715",
+          "seatNumber": "D4"
+        },
+        {
+          "id": "716",
+          "seatNumber": "D5"
+        },
+        {
+          "id": "717",
+          "seatNumber": "D6"
+        },
+        {
+          "id": "718",
+          "seatNumber": "D7"
+        },
+        {
+          "id": "719",
+          "seatNumber": "D8"
+        },
+        {
+          "id": "720",
+          "seatNumber": "D9"
+        },
+        {
+          "id": "721",
+          "seatNumber": "D10"
+        },
+        {
+          "id": "722",
+          "seatNumber": "E1"
+        },
+        {
+          "id": "723",
+          "seatNumber": "E2"
+        },
+        {
+          "id": "724",
+          "seatNumber": "E3"
+        },
+        {
+          "id": "725",
+          "seatNumber": "E4"
+        },
+        {
+          "id": "726",
+          "seatNumber": "E5"
+        },
+        {
+          "id": "727",
+          "seatNumber": "E6"
+        },
+        {
+          "id": "728",
+          "seatNumber": "E7"
+        },
+        {
+          "id": "729",
+          "seatNumber": "E8"
+        },
+        {
+          "id": "730",
+          "seatNumber": "E9"
+        },
+        {
+          "id": "731",
+          "seatNumber": "E10"
+        },
+        {
+          "id": "732",
+          "seatNumber": "F1"
+        },
+        {
+          "id": "733",
+          "seatNumber": "F2"
+        },
+        {
+          "id": "734",
+          "seatNumber": "F3"
+        },
+        {
+          "id": "735",
+          "seatNumber": "F4"
+        },
+        {
+          "id": "736",
+          "seatNumber": "F5"
+        },
+        {
+          "id": "737",
+          "seatNumber": "F6"
+        },
+        {
+          "id": "738",
+          "seatNumber": "F7"
+        },
+        {
+          "id": "739",
+          "seatNumber": "F8"
+        },
+        {
+          "id": "740",
+          "seatNumber": "F9"
+        },
+        {
+          "id": "741",
+          "seatNumber": "F10"
         }
       ],
       "SWEETBOX": [
@@ -291,24 +875,6 @@
   },
   "fnb": [
     {
-      "id": "7",
-      "sku": "SKU-PEPSI-33OZ",
-      "name": "Nước Ngọt Coca 33oz",
-      "isActive": false
-    },
-    {
-      "id": "6",
-      "sku": "SKU-FANTA-32OZ",
-      "name": "Nước Ngọt Fanta Lớn 33oz",
-      "isActive": true
-    },
-    {
-      "id": "8",
-      "sku": "SKU-COMBO01-33OZ",
-      "name": "CAT IN THE HAT COMBO01 Ly Cat In The Hat",
-      "isActive": true
-    },
-    {
       "id": "1",
       "sku": "FNB-POP-SWE",
       "name": "Bắp Rang Ngọt (Cỡ Vừa) + 1 Nước Nhỏ",
@@ -346,17 +912,17 @@
       "discountValue": 5,
       "minOrderAmount": 50000,
       "usageLimit": 10,
-      "startDate": "2023-01-01T07:00:00.000Z",
-      "endDate": "2023-02-01T07:00:00.000Z"
+      "startDate": "2023-01-01T00:00:00.000Z",
+      "endDate": "2023-02-01T00:00:00.000Z"
     },
     {
-      "code": "FIXED40K",
+      "code": "VOUCHER10",
       "discountType": "FIXED_AMOUNT",
-      "discountValue": 50000,
-      "minOrderAmount": 200000,
-      "usageLimit": 101,
-      "startDate": "2026-09-10T07:00:00.000Z",
-      "endDate": "2026-09-21T06:59:59.000Z"
+      "discountValue": 500,
+      "minOrderAmount": 50000,
+      "usageLimit": null,
+      "startDate": "2026-01-01T00:00:00.000Z",
+      "endDate": "2026-12-31T00:00:00.000Z"
     },
     {
       "code": "SALE10",
@@ -364,8 +930,8 @@
       "discountValue": 10,
       "minOrderAmount": 100000,
       "usageLimit": 100,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     },
     {
       "code": "WELCOME20",
@@ -373,8 +939,8 @@
       "discountValue": 20,
       "minOrderAmount": 0,
       "usageLimit": 500,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     },
     {
       "code": "BLACKFRIDAY",
@@ -382,8 +948,8 @@
       "discountValue": 50,
       "minOrderAmount": 300000,
       "usageLimit": 50,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     },
     {
       "code": "MIDYEAR",
@@ -391,8 +957,8 @@
       "discountValue": 15,
       "minOrderAmount": 150000,
       "usageLimit": null,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     },
     {
       "code": "REDUCE20K",
@@ -400,8 +966,8 @@
       "discountValue": 20000,
       "minOrderAmount": 50000,
       "usageLimit": 200,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     },
     {
       "code": "REDUCE50K",
@@ -409,8 +975,8 @@
       "discountValue": 50000,
       "minOrderAmount": 200000,
       "usageLimit": 100,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     },
     {
       "code": "REDUCE100K",
@@ -418,8 +984,8 @@
       "discountValue": 100000,
       "minOrderAmount": 500000,
       "usageLimit": 50,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     },
     {
       "code": "VIP1M",
@@ -427,8 +993,8 @@
       "discountValue": 1000000,
       "minOrderAmount": 5000000,
       "usageLimit": 5,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     },
     {
       "code": "FREESHIP25K",
@@ -436,8 +1002,8 @@
       "discountValue": 25000,
       "minOrderAmount": 99000,
       "usageLimit": 1000,
-      "startDate": "2026-10-15T22:00:11.157Z",
-      "endDate": "2027-01-15T22:00:11.157Z"
+      "startDate": "2026-11-03T17:20:24.997Z",
+      "endDate": "2027-02-03T17:20:24.997Z"
     }
   ]
 }

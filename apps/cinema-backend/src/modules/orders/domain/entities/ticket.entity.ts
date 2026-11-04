@@ -17,6 +17,12 @@ import { ColumnNumericTransformer } from '#src/common/transformers/numeric.trans
 @Entity('tickets')
 // Ràng buộc giá vé ghi nhận không được âm
 @Check(`"price" >= 0.00`)
+// Lớp bảo vệ cuối cùng chống bán trùng: mỗi ghế của một suất chiếu chỉ có tối đa
+// MỘT vé còn hiệu lực (vé đã hủy không tính). Postgres partial unique index.
+@Index('uq_tickets_showtime_seat_active', ['showtimeId', 'seatId'], {
+  unique: true,
+  where: `"status" IN ('VALID', 'CHECKED_IN')`,
+})
 export class Ticket {
   @PrimaryGeneratedColumn({
     type: 'bigint',

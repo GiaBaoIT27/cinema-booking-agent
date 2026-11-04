@@ -53,9 +53,15 @@ export class VnPayGateway implements IPaymentGateway {
     const now = new Date();
     const createDate = this.formatDate(now);
 
-    // Thời gian hết hạn: 15 phút sau
+    // Hết hạn sau tối đa 15 phút, nhưng KHÔNG muộn hơn hạn thanh toán của đơn – tránh khách
+    // trả tiền cho đơn đã hết hạn (giảm số giao dịch phải hoàn tiền).
+    const maxExpiry = now.getTime() + 15 * 60 * 1000;
     const expireDate = this.formatDate(
-      new Date(now.getTime() + 15 * 60 * 1000),
+      new Date(
+        params.expiresAt
+          ? Math.min(maxExpiry, params.expiresAt.getTime())
+          : maxExpiry,
+      ),
     );
 
     // Số tiền VNPay yêu cầu nhân 100 (đơn vị: đồng -> nhân 100)

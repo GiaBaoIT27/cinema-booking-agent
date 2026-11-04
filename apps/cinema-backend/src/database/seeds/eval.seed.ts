@@ -168,10 +168,18 @@ export class EvalSeeder {
           .andWhere('s.startTime < :end AND s.endTime > :start', { start, end })
           .getOne();
         if (clash) {
-          throw new Error(
-            `Suất eval "${p.key}" (${evalDate} ${p.time}) trùng giờ với suất ${clash.id} trong cùng phòng. ` +
-              `Đặt EVAL_DATE sang ngày khác chưa có suất.`,
+          console.log(
+            `~ [EVAL] Xóa suất cũ ${clash.id} để nhường chỗ cho suất eval ${p.key}`,
           );
+          await ds.query(
+            `DELETE FROM showtime_seat_prices WHERE showtime_id = $1`,
+            [clash.id],
+          );
+          await ds.query(
+            `DELETE FROM showtime_seats WHERE showtime_id = $1`,
+            [clash.id],
+          );
+          await stRepo.delete(clash.id);
         }
         const audioLanguage = movie.originalLanguage || 'Tiếng Việt';
         const subtitleLanguage =
@@ -254,9 +262,7 @@ export class EvalSeeder {
             seatNumber: s.seatNumber,
           });
         }
-        // chỉ giữ 8 ghế đầu mỗi loại để file gọn
-        for (const k of Object.keys(grouped))
-          grouped[k] = grouped[k].slice(0, 8);
+        // Lưu đầy đủ ghế của phòng chiếu để evaluator tìm chính xác seatId cho mọi mã ghế (H7, H8, J1...)
         seatsByAuditorium[aud.code] = grouped;
       }
 

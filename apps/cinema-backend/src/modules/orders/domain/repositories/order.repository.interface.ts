@@ -1,5 +1,7 @@
 import { Order } from '../entities/order.entity.js';
 import { OrderChannel } from '../enums/order-channel.enum.js';
+import { OrderStatus } from '../enums/order-status.enum.js';
+import { PaymentMethod } from '../enums/payment-method.enum.js';
 import type { TransactionContext } from '../ports/transaction.port.js';
 
 /** Dữ liệu để tạo đơn PENDING cùng chi tiết ghế/F&B (một aggregate). */
@@ -46,6 +48,18 @@ export interface IOrderRepository {
   createPending(data: NewOrderData, tx: TransactionContext): Promise<Order>;
 
   save(order: Order, tx?: TransactionContext): Promise<Order>;
+
+  /**
+   * Chuyển trạng thái nguyên tử (compare-and-set): chỉ cập nhật khi đơn đang ở `from`.
+   * @returns false nếu đơn đã bị request khác chuyển trạng thái trước.
+   */
+  transitionStatus(
+    orderId: string,
+    from: OrderStatus,
+    to: OrderStatus,
+    tx: TransactionContext,
+    patch?: { paymentMethod?: PaymentMethod; paidTxnRef?: string | null },
+  ): Promise<boolean>;
 
   /** Các chi tiết F&B còn PENDING của đơn -> CANCELLED. */
   cancelPendingFnbDetails(

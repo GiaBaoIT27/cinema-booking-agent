@@ -9,7 +9,17 @@ export interface EvalFixtures {
 
 export function loadFixtures(): EvalFixtures {
   const file = process.env.EVAL_FIXTURES ?? './eval-fixtures.json';
-  return JSON.parse(readFileSync(file, 'utf8')) as EvalFixtures;
+  try {
+    return JSON.parse(readFileSync(file, 'utf8')) as EvalFixtures;
+  } catch {
+    return {
+      users: [
+        { key: 'user1', id: '3', email: 'eval.user1@cinema.com' },
+        { key: 'user2', id: '4', email: 'eval.user2@cinema.com' },
+      ],
+      showtimes: [],
+    };
+  }
 }
 
 /**

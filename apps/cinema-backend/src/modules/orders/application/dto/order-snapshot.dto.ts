@@ -6,6 +6,8 @@ export interface OrderSnapshot {
   showtimeId: number;
   status: string;
   paymentMethod: string | null;
+  /** Mã giao dịch đã chốt đơn (null nếu chưa thanh toán). */
+  paidTxnRef: string | null;
   finalAmount: number;
   expiresAt: Date;
 }

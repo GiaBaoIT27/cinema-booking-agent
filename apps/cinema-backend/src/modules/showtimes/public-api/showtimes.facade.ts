@@ -127,17 +127,52 @@ export class ShowtimesFacade {
     return holds.map(toSeatHoldSummary);
   }
 
-  saveSeatHolds(
+  /** Giữ ghế nguyên tử ở DB (all-or-nothing). false => có ghế đã bị người khác giữ/bán. */
+  tryHoldSeats(
     showtimeId: string,
     seatIds: string[],
     userId: string,
     expiresAt: Date,
-  ): Promise<void> {
-    return this.showtimeSeatRepository.saveHolds(
+    now: Date,
+  ): Promise<boolean> {
+    return this.showtimeSeatRepository.tryHold(
       showtimeId,
       seatIds,
       userId,
       expiresAt,
+      now,
+    );
+  }
+
+  /** Gắn ghế đang giữ vào đơn hàng + gia hạn giữ (all-or-nothing). */
+  claimSeatsForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    orderCode: string,
+    holdUntil: Date,
+    now: Date,
+  ): Promise<boolean> {
+    return this.showtimeSeatRepository.claimForOrder(
+      showtimeId,
+      seatIds,
+      userId,
+      orderCode,
+      holdUntil,
+      now,
+    );
+  }
+
+  /** Gỡ gắn đơn (bù trừ khi tạo đơn thất bại). */
+  unclaimSeatsForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<void> {
+    return this.showtimeSeatRepository.unclaimForOrder(
+      showtimeId,
+      seatIds,
+      orderCode,
     );
   }
 
@@ -154,20 +189,56 @@ export class ShowtimesFacade {
     );
   }
 
-  /** HOLDING → BOOKED. Trả về số ghế được chốt */
-  markSeatsBooked(showtimeId: string, seatIds: string[]): Promise<number> {
-    return this.showtimeSeatRepository.markBooked(showtimeId, seatIds);
+  /** HOLDING của đơn `orderCode` → BOOKED (all-or-nothing). */
+  markSeatsBooked(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<boolean> {
+    return this.showtimeSeatRepository.markBooked(
+      showtimeId,
+      seatIds,
+      orderCode,
+    );
   }
 
-  /** BOOKED (hoặc HOLDING của `userId`) → AVAILABLE khi hủy/hết hạn đơn hàng */
+  /** Toàn bộ ghế đã BOOKED cho đúng đơn `orderCode`? */
+  areSeatsBookedForOrder(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<boolean> {
+    return this.showtimeSeatRepository.isBookedForOrder(
+      showtimeId,
+      seatIds,
+      orderCode,
+    );
+  }
+
+  /** BOOKED của đơn `orderCode` → HOLDING (bù trừ khi ghi đơn thất bại). */
+  revertSeatsBooked(
+    showtimeId: string,
+    seatIds: string[],
+    orderCode: string,
+  ): Promise<void> {
+    return this.showtimeSeatRepository.revertBooked(
+      showtimeId,
+      seatIds,
+      orderCode,
+    );
+  }
+
+  /** HOLDING của đơn `orderCode` → AVAILABLE khi hủy/hết hạn đơn (không nhả ghế BOOKED). */
   releaseSeatsForOrder(
     showtimeId: string,
     seatIds: string[],
+    orderCode: string,
     userId?: string,
   ): Promise<void> {
     return this.showtimeSeatRepository.releaseForOrder(
       showtimeId,
       seatIds,
+      orderCode,
       userId,
     );
   }

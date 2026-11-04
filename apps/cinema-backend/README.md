@@ -10,7 +10,7 @@ Dự án được xây dựng trên nền tảng **NestJS** kết hợp kiến t
 
 - **Domain-Driven Design (DDD):** Tách bạch 4 tầng rõ rệt: _Domain_ (Pure business logic), _Application_ (Use Cases & Orchestration), _Infrastructure_ (TypeORM, Redis, BullMQ), và _Presentation_ (Controllers, DTOs).
 - **Public API & Facade Pattern:** Các module nghiệp vụ giao tiếp liên-module thông qua các `Facade` đóng gói chặt chẽ, triệt tiêu phụ thuộc chéo giữa các Bounded Contexts.
-- **Xử lý Đặt Ghế Chống Trùng (Concurrency Control):** Kết hợp **Redlock (Distributed Lock)** và Redis TTL (11 phút) để khóa giữ ghế tạm thời, ngăn chặn triệt để tình trạng hai khách hàng đặt cùng một ghế (Overbooking).
+- **Xử lý Đặt Ghế Chống Trùng (Concurrency Control):** Khóa ghế 2 lớp: Redis `SET NX PX` (TTL 11 phút) chặn nhanh, PostgreSQL là nguồn sự thật (upsert có điều kiện all-or-nothing, ghế gắn theo mã đơn khi tạo đơn và gia hạn quá hạn thanh toán, unique index vé còn hiệu lực) để ngăn hai khách hàng có vé cho cùng một ghế (Overbooking). Kiểm chứng bằng `npm run test:int`.
 - **Thanh toán & Tính Idempotency (VNPay):**
   - Tích hợp cổng thanh toán VNPay với thuật toán bảo mật chữ ký điện tử **HMAC-SHA512**.
   - Xử lý Webhook IPN chuẩn **Idempotent**: Tự động từ chối xử lý lặp lại nếu đơn hàng đã được xác nhận thanh toán trước đó, đảm bảo an toàn tuyệt đối.
@@ -110,7 +110,8 @@ Dự án sử dụng **Vitest** với cấu hình tối ưu, cho tốc độ th�
 
 | Lệnh                 | Mô tả                                                               |
 | :------------------- | :------------------------------------------------------------------ |
-| `npm run test`       | Chạy toàn bộ 32 unit test cases                                     |
+| `npm run test`       | Chạy toàn bộ unit test                                              |
+| `npm run test:int`   | Integration test trên PostgreSQL thật (DB riêng `cinema_test`)       |
 | `npm run test:cov`   | Chạy kiểm thử và xuất bảng thống kê độ bao phủ mã (Coverage report) |
 | `npm run test:watch` | Chạy kiểm thử ở chế độ theo dõi file thay đổi (Watch mode)          |
 
