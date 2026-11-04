@@ -538,7 +538,7 @@ export const createOrderAndPayment: ToolDefinition = {
 export const getMyOrders: ToolDefinition = {
   name: "get_my_orders",
   description:
-    "Xem các đơn hàng gần đây của khách đang đăng nhập (mã đơn, trạng thái, tổng tiền).",
+    "Lấy toàn bộ danh sách tất cả các đơn hàng. CHỈ DÙNG KHI KHÁCH HỎI LỊCH SỬ ĐƠN VÀ KHÔNG NÊU MÃ ĐƠN CỤ THỂ NÀO.",
   requiresAuth: true,
   schema: z.object({}),
   async handler(_input, ctx) {
@@ -575,21 +575,46 @@ export const getMyOrders: ToolDefinition = {
 export const getOrderStatus: ToolDefinition = {
   name: "get_order_status",
   description:
-    "Xem trạng thái và vé của một đơn hàng. Dùng để xác nhận đơn đã thanh toán chưa; không tự suy đoán.",
+    "BẮT BUỘC DÙNG KHI CÓ MÃ ĐƠN HÀNG (dạng ORD-... hoặc số). Tra cứu trạng thái đơn hàng và xuất vé.",
   requiresAuth: true,
   schema: z.object({
-    orderId: z.number().int().min(1, "oderId phải từ 1 trở lên"),
+    orderCode: z
+      .string()
+      .describe("Mã đơn hàng dạng ORD-... (ví dụ ORD-PAID-01, ORD-USER2-SECRET) hoặc ID số"),
   }),
   async handler(input, ctx) {
     if (!ctx.token) return AUTH_REQUIRED;
     try {
+      const rawId = String(input.orderCode ?? "").trim();
+      let orderId = Number(rawId);
+
+      // Mã đơn dạng chuỗi (VD: ORD-PAID-01) -> tìm orderId trong danh sách đơn CỦA CHÍNH user
+      // (đơn của người khác không bao giờ xuất hiện ở đây => không lộ dữ liệu chéo).
+      if (!Number.isInteger(orderId) || orderId <= 0) {
+        const raw = await ctx.backend.get<unknown>("/orders/my", {
+          token: ctx.token,
+          signal: ctx.signal,
+        });
+        const found = asArray<{ orderId: number; orderCode: string }>(raw).find(
+          (o) => o.orderCode === rawId,
+        );
+        if (!found) {
+          return fail(
+            "ORDER_NOT_FOUND",
+            `Không tìm thấy đơn hàng "${rawId}" trong tài khoản của bạn.`,
+          );
+        }
+        orderId = found.orderId;
+      }
+
+      // Danh sách đơn không có vé/tổng tiền đầy đủ => luôn đọc chi tiết đơn
       const o = await ctx.backend.get<{
         orderId: number;
         orderCode: string;
         status: string;
         pricing: { finalAmount: number };
         tickets: Array<{ ticketCode: string; price: number; status: string }>;
-      }>(`/orders/${input.orderId}`, { token: ctx.token, signal: ctx.signal });
+      }>(`/orders/${orderId}`, { token: ctx.token, signal: ctx.signal });
       return {
         ok: true,
         data: {
@@ -619,8 +644,8 @@ export const toolDefinitions: ToolDefinition[] = [
   holdSeats,
   releaseSeats,
   createOrderAndPayment,
-  getMyOrders,
   getOrderStatus,
+  getMyOrders,
 ];
 
 /** Chạy tool theo tên; tên lạ hoặc dữ liệu sai schema trả về lỗi có cấu trúc thay vì ném lỗi */

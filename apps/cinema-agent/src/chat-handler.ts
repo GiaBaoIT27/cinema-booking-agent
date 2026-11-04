@@ -39,6 +39,44 @@ const SESSION_ID = /^[A-Za-z0-9_-]{8,64}$/;
 const HEARTBEAT_MS = 15_000;
 const RECURSION_LIMIT = 14;
 
+/** Hết quota theo NGÀY của nhà cung cấp LLM – thử lại trong vài phút cũng vô ích. */
+const LLM_DAILY_QUOTA = /per ?day|PerDay|daily/i;
+/** LLM quá tải / bị giới hạn tốc độ tạm thời – có thể thử lại sau. */
+const LLM_TRANSIENT =
+  /\b429\b|\b503\b|quota|rate.?limit|too many requests|resource.?exhausted|overloaded|unavailable/i;
+
+/**
+ * Phân loại lỗi agent thành mã máy đọc được + câu thông báo an toàn cho người dùng.
+ * KHÔNG đưa message gốc ra ngoài (có thể chứa URL API, thông tin quota, key...).
+ */
+export function classifyAgentError(error: unknown): {
+  code: string;
+  message: string;
+} {
+  if ((error as { name?: string })?.name === "GraphRecursionError") {
+    return {
+      code: "TOO_MANY_STEPS",
+      message: "Yêu cầu này cần quá nhiều bước, bạn thử chia nhỏ giúp mình nhé.",
+    };
+  }
+  const raw = String((error as Error)?.message ?? error ?? "");
+  if (LLM_TRANSIENT.test(raw)) {
+    return LLM_DAILY_QUOTA.test(raw)
+      ? {
+          code: "LLM_QUOTA_EXHAUSTED",
+          message: "Trợ lý tạm thời ngừng phục vụ do quá tải, vui lòng quay lại sau.",
+        }
+      : {
+          code: "LLM_UNAVAILABLE",
+          message: "Trợ lý đang quá tải, vui lòng thử lại sau ít phút.",
+        };
+  }
+  return {
+    code: "AGENT_ERROR",
+    message: "Trợ lý đang gặp sự cố, vui lòng thử lại sau.",
+  };
+}
+
 /** Mã định danh luồng hội thoại: gắn với người dùng nên không thể đọc phiên của người khác */
 export function threadIdFor(
   userId: string | undefined,
@@ -143,14 +181,9 @@ export async function handleChat(
   } catch (error) {
     if (!abort.signal.aborted) {
       log("Agent error", error);
-      const recursion =
-        (error as { name?: string })?.name === "GraphRecursionError";
-      send("error", {
-        code: recursion ? "TOO_MANY_STEPS" : "AGENT_ERROR",
-        message: recursion
-          ? "Yêu cầu này cần quá nhiều bước, bạn thử chia nhỏ giúp mình nhé."
-          : "Trợ lý đang gặp sự cố, vui lòng thử lại sau.",
-      });
+      // Chỉ gửi MÃ lỗi đã phân loại + câu thông báo chung cho client; chi tiết lỗi gốc
+      // (URL API, quota, stack...) chỉ nằm trong log server.
+      send("error", classifyAgentError(error));
       send("end", { status: "FAILED" });
     }
   } finally {

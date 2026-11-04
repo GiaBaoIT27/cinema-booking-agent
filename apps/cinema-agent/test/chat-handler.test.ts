@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { handleChat, threadIdFor, type ChatResponse } from "../src/chat-handler.js";
+import { classifyAgentError, handleChat, threadIdFor, type ChatResponse } from "../src/chat-handler.js";
 import { RateLimiter } from "../src/lib/rate-limit.js";
 import { loadConfig } from "../src/config.js";
 
@@ -75,6 +75,15 @@ test("từ chối tin rỗng, quá dài, token sai; vượt giới hạn tốc �
   x = fakeRes();
   await handleChat(d, { body: { message: "hi" }, ip: "9.9.9.9" }, x.res);
   assert.equal(x.r.code, 429);
+});
+
+test("phân loại lỗi LLM thành mã, không lộ thông điệp gốc", () => {
+  const daily = classifyAgentError(new Error("[429 Too Many Requests] Quota exceeded: GenerateRequestsPerDayPerProjectPerModel-FreeTier key=AIza"));
+  assert.equal(daily.code, "LLM_QUOTA_EXHAUSTED");
+  assert.ok(!daily.message.includes("AIza") && !daily.message.includes("429"));
+  assert.equal(classifyAgentError(new Error("[503 Service Unavailable] The model is overloaded")).code, "LLM_UNAVAILABLE");
+  assert.equal(classifyAgentError(new Error("Cannot read properties of undefined")).code, "AGENT_ERROR");
+  assert.equal(classifyAgentError(Object.assign(new Error("x"), { name: "GraphRecursionError" })).code, "TOO_MANY_STEPS");
 });
 
 test("lỗi graph không lộ chi tiết nội bộ; khách ngắt kết nối thì hủy yêu cầu", async () => {

@@ -171,6 +171,7 @@ async function sendChatTurn(
 
     let fullText = "";
     let sseError = "";
+    let sseErrorCode = "";
     const tools: string[] = [];
     const widgets: string[] = [];
 
@@ -188,6 +189,7 @@ async function sendChatTurn(
             fullText += payload.text;
           } else if (currentEvent === "error") {
             sseError = payload.message || dataStr;
+            sseErrorCode = payload.code || "";
           } else if (
             currentEvent === "tool_start" &&
             (payload.name || payload.tool)
@@ -208,15 +210,16 @@ async function sendChatTurn(
       }
     }
 
-    // Nếu trong luồng SSE xuất hiện lỗi hạn mức Gemini 429 hoặc 503
+    // Agent phân loại lỗi LLM thành mã (không lộ lỗi gốc ra client):
+    //  - LLM_QUOTA_EXHAUSTED: hết quota theo NGÀY => dừng ngay, chờ thêm vài chục giây vô ích
+    //  - LLM_UNAVAILABLE: 429/503 tạm thời => chờ rồi thử lại
+    if (sseErrorCode === "LLM_QUOTA_EXHAUSTED") {
+      throw new Error(
+        "LLM_QUOTA_EXHAUSTED: nhà cung cấp LLM đã hết quota theo ngày – dừng thử lại.",
+      );
+    }
     if (sseError) {
-      const isQuota =
-        sseError.includes("429") ||
-        sseError.includes("quota") ||
-        sseError.includes("RateLimit") ||
-        sseError.includes("Too Many Requests") ||
-        sseError.includes("Resource has been exhausted") ||
-        sseError.includes("503");
+      const isQuota = sseErrorCode === "LLM_UNAVAILABLE";
 
       if (isQuota && attempt < retries) {
         console.log(
@@ -228,6 +231,15 @@ async function sendChatTurn(
         continue;
       }
       if (!fullText) {
+        if (attempt < retries) {
+          console.log(
+            yellow(
+              `    ⚠ [SSE Error] ${sseError}. Thử lại turn sau 5s (lần ${attempt}/${retries})...`,
+            ),
+          );
+          await new Promise((r) => setTimeout(r, 5000));
+          continue;
+        }
         throw new Error(`SSE Agent Error: ${sseError}`);
       }
     }
@@ -250,11 +262,10 @@ function resolveSeatId(seatLabel: string, fixtures: any): string {
   }
   // Trường hợp ghế số
   if (!isNaN(Number(seatLabel))) return seatLabel;
-  // Ghế H7, H8 nếu chưa có trong fixture rút gọn:
-  if (seatLabel === "H7") return "1492";
-  if (seatLabel === "H8") return "1493";
-  if (seatLabel === "H9") return "1494";
-  if (seatLabel === "J1-J2" || seatLabel === "J1") return "1510";
+  // Ghế H7, H8 nếu chưa có trong fixture rút gọn (fallback auditorium 7):
+  if (seatLabel === "H7") return "658";
+  if (seatLabel === "H8") return "659";
+  if (seatLabel === "H9") return "660";
   return seatLabel;
 }
 
@@ -266,6 +277,24 @@ async function executeCase(
   verbose = false,
 ): Promise<RunResult> {
   resetDatabaseState();
+
+  // Thiết lập tiền đề riêng cho ca kiểm thử xung đột ghế (C02: Ghế H9 đã được mua trước)
+  if (c.id === "C02") {
+    try {
+      const stId =
+        fixtures.showtimes.find((s) => s.key === "mai-morning")?.id || "443";
+      const seatH9 = resolveSeatId("H9", fixtures);
+      execSync(
+        `docker exec cinema_postgres psql -U cinema_admin -d cinema_db -c "INSERT INTO showtime_seats (showtime_id, seat_id, status, user_id) VALUES (${stId}, ${seatH9}, 'BOOKED', 4) ON CONFLICT (showtime_id, seat_id) DO UPDATE SET status = 'BOOKED';"`,
+        { stdio: "pipe" },
+      );
+    } catch (e: any) {
+      console.error(
+        yellow("Không thể thiết lập ghế BOOKED cho C02:"),
+        e.message,
+      );
+    }
+  }
 
   const token =
     c.user === "user1"
@@ -405,7 +434,12 @@ async function main() {
   // Lọc tập test cases theo tham số CLI
   let testCases = EVAL_DATASET;
   if (targetGroup) {
-    testCases = testCases.filter((c) => c.group === targetGroup);
+    testCases = testCases.filter(
+      (c) =>
+        c.group === targetGroup ||
+        c.group.toLowerCase().startsWith(targetGroup.toLowerCase()) ||
+        c.group.split("-")[0].toLowerCase() === targetGroup.toLowerCase(),
+    );
     console.log(
       yellow(`-> Lọc theo nhóm: ${targetGroup} (${testCases.length} cases)`),
     );
@@ -430,6 +464,7 @@ async function main() {
     { total: number; pass: number; totalLatencyMs: number }
   > = {};
 
+  let quotaExhausted = false;
   for (let i = 0; i < testCases.length; i++) {
     const c = testCases[i];
     if (i > 0) {
@@ -452,6 +487,10 @@ async function main() {
         break;
       } catch (e: any) {
         lastErr = e.message;
+        if (String(e.message).startsWith("LLM_QUOTA_EXHAUSTED")) {
+          quotaExhausted = true;
+          break;
+        }
         if (
           attempt === 0 &&
           (e.message.includes("503") ||
@@ -497,6 +536,18 @@ async function main() {
         failures: [`RUNTIME_ERROR: ${lastErr}`],
         responseText: "",
       });
+    }
+
+    if (quotaExhausted) {
+      console.log(
+        red(
+          `
+⛔ Hết quota LLM theo ngày – dừng sau case ${c.id}. Báo cáo chỉ gồm ${i + 1}/${testCases.length} case đã chạy.` +
+            ` Chạy tiếp các case còn lại khi quota được reset.`,
+        ),
+      );
+      testCases = testCases.slice(0, i + 1);
+      break;
     }
   }
 

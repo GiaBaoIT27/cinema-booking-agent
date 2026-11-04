@@ -115,9 +115,19 @@ test("token hết hạn (401) thành AUTH_REQUIRED", async () => {
 test("get_my_orders / get_order_status đọc đúng định dạng backend", async () => {
   const a: any = await runTool("get_my_orders", {}, authed());
   assert.equal(a.data.orders[0].orderCode, "ORD-1");
-  const b: any = await runTool("get_order_status", { orderId: 14 }, authed());
+  const b: any = await runTool("get_order_status", { orderCode: "14" }, authed());
   assert.equal(b.data.status, "PAID");
   assert.equal(b.data.tickets[0].ticketCode, "T-1");
+});
+
+test("get_order_status theo mã ORD-...: tìm trong đơn của chính user rồi đọc chi tiết (có vé, tổng tiền)", async () => {
+  const r: any = await runTool("get_order_status", { orderCode: "ORD-1" }, authed());
+  assert.equal(r.data.orderId, 14);
+  assert.equal(r.data.finalAmount, 130000);
+  assert.equal(r.data.tickets[0].ticketCode, "T-1");
+
+  const missing: any = await runTool("get_order_status", { orderCode: "ORD-NGUOI-KHAC" }, authed());
+  assert.equal(missing.errorCode, "ORDER_NOT_FOUND");
 });
 
 test("tham số sai schema và tool lạ không ném lỗi", async () => {
