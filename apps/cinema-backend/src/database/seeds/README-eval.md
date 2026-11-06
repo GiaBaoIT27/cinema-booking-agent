@@ -12,7 +12,8 @@ npx tsx database/seeds/eval-cli.ts state   # in JSON trạng thái ghế và đ�
 
 ## Biến môi trường
 - `EVAL_DATE=2026-11-20` cố định ngày chiếu suốt đợt đánh giá (khuyến nghị).
-- `EVAL_DAY_OFFSET` mặc định 4 nếu không đặt EVAL_DATE.
+- `EVAL_DAY_OFFSET` mặc định 1 (ngày mai) nếu không đặt EVAL_DATE – khớp cách bộ dữ liệu hỏi "ngày mai".
+- **Không cần seed bằng tay khi chạy eval:** `npm run eval` (apps/cinema-agent) tự seed cho ngày mai theo giờ VN, chép fixtures ra, rồi kiểm tra fixtures khớp database trước khi chạy. Dùng `--no-seed` để chạy với dữ liệu có sẵn (vẫn kiểm tra).
 - `EVAL_FIXTURES` đường dẫn file fixtures, mặc định `./eval-fixtures.json`.
 
 ## Tài khoản
