@@ -75,7 +75,9 @@ const PLAN = [
 /** Ngày chiếu YYYY-MM-DD (giờ VN). Đặt EVAL_DATE để cố định suốt đợt đánh giá. */
 export function resolveEvalDate(): string {
   if (process.env.EVAL_DATE) return process.env.EVAL_DATE;
-  const offset = Number(process.env.EVAL_DAY_OFFSET ?? 4); // sau 3 ngày của seed 16, vẫn trong 7 ngày web hiển thị
+  // Mặc định NGÀY MAI: bộ dữ liệu eval hỏi "ngày mai 10:00". Runner (npm run eval) luôn
+  // truyền EVAL_DATE cụ thể, offset chỉ dùng khi seed bằng tay.
+  const offset = Number(process.env.EVAL_DAY_OFFSET ?? 1);
   const d = new Date(Date.now() + offset * 24 * 3600 * 1000);
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Ho_Chi_Minh',

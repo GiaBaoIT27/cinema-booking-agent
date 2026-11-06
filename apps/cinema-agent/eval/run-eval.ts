@@ -8,6 +8,15 @@ import {
 } from "./eval-dataset.js";
 import { checkState, type Fixtures, type Snapshot } from "./eval-expect.js";
 import {
+  checkFixtures,
+  requiredEvalDate,
+  resolveSeatId as resolveSeatIdIn,
+  vnDate,
+  type DbShowtime,
+  type SeatReference,
+  type SyncFixtures,
+} from "./eval-data-sync.js";
+import {
   renderMarkdownReport,
   summarize,
   toolFailures,
@@ -39,6 +48,91 @@ function loadFixtures(): Fixtures {
     const raw = readFileSync("./eval-fixtures.json", "utf8");
     return JSON.parse(raw) as Fixtures;
   }
+}
+
+const FIXTURES_PATH = "./eval/eval-fixtures.json";
+
+/**
+ * Seed dữ liệu eval cho đúng `evalDate` (ngày mai theo giờ VN) rồi chép fixtures từ container
+ * ra máy chạy runner – runner và lệnh reset trong container dùng CÙNG một bản fixtures.
+ * Truyền EVAL_DATE cụ thể (không dùng offset) để .env trong container không đè được.
+ */
+function seedEvalData(evalDate: string) {
+  console.log(cyan(`   Seed dữ liệu eval cho ngày ${evalDate} (ngày mai, giờ VN)...`));
+  execSync(
+    `docker exec -e EVAL_DATE=${evalDate} cinema_backend node dist/database/seeds/eval-cli.js seed`,
+    { encoding: "utf8", stdio: "pipe" },
+  );
+  execSync(`docker cp cinema_backend:/app/eval-fixtures.json ${FIXTURES_PATH}`, {
+    stdio: "pipe",
+  });
+}
+
+/** start_time (UTC) của các suất trong fixtures, đọc trực tiếp từ database. */
+function fetchDbShowtimes(ids: string[]): DbShowtime[] {
+  const idList = ids.map((id) => Number(id)).filter(Number.isInteger);
+  if (idList.length === 0) return [];
+  const raw = execSync(
+    `docker exec cinema_postgres psql -U cinema_admin -d cinema_db -At -F "|" -c "SELECT id, to_char(start_time, 'YYYY-MM-DD\\"T\\"HH24:MI:SS.MS\\"Z\\"') FROM showtimes WHERE id IN (${idList.join(",")})"`,
+    { encoding: "utf8", stdio: "pipe" },
+  );
+  return raw
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const [id, startTime] = line.split("|");
+      return { id, startTime };
+    });
+}
+
+/** Mọi nhãn ghế dataset dùng để chấm trạng thái DB – phải tra được trong fixtures. */
+function collectSeatRefs(cases: EvalCase[]): SeatReference[] {
+  const refs: SeatReference[] = [{ caseId: "C02", label: "H9", showtimeKey: "mai-morning" }];
+  for (const c of cases) {
+    for (const e of c.expectState ?? []) {
+      for (const label of e.seatIds ?? []) {
+        refs.push({ caseId: c.id, label, showtimeKey: e.showtime });
+      }
+    }
+  }
+  return refs;
+}
+
+/**
+ * Bảo đảm dữ liệu eval khớp database tại thời điểm chạy. Lỗi => dừng NGAY, không chạy
+ * 100 case để nhận về FAIL vô nghĩa vì dữ liệu lệch.
+ */
+function syncEvalData(seed: boolean, cases: EvalCase[]): Fixtures {
+  const evalDate = requiredEvalDate(new Date());
+  if (seed) seedEvalData(evalDate);
+
+  const fixtures = loadFixtures();
+  const sync = fixtures as unknown as SyncFixtures;
+  const errors = checkFixtures(
+    sync,
+    fetchDbShowtimes(sync.showtimes.map((s) => s.id)),
+    collectSeatRefs(cases),
+    new Date(),
+  );
+  if (errors.length > 0) {
+    console.error(red("\nDữ liệu eval KHÔNG khớp database – dừng trước khi chạy:"));
+    for (const e of errors) console.error(red(`  - ${e}`));
+    console.error(
+      yellow(
+        seed
+          ? "\nSeed vừa chạy nhưng vẫn lệch: kiểm tra container cinema_backend đã build bản mới chưa."
+          : "\nBỏ cờ --no-seed để runner tự seed lại dữ liệu cho đúng ngày.",
+      ),
+    );
+    process.exit(1);
+  }
+  console.log(
+    green(
+      `✔ Dữ liệu eval khớp database: ${sync.showtimes.length} suất chiếu ngày ${sync.evalDate}.`,
+    ),
+  );
+  return fixtures;
 }
 
 // 2. Reset trạng thái Database & Redis Lock trước mỗi test case
@@ -120,6 +214,11 @@ async function sendChatTurn(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  // Gộp tool/widget của MỌI lần thử: lần thử lỗi giữa chừng (429/503) có thể đã chạy tool
+  // và kết quả đã nằm trong lịch sử hội thoại – lần thử lại trả lời luôn mà không gọi lại.
+  const toolsAcrossAttempts: string[] = [];
+  const widgetsAcrossAttempts: string[] = [];
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     const start = Date.now();
     let rawSSE = "";
@@ -168,8 +267,8 @@ async function sendChatTurn(
     let fullText = "";
     let sseError = "";
     let sseErrorCode = "";
-    const tools: string[] = [];
-    const widgets: string[] = [];
+    const tools = toolsAcrossAttempts;
+    const widgets = widgetsAcrossAttempts;
 
     const lines = rawSSE.split("\n");
     let currentEvent = "";
@@ -247,22 +346,24 @@ async function sendChatTurn(
 }
 
 // 6. Map nhãn ghế thân thiện (ví dụ H7, H8) sang ID số trong database
-function resolveSeatId(seatLabel: string, fixtures: any): string {
-  // Tìm trong tất cả phòng chiếu
-  for (const audCode of Object.keys(fixtures.seatsByAuditorium || {})) {
-    const types = fixtures.seatsByAuditorium[audCode];
-    for (const type of Object.keys(types || {})) {
-      const seat = types[type].find((s: any) => s.seatNumber === seatLabel);
-      if (seat) return String(seat.id);
-    }
+// Tra theo phòng của suất chiếu, không id viết cứng. Bước kiểm tra trước khi chạy đã bảo
+// đảm mọi nhãn ghế dataset dùng đều tra được => không tìm thấy ở đây là lỗi logic.
+function resolveSeatId(
+  seatLabel: string,
+  fixtures: Fixtures,
+  showtimeKey?: string,
+): string {
+  const id = resolveSeatIdIn(
+    fixtures as unknown as SyncFixtures,
+    seatLabel,
+    showtimeKey,
+  );
+  if (id === null) {
+    throw new Error(
+      `Không tra được ghế "${seatLabel}"${showtimeKey ? ` của suất ${showtimeKey}` : ""} trong fixtures`,
+    );
   }
-  // Trường hợp ghế số
-  if (!isNaN(Number(seatLabel))) return seatLabel;
-  // Ghế H7, H8 nếu chưa có trong fixture rút gọn (fallback auditorium 7):
-  if (seatLabel === "H7") return "658";
-  if (seatLabel === "H8") return "659";
-  if (seatLabel === "H9") return "660";
-  return seatLabel;
+  return id;
 }
 
 // 7. Chạy 1 Test Case
@@ -277,9 +378,9 @@ async function executeCase(
   // Thiết lập tiền đề riêng cho ca kiểm thử xung đột ghế (C02: Ghế H9 đã được mua trước)
   if (c.id === "C02") {
     try {
-      const stId =
-        fixtures.showtimes.find((s) => s.key === "mai-morning")?.id || "443";
-      const seatH9 = resolveSeatId("H9", fixtures);
+      const stId = fixtures.showtimes.find((s) => s.key === "mai-morning")?.id;
+      if (!stId) throw new Error("fixtures thiếu suất mai-morning");
+      const seatH9 = resolveSeatId("H9", fixtures, "mai-morning");
       execSync(
         `docker exec cinema_postgres psql -U cinema_admin -d cinema_db -c "INSERT INTO showtime_seats (showtime_id, seat_id, status, user_id) VALUES (${stId}, ${seatH9}, 'BOOKED', 4) ON CONFLICT (showtime_id, seat_id) DO UPDATE SET status = 'BOOKED';"`,
         { stdio: "pipe" },
@@ -349,7 +450,9 @@ async function executeCase(
       if (e.seatIds) {
         return {
           ...e,
-          seatIds: e.seatIds.map((sid) => resolveSeatId(sid, fixtures)),
+          seatIds: e.seatIds.map((sid) =>
+            resolveSeatId(sid, fixtures, e.showtime),
+          ),
         };
       }
       return e;
@@ -439,6 +542,15 @@ async function main() {
   const args = process.argv.slice(2);
   const targetGroup = args.find((a) => a.startsWith("--group="))?.split("=")[1];
   const targetCase = args.find((a) => a.startsWith("--case="))?.split("=")[1];
+  // --cases=A03,A04,F01: chạy lại đúng các case cần (VD: các case FAIL lần trước)
+  const targetCases = args
+    .find((a) => a.startsWith("--cases="))
+    ?.split("=")[1]
+    ?.split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  // --no-seed: dùng dữ liệu đã seed sẵn (VD: tái hiện một lần chạy) – vẫn kiểm tra khớp DB
+  const shouldSeed = !args.includes("--no-seed");
   const verbose = args.includes("--verbose");
 
   console.log(
@@ -451,9 +563,10 @@ async function main() {
     bold("============================================================\n"),
   );
 
-  // Đọc fixtures
-  console.log(cyan("1. Nạp tập Fixtures đánh giá..."));
-  const fixtures = loadFixtures();
+  // Seed (mặc định) + kiểm tra dữ liệu eval khớp database tại thời điểm chạy
+  console.log(cyan("1. Đồng bộ dữ liệu đánh giá với database..."));
+  let fixtures = syncEvalData(shouldSeed, EVAL_DATASET);
+  let seededForDate = requiredEvalDate(new Date());
 
   // Đăng nhập lấy token
   console.log(cyan("2. Đăng nhập tài khoản test (user1, user2)..."));
@@ -485,6 +598,17 @@ async function main() {
     testCases = testCases.filter((c) => c.id === targetCase);
     console.log(yellow(`-> Lọc case đơn: ${targetCase}`));
   }
+  if (targetCases?.length) {
+    const unknown = targetCases.filter(
+      (id) => !EVAL_DATASET.some((c) => c.id === id),
+    );
+    if (unknown.length) {
+      console.error(red(`Không có case: ${unknown.join(", ")}`));
+      process.exit(1);
+    }
+    testCases = testCases.filter((c) => targetCases.includes(c.id));
+    console.log(yellow(`-> Chạy ${testCases.length} case: ${targetCases.join(",")}`));
+  }
   // --from=<caseId>: chạy tiếp từ một case (VD: sau khi hết quota hôm trước)
   const fromCase = args.find((a) => a.startsWith("--from="))?.split("=")[1];
   if (fromCase) {
@@ -502,6 +626,8 @@ async function main() {
     targetGroup && `--group=${targetGroup}`,
     targetCase && `--case=${targetCase}`,
     fromCase && `--from=${fromCase}`,
+    targetCases?.length && `--cases=${targetCases.join(",")}`,
+    !shouldSeed && "--no-seed",
   ]
     .filter(Boolean)
     .join(" ");
@@ -528,6 +654,26 @@ async function main() {
     const c = testCases[i];
     if (i > 0) {
       await new Promise((r) => setTimeout(r, interCaseDelay));
+    }
+
+    // Đợt chạy kéo dài qua nửa đêm (giờ VN): "ngày mai" đã đổi => seed lại trước case này.
+    // Mỗi case tự reset DB nên seed giữa chừng không ảnh hưởng case khác.
+    const needDate = requiredEvalDate(new Date());
+    if (needDate !== seededForDate) {
+      if (shouldSeed) {
+        console.log(
+          yellow(`\n⟳ Đã sang ngày ${vnDate(new Date())} – seed lại dữ liệu eval.`),
+        );
+        fixtures = syncEvalData(true, EVAL_DATASET);
+        seededForDate = needDate;
+      } else {
+        console.log(
+          yellow(
+            `\n⚠ Đã sang ngày mới nhưng đang chạy --no-seed: các case sau có thể FAIL vì dữ liệu lệch ngày.`,
+          ),
+        );
+        seededForDate = needDate;
+      }
     }
     process.stdout.write(
       `[${i + 1}/${testCases.length}] Case ${bold(c.id)} (${c.group}) - ${c.title}... `,
