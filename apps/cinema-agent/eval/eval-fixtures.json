@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-06T13:09:10.116Z",
+  "generatedAt": "2026-11-08T09:46:08.933Z",
   "timezone": "Asia/Ho_Chi_Minh",
-  "evalDate": "2026-11-07",
+  "evalDate": "2026-11-09",
   "password": "Eval123@Password",
   "users": [
     {
@@ -18,10 +18,10 @@
   "showtimes": [
     {
       "key": "mai-morning",
-      "id": "674",
+      "id": "679",
       "movieId": "1",
       "movieTitle": "Mai",
-      "startTime": "2026-11-07T03:00:00.000Z",
+      "startTime": "2026-11-09T03:00:00.000Z",
       "localStart": "10:00",
       "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
@@ -29,10 +29,10 @@
     },
     {
       "key": "quatmo-afternoon",
-      "id": "675",
+      "id": "680",
       "movieId": "3",
       "movieTitle": "Quật Mộ Trùng Phùng",
-      "startTime": "2026-11-07T07:00:00.000Z",
+      "startTime": "2026-11-09T07:00:00.000Z",
       "localStart": "14:00",
       "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
@@ -40,10 +40,10 @@
     },
     {
       "key": "mai-evening",
-      "id": "676",
+      "id": "681",
       "movieId": "1",
       "movieTitle": "Mai",
-      "startTime": "2026-11-07T12:30:00.000Z",
+      "startTime": "2026-11-09T12:30:00.000Z",
       "localStart": "19:30",
       "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
@@ -51,10 +51,10 @@
     },
     {
       "key": "dune-afternoon",
-      "id": "677",
+      "id": "682",
       "movieId": "2",
       "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-      "startTime": "2026-11-07T07:00:00.000Z",
+      "startTime": "2026-11-09T07:00:00.000Z",
       "localStart": "14:00",
       "auditoriumId": "8",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-02",
@@ -62,10 +62,10 @@
     },
     {
       "key": "dune-evening",
-      "id": "678",
+      "id": "683",
       "movieId": "2",
       "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-      "startTime": "2026-11-07T13:00:00.000Z",
+      "startTime": "2026-11-09T13:00:00.000Z",
       "localStart": "20:00",
       "auditoriumId": "8",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-02",
@@ -848,29 +848,29 @@
   },
   "prices": {
     "mai-morning": {
-      "NORMAL": 85000,
-      "VIP": 112000,
-      "SWEETBOX": 190000
+      "NORMAL": 65000,
+      "VIP": 88000,
+      "SWEETBOX": 150000
     },
     "quatmo-afternoon": {
-      "NORMAL": 105000,
-      "VIP": 136000,
-      "SWEETBOX": 230000
+      "NORMAL": 80000,
+      "VIP": 106000,
+      "SWEETBOX": 180000
     },
     "mai-evening": {
-      "NORMAL": 120000,
-      "VIP": 154000,
-      "SWEETBOX": 260000
+      "NORMAL": 95000,
+      "VIP": 124000,
+      "SWEETBOX": 210000
     },
     "dune-afternoon": {
-      "NORMAL": 200000,
-      "VIP": 250000,
-      "SWEETBOX": 420000
+      "NORMAL": 160000,
+      "VIP": 202000,
+      "SWEETBOX": 340000
     },
     "dune-evening": {
-      "NORMAL": 200000,
-      "VIP": 250000,
-      "SWEETBOX": 420000
+      "NORMAL": 160000,
+      "VIP": 202000,
+      "SWEETBOX": 340000
     }
   },
   "fnb": [
