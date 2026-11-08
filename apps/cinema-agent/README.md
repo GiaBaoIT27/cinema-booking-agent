@@ -1,4 +1,4 @@
-# 🤖 Cinema AI Agent Service (LangGraph & Generative UI)
+# Cinema AI Agent Service (LangGraph & Generative UI)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Agent%20Architecture-LangGraph%20JS%201.4-FF6F00?style=for-the-badge&logo=langchain&logoColor=white" alt="LangGraph JS" />
@@ -15,7 +15,7 @@
 
 ---
 
-## 🌟 4 Nguyên Lý Thiết Kế Cốt Lõi
+## 4 Nguyên Lý Thiết Kế Cốt Lõi
 
 1. **Không ảo giác dữ liệu (Zero Data Hallucination):**
    - Agent tuyệt đối không tự bịa đặt suất chiếu, sơ đồ ghế hay giá vé. 100% dữ liệu nghiệp vụ đều được truy vấn theo thời gian thực từ Cinema Core Backend (NestJS) thông qua 10 công cụ (Tools) chuẩn hóa.
@@ -28,7 +28,7 @@
 
 ---
 
-## 🏛️ Kiến Trúc Luồng Hoạt Động (LangGraph Workflow)
+## Kiến Trúc Luồng Hoạt Động (LangGraph Workflow)
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ flowchart TD
 
 ---
 
-## 🛠️ Danh Mục 10 Công Cụ Nghiệp Vụ (Agent Tools)
+## Danh Mục 10 Công Cụ Nghiệp Vụ (Agent Tools)
 
 Agent được trang bị bộ công cụ nghiệp vụ đầy đủ, bọc trong Zod Schema chặt chẽ:
 
@@ -86,7 +86,7 @@ Agent được trang bị bộ công cụ nghiệp vụ đầy đủ, bọc tron
 
 ---
 
-## 📊 Bộ Đánh Giá Thực Nghiệm Chuẩn Khoa Học (100 Test Cases Benchmark)
+## Bộ Đánh Giá Thực Nghiệm Chuẩn Khoa Học (100 Test Cases Benchmark)
 
 Để phục vụ báo cáo khóa luận tốt nghiệp và đánh giá năng lực AI thực tế, hệ thống được trang bị bộ **Benchmark Suite 100 kịch bản kiểm thử tự động** chia đều trên 7 nhóm năng lực:
 
@@ -99,11 +99,11 @@ Agent được trang bị bộ công cụ nghiệp vụ đầy đủ, bọc tron
 | **E** | **Out-of-Domain**            |   **10**    | Xử lý khéo léo câu hỏi ngoài phạm vi: giải toán, thời tiết, tâm sự tình cảm, chứng khoán, du lịch.   |
 | **F** | **Multi-turn Dialog**        |   **10**    | Duy trì hội thoại đa lượt phức tạp: đổi ý suất chiếu, đổi ghế đã giữ, hỏi ngắt ngang rồi quay lại.   |
 | **G** | **Robustness & Consistency** |   **10**    | Độ bền bỉ khi gặp tiếng Việt không dấu, câu cộc lốc, lỗi chính tả (typo), teencode, emoji, ALL CAPS. |
-|  🎯   | **TỔNG CỘNG**                |   **100**   | **Bộ dữ liệu chuẩn hóa phục vụ đo lường Tool-calling F1-Score & Latency**                            |
+|       | **TỔNG CỘNG**                |   **100**   | **Bộ dữ liệu chuẩn hóa phục vụ đo lường Tool-calling F1-Score & Latency**                            |
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Chạy Thử Nghiệm
+## Hướng Dẫn Cài Đặt & Chạy Thử Nghiệm
 
 ### 1. Cài đặt dependencies
 
@@ -142,7 +142,7 @@ Agent chạy tại cổng `http://localhost:3002`. Endpoint kiểm tra sức kh�
 ### 4. Chạy kiểm thử tự động (Unit Test & Eval Suite)
 
 ```bash
-# Chạy 26 unit tests tự động (100% Pass)
+# Chạy unit tests
 npm test
 
 # Chạy kiểm tra TypeScript Compile
@@ -151,3 +151,35 @@ npm run typecheck
 # Chạy bộ đánh giá thực nghiệm 100 kịch bản (Benchmark)
 npm run eval
 ```
+
+### 5. Chạy bộ đánh giá (`npm run eval`)
+
+**Yêu cầu:** stack Docker đang chạy (`cinema_backend`, `cinema_postgres`, `cinema_agent`) và `GOOGLE_API_KEY` còn quota.
+
+Mỗi lần chạy, runner tự động:
+
+1. Seed dữ liệu eval cho **ngày mai theo giờ VN** (bộ dữ liệu hỏi "ngày mai") và chép `eval/eval-fixtures.json` từ container ra.
+2. Kiểm tra fixtures khớp database: suất chiếu còn tồn tại, chưa bắt đầu, đúng giờ; mọi nhãn ghế dataset dùng đều tra được. Lệch thì **dừng trước khi chạy** và liệt kê lỗi.
+3. Seed lại nếu đợt chạy kéo qua nửa đêm.
+4. Ghi kết quả vào `eval/eval-report.md` và `eval/eval-results.json` (**ghi đè** lần chạy trước, nên sao lưu bản cần giữ).
+
+Các cờ (đặt sau `--` khi chạy qua npm):
+
+| Cờ                 | Tác dụng                                                                   | Ví dụ                 |
+| :----------------- | :------------------------------------------------------------------------- | :-------------------- |
+| `--group=<nhóm>`   | Chỉ chạy một nhóm; nhận chữ cái đầu (`A`…`G`) hoặc tên đầy đủ              | `--group=F`           |
+| `--case=<id>`      | Chạy một case                                                              | `--case=A03`          |
+| `--cases=<id,...>` | Chạy đúng danh sách case (sai mã thì báo lỗi và dừng)                      | `--cases=A04,B03,C02` |
+| `--from=<id>`      | Chạy tiếp từ một case đến hết (VD: sau khi hết quota hôm trước)            | `--from=F06`          |
+| `--no-seed`        | Không seed lại, dùng dữ liệu đang có (vẫn kiểm tra khớp database)          | `--no-seed`           |
+| `--delay=<ms>`     | Thời gian chờ giữa các case, mặc định `3000`; tăng lên nếu hay gặp lỗi 429 | `--delay=6000`        |
+| `--verbose`        | In câu người dùng và tool agent gọi ở từng lượt                            | `--verbose`           |
+
+```bash
+npm run eval                                  # cả 100 case
+npm run eval -- --group=F --verbose           # chỉ nhóm multi-turn, in chi tiết
+npm run eval -- --from=F06 --delay=5000       # chạy tiếp sau khi hết quota
+npm run eval -- --cases=A04,A06,B03,B07,C02   # chạy lại các case đang fail
+```
+
+`--group` và `--from` dùng chung được: runner lọc theo nhóm trước, rồi chạy tiếp từ case chỉ định trong nhóm đó. Khi nhà cung cấp LLM hết quota theo ngày, runner dừng sớm và báo cáo ghi rõ số kịch bản đã chạy. Chi tiết về seed: [`apps/cinema-backend/src/database/seeds/README-eval.md`](../cinema-backend/src/database/seeds/README-eval.md).

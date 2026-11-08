@@ -223,6 +223,8 @@ export interface RunMeta {
   stoppedEarly?: string;
   /** Bộ lọc CLI đã dùng (--group, --case, --from). */
   filter?: string;
+  /** Ghi chú khi báo cáo gộp kết quả của nhiều lần chạy (--merge). */
+  mergedNote?: string;
 }
 
 export interface ReportSummary {
@@ -297,6 +299,10 @@ export function renderMarkdownReport(
     `**Tỷ lệ hoàn thành tác vụ (TCR = đạt / chấm được):** ${pct(s.taskCompletionRate)}  `,
   );
   lines.push(`**Độ trễ trung bình:** ${sec(s.latency.mean)}`, "");
+
+  if (meta.mergedNote) {
+    lines.push("> [!NOTE]", `> ${meta.mergedNote}`, "");
+  }
 
   if (partial || meta.stoppedEarly || s.error > 0) {
     lines.push("> [!WARNING]");

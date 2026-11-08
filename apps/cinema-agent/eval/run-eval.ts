@@ -551,6 +551,9 @@ async function main() {
     .filter(Boolean);
   // --no-seed: dùng dữ liệu đã seed sẵn (VD: tái hiện một lần chạy) – vẫn kiểm tra khớp DB
   const shouldSeed = !args.includes("--no-seed");
+  // --merge: thay kết quả các case vừa chạy vào eval-results.json cũ rồi tính lại báo cáo
+  // (VD: chạy lại vài case bị lỗi hạ tầng mà không tốn quota chạy lại cả 100 case)
+  const shouldMerge = args.includes("--merge");
   const verbose = args.includes("--verbose");
 
   console.log(
@@ -570,11 +573,20 @@ async function main() {
 
   // Đăng nhập lấy token
   console.log(cyan("2. Đăng nhập tài khoản test (user1, user2)..."));
-  let token1: string | undefined;
-  let token2: string | undefined;
+  // Access token chỉ sống 30 phút (JWT_ACCESS_EXPIRES) trong khi chạy đủ 100 case mất
+  // hơn 1 giờ => đăng nhập lại định kỳ và khi agent trả 401, thay vì dùng một token suốt đợt.
+  const TOKEN_REFRESH_MS = 20 * 60 * 1000;
+  let tokens: { user1?: string; user2?: string } = {};
+  let tokensIssuedAt = 0;
+  const loginEvalUsers = async () => {
+    tokens = {
+      user1: await loginUser("eval.user1@cinema.com", "Eval123@Password"),
+      user2: await loginUser("eval.user2@cinema.com", "Eval123@Password"),
+    };
+    tokensIssuedAt = Date.now();
+  };
   try {
-    token1 = await loginUser("eval.user1@cinema.com", "Eval123@Password");
-    token2 = await loginUser("eval.user2@cinema.com", "Eval123@Password");
+    await loginEvalUsers();
     console.log(green("✔ Đăng nhập thành công! Đã cấp phát JWT Token test.\n"));
   } catch (err: any) {
     console.error(red("Lỗi đăng nhập user eval:"), err.message);
@@ -683,18 +695,25 @@ async function main() {
     let lastErr = "";
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        res = await executeCaseRepeated(
-          c,
-          fixtures,
-          { user1: token1, user2: token2 },
-          verbose,
-        );
+        if (Date.now() - tokensIssuedAt > TOKEN_REFRESH_MS) await loginEvalUsers();
+        res = await executeCaseRepeated(c, fixtures, tokens, verbose);
         break;
       } catch (e: any) {
         lastErr = e.message;
         if (String(e.message).startsWith("LLM_QUOTA_EXHAUSTED")) {
           quotaExhausted = true;
           break;
+        }
+        if (attempt === 0 && String(e.message).includes("HTTP 401")) {
+          // Token hết hạn giữa chừng: lỗi của runner, không phải của agent => đăng nhập lại
+          process.stdout.write(yellow(` (token hết hạn, đăng nhập lại...) `));
+          try {
+            await loginEvalUsers();
+          } catch (loginErr: any) {
+            lastErr = `${lastErr}; đăng nhập lại thất bại: ${loginErr.message}`;
+            break;
+          }
+          continue;
         }
         if (
           attempt === 0 &&
@@ -757,6 +776,15 @@ async function main() {
   // Reset database sạch sau khi kết thúc
   resetDatabaseState();
 
+  // --merge: lấy kết quả cũ, thay các case vừa chạy, giữ thứ tự dataset
+  let mergedNote: string | undefined;
+  if (shouldMerge) {
+    const merged = mergeWithPreviousRun(results, agentInfo.model);
+    results.splice(0, results.length, ...merged.results);
+    testCases = EVAL_DATASET.filter((c) => results.some((r) => r.caseId === c.id));
+    mergedNote = merged.note;
+  }
+
   // 9. Báo cáo – mọi số liệu và nhận định sinh từ dữ liệu (xem eval-scoring.ts)
   const summary = summarize(testCases, results);
   const pctText = (v: number | null) =>
@@ -794,7 +822,8 @@ async function main() {
     stoppedEarly: quotaExhausted
       ? "nhà cung cấp LLM hết quota theo ngày"
       : undefined,
-    filter: filterDesc || undefined,
+    filter: shouldMerge ? undefined : filterDesc || undefined,
+    mergedNote,
   };
 
   const reportPath = "./eval/eval-results.json";
@@ -807,6 +836,43 @@ async function main() {
     "utf8",
   );
   console.log(cyan(`Đã xuất báo cáo vào: ./eval/eval-report.md\n`));
+}
+
+/**
+ * Gộp kết quả lần chạy này vào eval-results.json trước đó: case nào vừa chạy thì dùng
+ * kết quả mới, còn lại giữ kết quả cũ. Chỉ gộp khi cùng model để số liệu còn so sánh được.
+ */
+function mergeWithPreviousRun(
+  fresh: RunResult[],
+  model: string,
+): { results: RunResult[]; note: string } {
+  let previous: { meta: { date: string; model: string }; results: RunResult[] };
+  try {
+    previous = JSON.parse(readFileSync("./eval/eval-results.json", "utf8"));
+  } catch (e: any) {
+    console.error(red(`--merge: không đọc được eval/eval-results.json cũ: ${e.message}`));
+    process.exit(1);
+  }
+  if (previous.meta.model !== model) {
+    console.error(
+      red(
+        `--merge: lần chạy cũ dùng model ${previous.meta.model}, lần này ${model} – không gộp để tránh trộn số liệu của 2 model.`,
+      ),
+    );
+    process.exit(1);
+  }
+
+  const freshById = new Map(fresh.map((r) => [r.caseId, r]));
+  const prevById = new Map(previous.results.map((r) => [r.caseId, r]));
+  const results = EVAL_DATASET.map((c) => freshById.get(c.id) ?? prevById.get(c.id)).filter(
+    (r): r is RunResult => Boolean(r),
+  );
+  const prevDate = new Date(previous.meta.date).toLocaleString("vi-VN");
+  const note =
+    `Báo cáo gộp: ${results.length - fresh.length} kịch bản lấy từ lần chạy ${prevDate}, ` +
+    `${fresh.length} kịch bản chạy lại lúc ${new Date().toLocaleString("vi-VN")} ` +
+    `(${fresh.map((r) => r.caseId).join(", ")}), cùng model ${model}.`;
+  return { results, note };
 }
 
 main().catch((err) => {
