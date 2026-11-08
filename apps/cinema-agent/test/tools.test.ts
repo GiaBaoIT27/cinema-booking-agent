@@ -59,6 +59,8 @@ test("hold_seats đổi nhãn ghế sang seatId, gửi JWT, lấy hạn giữ t�
   assert.deepEqual(post.body, { showtimeId: 897, seatIds: [11, 12] });
   assert.equal(post.auth, "Bearer good");
   assert.equal(r.data.holdMinutes, 11);
+  // backend trả 13:00Z => khách phải thấy 20:00 giờ VN, không phải 13:00
+  assert.equal(r.data.holdUntilVN, "20:00 (giờ Việt Nam)");
   assert.equal(r.data.totalSeatPrice, 130000);
   const fx = effectsFor("hold_seats", {}, r);
   assert.deepEqual(fx.patch.selectedSeats, [{ seatId: 11, label: "H7" }, { seatId: 12, label: "H8" }]);

@@ -38,6 +38,8 @@ export async function pipeAgentStream(stream: AsyncIterable<unknown>, send: Send
     } else if (mode === "updates") {
       for (const [node, update] of Object.entries(payload ?? {}) as Array<[string, any]>) {
         if (node === "agent") {
+          // Chốt chặn đã bỏ lời gọi giữ ghế khách chưa chọn – báo ra để client/eval đo đếm
+          for (const b of update?.guardBlocked ?? []) send("guard_blocked", { tool: "hold_seats", seats: b.seats });
           const calls = update?.messages?.[0]?.tool_calls ?? [];
           for (const c of calls) send("tool_start", { name: c.name });
         } else if (node === "tools") {

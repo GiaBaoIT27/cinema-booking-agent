@@ -98,6 +98,9 @@ services:
       # Để trống vẫn chạy (backend tự verify JWT thật); điền cùng
       # JWT_ACCESS_SECRET của backend nếu muốn agent tự verify chữ ký.
       JWT_SECRET: ${AGENT_JWT_SECRET:-}
+      # Chốt chặn chỉ giữ ghế khách đã chọn; đặt SEAT_CHOICE_GUARD=off chỉ khi làm
+      # thí nghiệm so sánh có/không chốt chặn
+      SEAT_CHOICE_GUARD: ${SEAT_CHOICE_GUARD:-on}
       PORT: "3002"
     ports:
       - "3002:3002"

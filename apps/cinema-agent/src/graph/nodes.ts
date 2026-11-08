@@ -1,9 +1,14 @@
-import { SystemMessage, ToolMessage } from "@langchain/core/messages";
+import { AIMessage, SystemMessage, ToolMessage } from "@langchain/core/messages";
 import type { BackendClient } from "../lib/backend-client.js";
 import { runTool, type ToolResult } from "../tools/definitions.js";
 import { effectsFor } from "../tools/tool-effects.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { windowMessages } from "./messages.js";
+import {
+  fallbackProposal,
+  findUnconfirmedHolds,
+  guardInstruction,
+} from "./seat-choice-guard.js";
 import type {
   BookingSession,
   GenerativeUIWidget,
@@ -25,6 +30,8 @@ export interface NodeDeps {
   model: ModelLike;
   backend: BackendClient;
   maxHistory?: number;
+  /** Mặc định bật. */
+  seatChoiceGuard?: boolean;
 }
 
 type NodeState = BookingSession & { messages: any[] };
@@ -49,10 +56,43 @@ export function createAgentNode(deps: NodeDeps) {
   return async (state: NodeState, config: NodeConfig) => {
     const loggedIn = Boolean(config?.configurable?.authToken);
     const history = windowMessages(state.messages, deps.maxHistory ?? 40);
-    const prompt = new SystemMessage(buildSystemPrompt(state, loggedIn));
+    const systemPrompt = buildSystemPrompt(state, loggedIn);
     // Truyền config để token của mô hình được stream ra ngoài theo thời gian thực
-    const response = await deps.model.invoke([prompt, ...history], config);
-    return { messages: [response] };
+    const response = await deps.model.invoke(
+      [new SystemMessage(systemPrompt), ...history],
+      config,
+    );
+
+    // Chốt chặn: không giữ ghế khách chưa chọn (seat-choice-guard.ts). Xét trên TOÀN BỘ
+    // hội thoại, không chỉ cửa sổ gửi cho mô hình.
+    const blocked =
+      deps.seatChoiceGuard === false
+        ? []
+        : findUnconfirmedHolds(response?.tool_calls, state.messages);
+    if (blocked.length === 0) return { messages: [response] };
+
+    // Hỏi lại mô hình một lần với chỉ dẫn của chốt chặn (đặt trong system prompt vì
+    // Gemini chỉ nhận system message ở đầu hội thoại)
+    let retry = await deps.model.invoke(
+      [new SystemMessage(`${systemPrompt}\n\n${guardInstruction(blocked)}`), ...history],
+      config,
+    );
+    const stillBlocked = findUnconfirmedHolds(retry?.tool_calls, state.messages);
+    if (stillBlocked.length > 0) {
+      const blockedIds = new Set(stillBlocked.map((b) => b.callId));
+      const remaining = (retry.tool_calls ?? []).filter(
+        (c: { id?: string; name: string }) => !(c.name === "hold_seats" && blockedIds.has(c.id)),
+      );
+      const text = typeof retry.content === "string" ? retry.content.trim() : "";
+      retry = new AIMessage({
+        content: text || fallbackProposal(stillBlocked),
+        tool_calls: remaining,
+      });
+    }
+    return {
+      messages: [retry],
+      guardBlocked: [...blocked, ...stillBlocked].map((b) => ({ seats: b.seats })),
+    };
   };
 }
 

@@ -34,6 +34,7 @@ async function main() {
     model: model as unknown as ModelLike,
     backend,
     checkpointer,
+    seatChoiceGuard: config.seatChoiceGuard,
   });
   const limiter = new RateLimiter(config.rateLimitPerMinute);
 
@@ -55,6 +56,7 @@ async function main() {
       model: config.model,
       temperature: LLM_TEMPERATURE,
       sessionStore: kind,
+      seatChoiceGuard: config.seatChoiceGuard,
     });
   });
 

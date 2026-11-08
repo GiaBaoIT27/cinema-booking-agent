@@ -174,6 +174,16 @@ Các cờ (đặt sau `--` khi chạy qua npm):
 | `--no-seed`        | Không seed lại, dùng dữ liệu đang có (vẫn kiểm tra khớp database)          | `--no-seed`           |
 | `--delay=<ms>`     | Thời gian chờ giữa các case, mặc định `3000`; tăng lên nếu hay gặp lỗi 429 | `--delay=6000`        |
 | `--verbose`        | In câu người dùng và tool agent gọi ở từng lượt                            | `--verbose`           |
+| `--merge`          | Thay kết quả các case vừa chạy vào báo cáo cũ rồi tính lại (cùng model)     | `--cases=G04 --merge` |
+| `--out=<tên>`      | Ghi ra `eval-results-<tên>.json` / `eval-report-<tên>.md`, không đè báo cáo chính | `--out=guard-on` |
+| `--repeat=<N>`     | Chạy mỗi case ít nhất N lần (đo tỷ lệ qua nhiều lần chạy)                   | `--repeat=3`          |
+
+**Chốt chặn giữ ghế (`SEAT_CHOICE_GUARD`).** Agent chỉ được giữ ghế mà khách đã tự nêu số ghế, hoặc ghế agent đã đề xuất ở lượt trước và khách đã trả lời ([seat-choice-guard.ts](src/graph/seat-choice-guard.ts)). Mặc định bật; mỗi lần chặn được báo qua sự kiện SSE `guard_blocked` và ghi vào báo cáo eval. Chỉ tắt khi làm thí nghiệm so sánh:
+
+```bash
+SEAT_CHOICE_GUARD=off docker compose up -d agent   # tắt
+docker compose up -d agent                         # bật lại (mặc định)
+```
 
 ```bash
 npm run eval                                  # cả 100 case

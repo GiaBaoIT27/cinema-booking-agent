@@ -56,6 +56,8 @@ export interface CaseResult {
   /** Số lần chạy và số lần đạt (case có `repeat` > 1 đo độ nhất quán). */
   runs: number;
   passedRuns: number;
+  /** Số lời gọi giữ ghế bị chốt chặn của agent bỏ (cộng dồn mọi lần chạy). */
+  guardBlocked?: number;
 }
 
 /** Lỗi chấm điểm liên quan tới tool (thiếu tool, gọi tool cấm, gọi tool hành động ngoài yêu cầu). */
@@ -225,6 +227,8 @@ export interface RunMeta {
   filter?: string;
   /** Ghi chú khi báo cáo gộp kết quả của nhiều lần chạy (--merge). */
   mergedNote?: string;
+  /** Chốt chặn giữ ghế của agent đang bật hay tắt (đọc từ /health). */
+  seatChoiceGuard?: string;
 }
 
 export interface ReportSummary {
@@ -289,6 +293,10 @@ export function renderMarkdownReport(
   lines.push(`**Ngày thực nghiệm:** ${meta.date.toLocaleString("vi-VN")}  `);
   lines.push(`**Mô hình:** ${meta.model} (temperature ${meta.temperature})  `);
   lines.push(`**Môi trường:** Node.js ${meta.nodeVersion}  `);
+  if (meta.seatChoiceGuard) {
+    const blocks = results.reduce((a, r) => a + (r.guardBlocked ?? 0), 0);
+    lines.push(`**Chốt chặn giữ ghế:** ${meta.seatChoiceGuard} · đã chặn ${blocks} lời gọi  `);
+  }
   lines.push(
     `**Số kịch bản đã chạy:** ${s.total}/${meta.datasetSize}${meta.filter ? ` (lọc: ${meta.filter})` : ""}  `,
   );

@@ -11,6 +11,8 @@ export interface AgentConfig {
   rateLimitPerMinute: number;
   backendTimeoutMs: number;
   maxMessageChars: number;
+  /** Chốt chặn chỉ giữ ghế khách đã chọn (SEAT_CHOICE_GUARD=off để tắt khi làm thí nghiệm so sánh). */
+  seatChoiceGuard: boolean;
 }
 
 export type EnvLike = Record<string, string | undefined>;
@@ -50,5 +52,6 @@ export function loadConfig(env: EnvLike): AgentConfig {
     rateLimitPerMinute: toInt(env.RATE_LIMIT_PER_MINUTE, 20),
     backendTimeoutMs: toInt(env.BACKEND_TIMEOUT_MS, 10_000),
     maxMessageChars: 2000,
+    seatChoiceGuard: env.SEAT_CHOICE_GUARD?.trim().toLowerCase() !== "off",
   };
 }
