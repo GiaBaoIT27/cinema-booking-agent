@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   checkFixtures,
+  createFixturesProvider,
   requiredEvalDate,
   resolveSeatId,
   vnDate,
@@ -83,4 +84,40 @@ test("nhãn ghế dataset dùng mà fixtures không có => báo lỗi kèm mã c
     RUN_AT,
   );
   assert.deepEqual(errors, ['[A03] Không tra được ghế "Z1" trong phòng của suất mai-morning']);
+});
+
+test("createFixturesProvider: lần chạy rơi sang ngày mới (kể cả giữa các lần lặp) => seed lại một lần", () => {
+  // 23:59 ngày 15/11 giờ VN, rồi 00:01 ngày 16/11 – đúng tình huống thí nghiệm G06
+  let clock = new Date("2026-11-15T16:59:00Z");
+  let reseeds = 0;
+  const get = createFixturesProvider({
+    initial: "data-16/11",
+    seededForDate: requiredEvalDate(clock),
+    reseed: () => {
+      reseeds += 1;
+      return "data-17/11";
+    },
+    now: () => clock,
+  });
+
+  assert.equal(get(), "data-16/11"); // lần lặp 1, trước nửa đêm
+  clock = new Date("2026-11-15T17:01:00Z");
+  assert.equal(get(), "data-17/11"); // lần lặp 2, sau nửa đêm => seed lại
+  assert.equal(get(), "data-17/11"); // lần lặp 3: không seed lại lần nữa
+  assert.equal(reseeds, 1);
+});
+
+test("createFixturesProvider: --no-seed chỉ cảnh báo, giữ dữ liệu cũ", () => {
+  let clock = new Date("2026-11-15T16:59:00Z");
+  const days: boolean[] = [];
+  const get = createFixturesProvider({
+    initial: "old",
+    seededForDate: requiredEvalDate(clock),
+    reseed: null,
+    now: () => clock,
+    onNewDay: (reseeded) => days.push(reseeded),
+  });
+  clock = new Date("2026-11-15T17:01:00Z");
+  assert.equal(get(), "old");
+  assert.deepEqual(days, [false]);
 });

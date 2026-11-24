@@ -9,6 +9,7 @@ import {
 import { checkState, type Fixtures, type Snapshot } from "./eval-expect.js";
 import {
   checkFixtures,
+  createFixturesProvider,
   requiredEvalDate,
   resolveSeatId as resolveSeatIdIn,
   vnDate,
@@ -497,7 +498,8 @@ async function executeCase(
  */
 async function executeCaseRepeated(
   c: EvalCase,
-  fixtures: Fixtures,
+  /** Gọi trước MỖI lần chạy: lần lặp có thể rơi sang ngày mới (seed lại dữ liệu). */
+  getFixtures: () => Fixtures,
   tokens: { user1?: string; user2?: string },
   verbose = false,
   minRuns = 1,
@@ -506,7 +508,7 @@ async function executeCaseRepeated(
   const all: RunResult[] = [];
   for (let k = 0; k < runs; k++) {
     if (runs > 1 && verbose) console.log(gray(`  [Lần ${k + 1}/${runs}]`));
-    all.push(await executeCase(c, fixtures, tokens, verbose));
+    all.push(await executeCase(c, getFixtures(), tokens, verbose));
   }
   if (runs === 1) return all[0];
 
@@ -595,7 +597,7 @@ async function main() {
   // Seed (mặc định) + kiểm tra dữ liệu eval khớp database tại thời điểm chạy
   console.log(cyan("1. Đồng bộ dữ liệu đánh giá với database..."));
   let fixtures = syncEvalData(shouldSeed, EVAL_DATASET);
-  let seededForDate = requiredEvalDate(new Date());
+  const seededForDate = requiredEvalDate(new Date());
 
   // Đăng nhập lấy token
   console.log(cyan("2. Đăng nhập tài khoản test (user1, user2)..."));
@@ -688,6 +690,25 @@ async function main() {
 
   const results: RunResult[] = [];
 
+  // Đợt chạy kéo dài qua nửa đêm (giờ VN): "ngày mai" đã đổi => seed lại trước lần chạy kế
+  // tiếp – kiểm tra trước MỖI lần chạy (kể cả giữa các lần lặp của một case), không chỉ
+  // trước mỗi case. Mỗi lần chạy tự reset DB nên seed giữa chừng không ảnh hưởng lần khác.
+  const currentFixtures = createFixturesProvider<Fixtures>({
+    initial: fixtures,
+    seededForDate,
+    reseed: shouldSeed ? () => (fixtures = syncEvalData(true, EVAL_DATASET)) : null,
+    onNewDay: (reseeded) =>
+      console.log(
+        yellow(
+          reseeded
+            ? `
+⟳ Đã sang ngày ${vnDate(new Date())} – seed lại dữ liệu eval.`
+            : `
+⚠ Đã sang ngày mới nhưng đang chạy --no-seed: các case sau có thể FAIL vì dữ liệu lệch ngày.`,
+        ),
+      ),
+  });
+
   let quotaExhausted = false;
   for (let i = 0; i < testCases.length; i++) {
     const c = testCases[i];
@@ -695,25 +716,6 @@ async function main() {
       await new Promise((r) => setTimeout(r, interCaseDelay));
     }
 
-    // Đợt chạy kéo dài qua nửa đêm (giờ VN): "ngày mai" đã đổi => seed lại trước case này.
-    // Mỗi case tự reset DB nên seed giữa chừng không ảnh hưởng case khác.
-    const needDate = requiredEvalDate(new Date());
-    if (needDate !== seededForDate) {
-      if (shouldSeed) {
-        console.log(
-          yellow(`\n⟳ Đã sang ngày ${vnDate(new Date())} – seed lại dữ liệu eval.`),
-        );
-        fixtures = syncEvalData(true, EVAL_DATASET);
-        seededForDate = needDate;
-      } else {
-        console.log(
-          yellow(
-            `\n⚠ Đã sang ngày mới nhưng đang chạy --no-seed: các case sau có thể FAIL vì dữ liệu lệch ngày.`,
-          ),
-        );
-        seededForDate = needDate;
-      }
-    }
     process.stdout.write(
       `[${i + 1}/${testCases.length}] Case ${bold(c.id)} (${c.group}) - ${c.title}... `,
     );
@@ -723,7 +725,7 @@ async function main() {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         if (Date.now() - tokensIssuedAt > TOKEN_REFRESH_MS) await loginEvalUsers();
-        res = await executeCaseRepeated(c, fixtures, tokens, verbose, minRuns);
+        res = await executeCaseRepeated(c, currentFixtures, tokens, verbose, minRuns);
         break;
       } catch (e: any) {
         lastErr = e.message;
