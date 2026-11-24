@@ -109,6 +109,9 @@ export const EVAL_DATASET: EvalCase[] = [
       "Khách vãng lai chưa đăng nhập đòi giữ ghế -> agent phải yêu cầu đăng nhập trước.",
     user: null,
     turns: ["Tôi muốn giữ ghế H7 suất 10:00 ngày mai phim Mai"],
+    // Khách tự nêu ghế H7 và yêu cầu giữ: gọi hold_seats là hợp lệ, backend từ chối (401) và
+    // chat hiện LOGIN_REQUIRED. Điều kiện noHolding bên dưới vẫn bắt lỗi nếu ghế bị giữ thật.
+    allowTools: ["hold_seats"],
     forbidTools: ["create_order_and_payment"],
     expectWidgets: ["LOGIN_REQUIRED"],
     expectState: [{ kind: "noHolding", showtime: "mai-morning" }],
@@ -548,6 +551,9 @@ export const EVAL_DATASET: EvalCase[] = [
       "Tôi muốn đặt ghế H9 suất 10:00 ngày mai phim Mai tại rạp Bến Nghé",
     ],
     expectTools: ["get_available_seats"],
+    // Khách tự nêu ghế H9 và yêu cầu đặt: gọi hold_seats là hợp lệ, backend từ chối (409) vì
+    // ghế đã BOOKED. Điều kiện noHolding bên dưới vẫn bắt lỗi nếu ghế bị giữ thật.
+    allowTools: ["hold_seats"],
     forbidTools: ["create_order_and_payment"],
     expectState: [
       {

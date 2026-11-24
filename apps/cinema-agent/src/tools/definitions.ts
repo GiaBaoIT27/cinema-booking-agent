@@ -391,6 +391,9 @@ export const holdSeats: ToolDefinition = {
             price: s.price,
           })),
           holdExpiresAt: held.holdExpiresAt,
+          // holdExpiresAt là ISO UTC: mô hình từng đọc nhầm "10:20Z" thành 10:20 giờ VN
+          // (thực tế 17:20) => đưa sẵn giờ VN để trả lời khách
+          holdUntilVN: `${vnTime(held.holdExpiresAt)} (giờ Việt Nam)`,
           holdMinutes: Math.round((held.holdDurationMs ?? 0) / 60000),
           totalSeatPrice: totalPrice,
         },

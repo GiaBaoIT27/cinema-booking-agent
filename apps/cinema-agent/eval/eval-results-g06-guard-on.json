@@ -1,0 +1,182 @@
+{
+  "meta": {
+    "date": "2026-11-16T15:49:48.980Z",
+    "model": "gemini-3.5-flash-lite",
+    "temperature": "0.2",
+    "nodeVersion": "v24.12.0",
+    "datasetSize": 100,
+    "filter": "--cases=G06 --repeat=3",
+    "seatChoiceGuard": "bật"
+  },
+  "summary": {
+    "total": 1,
+    "pass": 1,
+    "fail": 0,
+    "error": 0,
+    "taskCompletionRate": 1,
+    "latency": {
+      "min": 8087,
+      "p50": 8087,
+      "p90": 8087,
+      "p95": 8087,
+      "max": 8087,
+      "mean": 8087
+    },
+    "groups": [
+      {
+        "group": "G-stability",
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "error": 0,
+        "avgLatencyMs": 8087
+      }
+    ],
+    "tools": {
+      "perTool": [
+        {
+          "tool": "search_movies",
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        {
+          "tool": "get_movie_details",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_showtimes",
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        {
+          "tool": "get_available_seats",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 1,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_fnb_items",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_my_orders",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_order_status",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "hold_seats",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "release_seats",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "create_order_and_payment",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        }
+      ],
+      "micro": {
+        "tool": "Micro-Average",
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "extra": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1
+      }
+    },
+    "consistency": [
+      {
+        "caseId": "G06",
+        "runs": 3,
+        "passedRuns": 3
+      }
+    ]
+  },
+  "results": [
+    {
+      "caseId": "G06",
+      "group": "G-stability",
+      "title": "Câu lệnh trộn lẫn tiếng Anh và tiếng Việt (Code-switching)",
+      "status": "PASS",
+      "pass": true,
+      "latencyMs": 8087,
+      "toolsCalled": [
+        "search_movies",
+        "get_showtimes",
+        "get_available_seats"
+      ],
+      "widgetsEmitted": [
+        "MOVIE_LIST",
+        "SHOWTIME_SELECTOR",
+        "SEAT_MATRIX_SELECTOR"
+      ],
+      "failures": [],
+      "responseText": "Chào bạn, suất chiếu phim **Mai** vào lúc **10:00 ngày mai (17/11/2026)** tại rạp **Cinema Star - Bến Nghé Plaza** hiện đang còn rất nhiều ghế trống.\n\nBạn muốn chọn ghế loại nào (Ghế Thường 65.000đ, Ghế VIP 88.000đ hay Ghế Đôi Sweetbox 150.000đ) và vị trí cụ thể nào không ạ?\n",
+      "runs": 3,
+      "passedRuns": 3,
+      "guardBlocked": 1
+    }
+  ]
+}

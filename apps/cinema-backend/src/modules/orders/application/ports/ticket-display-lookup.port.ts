@@ -2,6 +2,8 @@ export interface ShowtimeDisplayRef {
   showtimeId: string;
   movieTitle: string | null;
   auditoriumName: string | null;
+  /** Tên cụm rạp (tùy chọn – dùng cho email vé). */
+  cineplexName?: string | null;
   startTime: Date;
 }
 

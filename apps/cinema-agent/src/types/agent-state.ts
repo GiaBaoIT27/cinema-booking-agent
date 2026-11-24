@@ -24,6 +24,8 @@ export const MovieAgentState = Annotation.Root({
   holdExpiresAt: latest<string | null>(null),
   orderId: latest<number | null>(null),
   activeWidget: latest<GenerativeUIWidget | null>(null),
+  /** Lời gọi giữ ghế bị chốt chặn bỏ ở bước agent gần nhất (để báo ra SSE và đo đếm). */
+  guardBlocked: latest<Array<{ seats: string[] }> | null>(null),
 });
 
 export type MovieAgentStateType = typeof MovieAgentState.State;

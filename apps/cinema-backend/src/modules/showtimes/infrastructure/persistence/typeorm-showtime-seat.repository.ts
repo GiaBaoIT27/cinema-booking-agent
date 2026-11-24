@@ -56,6 +56,25 @@ export class TypeOrmShowtimeSeatRepository implements IShowtimeSeatRepository {
     });
   }
 
+  async findSeatIdsHeldByOthers(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    now: Date,
+  ): Promise<string[]> {
+    if (seatIds.length === 0) return [];
+    const rows = await this.repo.find({
+      select: { seatId: true, userId: true },
+      where: {
+        showtimeId,
+        seatId: In(seatIds),
+        status: ShowtimeSeatStatus.HOLDING,
+        holdExpiresAt: MoreThan(now),
+      },
+    });
+    return rows.filter((r) => r.userId !== userId).map((r) => r.seatId);
+  }
+
   findActiveHoldsByUser(userId: string, now: Date): Promise<ShowtimeSeat[]> {
     return this.repo.find({
       where: {

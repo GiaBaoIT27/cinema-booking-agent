@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "date": "2026-11-15T16:54:34.352Z",
+    "model": "gemini-3.5-flash-lite",
+    "temperature": "0.2",
+    "nodeVersion": "v24.12.0",
+    "datasetSize": 100,
+    "filter": "--cases=A04,B03,B07,C02,G06 --repeat=3",
+    "seatChoiceGuard": "tắt"
+  },
+  "summary": {
+    "total": 5,
+    "pass": 0,
+    "fail": 5,
+    "error": 0,
+    "taskCompletionRate": 0,
+    "latency": {
+      "min": 5313,
+      "p50": 6068,
+      "p90": 6203,
+      "p95": 6203,
+      "max": 6203,
+      "mean": 5856.2
+    },
+    "groups": [
+      {
+        "group": "A-booking",
+        "total": 1,
+        "pass": 0,
+        "fail": 1,
+        "error": 0,
+        "avgLatencyMs": 5313
+      },
+      {
+        "group": "B-ambiguous",
+        "total": 2,
+        "pass": 0,
+        "fail": 2,
+        "error": 0,
+        "avgLatencyMs": 6080.5
+      },
+      {
+        "group": "C-truth",
+        "total": 1,
+        "pass": 0,
+        "fail": 1,
+        "error": 0,
+        "avgLatencyMs": 6203
+      },
+      {
+        "group": "G-stability",
+        "total": 1,
+        "pass": 0,
+        "fail": 1,
+        "error": 0,
+        "avgLatencyMs": 5604
+      }
+    ],
+    "tools": {
+      "perTool": [
+        {
+          "tool": "search_movies",
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "extra": 4,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        {
+          "tool": "get_movie_details",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_showtimes",
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "extra": 4,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        {
+          "tool": "get_available_seats",
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "extra": 2,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        {
+          "tool": "get_fnb_items",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_my_orders",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_order_status",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "hold_seats",
+          "tp": 0,
+          "fp": 5,
+          "fn": 0,
+          "extra": 0,
+          "precision": 0,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "release_seats",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "create_order_and_payment",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        }
+      ],
+      "micro": {
+        "tool": "Micro-Average",
+        "tp": 5,
+        "fp": 5,
+        "fn": 0,
+        "extra": 10,
+        "precision": 0.5,
+        "recall": 1,
+        "f1": 0.6666666666666666
+      }
+    },
+    "consistency": [
+      {
+        "caseId": "A04",
+        "runs": 3,
+        "passedRuns": 0
+      },
+      {
+        "caseId": "B03",
+        "runs": 3,
+        "passedRuns": 0
+      },
+      {
+        "caseId": "B07",
+        "runs": 3,
+        "passedRuns": 0
+      },
+      {
+        "caseId": "C02",
+        "runs": 3,
+        "passedRuns": 0
+      },
+      {
+        "caseId": "G06",
+        "runs": 3,
+        "passedRuns": 1
+      }
+    ]
+  },
+  "results": [
+    {
+      "caseId": "A04",
+      "group": "A-booking",
+      "title": "Yêu cầu giữ ghế nhưng chưa đăng nhập (Auth Guard)",
+      "status": "FAIL",
+      "pass": false,
+      "latencyMs": 5313,
+      "toolsCalled": [
+        "search_movies",
+        "get_showtimes",
+        "get_available_seats",
+        "hold_seats"
+      ],
+      "widgetsEmitted": [
+        "MOVIE_LIST",
+        "SHOWTIME_SELECTOR",
+        "SEAT_MATRIX_SELECTOR",
+        "LOGIN_REQUIRED"
+      ],
+      "failures": [
+        "Lần 1/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 2/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 3/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)"
+      ],
+      "responseText": "Dạ, ghế **H7** suất **10:00** ngày mai (**16/11/2026**) phim **Mai** tại rạp Cinema Star - Bến Nghé Plaza hiện còn trống và có giá vé là 65.000đ. \n\nĐể tiến hành giữ ghế, bạn vui lòng đăng nhập vào tài khoản của mình nhé!\n",
+      "runs": 3,
+      "passedRuns": 0,
+      "guardBlocked": 0
+    },
+    {
+      "caseId": "B03",
+      "group": "B-ambiguous",
+      "title": "Yêu cầu \"chỗ ngồi đẹp nhất\" một cách cảm tính",
+      "status": "FAIL",
+      "pass": false,
+      "latencyMs": 6093,
+      "toolsCalled": [
+        "search_movies",
+        "get_showtimes",
+        "get_available_seats",
+        "hold_seats"
+      ],
+      "widgetsEmitted": [
+        "MOVIE_LIST",
+        "SHOWTIME_SELECTOR",
+        "SEAT_MATRIX_SELECTOR",
+        "SEAT_MATRIX_SELECTOR"
+      ],
+      "failures": [
+        "Lần 1/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 2/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 3/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)"
+      ],
+      "responseText": "Tôi đã giữ cho bạn 2 ghế VIP đẹp nhất ở giữa rạp (ghế **F6, F7**) cho suất chiếu **10:00 ngày mai (16/11/2026)** phim **Mai** tại *Cinema Star - Bến Nghé Plaza*. \n\nTổng tiền vé: **176.000đ** (88.000đ/ghế). \nGhế được giữ đến **00:02**. Bạn có muốn chọn thêm bắp nước không hay tiến hành thanh toán luôn?\n",
+      "runs": 3,
+      "passedRuns": 0,
+      "guardBlocked": 0
+    },
+    {
+      "caseId": "B07",
+      "group": "B-ambiguous",
+      "title": "Chỉ định vị trí ghế chung chung (ghế lối đi / ghế cuối)",
+      "status": "FAIL",
+      "pass": false,
+      "latencyMs": 6068,
+      "toolsCalled": [
+        "search_movies",
+        "get_showtimes",
+        "get_available_seats",
+        "hold_seats"
+      ],
+      "widgetsEmitted": [
+        "MOVIE_LIST",
+        "SHOWTIME_SELECTOR",
+        "SEAT_MATRIX_SELECTOR",
+        "SEAT_MATRIX_SELECTOR"
+      ],
+      "failures": [
+        "Lần 1/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 2/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 3/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)"
+      ],
+      "responseText": "Tôi đã giữ thành công ghế sát lối đi **F1** (ghế VIP, giá 88.000đ) cho suất chiếu phim **Mai** lúc **10:00 ngày mai (16/11/2026)** tại *Cinema Star - Bến Nghé Plaza*. \n\nGhế của bạn sẽ được giữ đến **00:02** hôm nay. Bạn có muốn chọn thêm bắp nước không hay tiến hành tạo đơn thanh toán luôn?\n",
+      "runs": 3,
+      "passedRuns": 0,
+      "guardBlocked": 0
+    },
+    {
+      "caseId": "C02",
+      "group": "C-truth",
+      "title": "Cố tình đặt ghế đã có người mua trước đó (Conflict Seat)",
+      "status": "FAIL",
+      "pass": false,
+      "latencyMs": 6203,
+      "toolsCalled": [
+        "search_movies",
+        "get_showtimes",
+        "get_available_seats",
+        "hold_seats"
+      ],
+      "widgetsEmitted": [
+        "MOVIE_LIST",
+        "SHOWTIME_SELECTOR",
+        "SEAT_MATRIX_SELECTOR"
+      ],
+      "failures": [
+        "Lần 1/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 2/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 3/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)"
+      ],
+      "responseText": "Rất tiếc, ghế **H9** suất **10:00 ngày mai (16/11)** tại rạp **Cinema Star - Bến Nghé Plaza** phim **Mai** hiện đã có người đặt rồi ạ. \n\nGhế H hàng này hiện còn trống các số từ **H1 đến H8** và **H10 đến H12** (giá vé: 65.000đ). Bạn có muốn chọn sang ghế khác cạnh đó không ạ?\n",
+      "runs": 3,
+      "passedRuns": 0,
+      "guardBlocked": 0
+    },
+    {
+      "caseId": "G06",
+      "group": "G-stability",
+      "title": "Câu lệnh trộn lẫn tiếng Anh và tiếng Việt (Code-switching)",
+      "status": "FAIL",
+      "pass": false,
+      "latencyMs": 5604,
+      "toolsCalled": [
+        "search_movies",
+        "get_showtimes",
+        "get_available_seats",
+        "hold_seats"
+      ],
+      "widgetsEmitted": [
+        "MOVIE_LIST",
+        "SHOWTIME_SELECTOR",
+        "SEAT_MATRIX_SELECTOR",
+        "SEAT_MATRIX_SELECTOR"
+      ],
+      "failures": [
+        "Lần 1/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 2/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)"
+      ],
+      "responseText": "Mình đã giữ giúp bạn 2 ghế VIP **E6, E7** cho suất chiếu phim **Mai** lúc **10:00 ngày mai (16/11/2026)** tại **Cinema Star - Bến Nghé Plaza** (Tổng tiền vé: 176.000đ).\n\nBạn có muốn lấy thêm bắp nước không? Nếu không, mình tiến hành tạo đơn hàng và link thanh toán luôn nhé!\n",
+      "runs": 3,
+      "passedRuns": 1,
+      "guardBlocked": 0
+    }
+  ]
+}

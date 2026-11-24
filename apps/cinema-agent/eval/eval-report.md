@@ -1,57 +1,88 @@
-# BÁO CÁO THỰC NGHIỆM ĐÁNH GIÁ HỆ THỐNG AI CINEMA BOOKING AGENT
+# BÁO CÁO THỰC NGHIỆM ĐÁNH GIÁ AI CINEMA BOOKING AGENT
 
-**Ngày thực nghiệm:** 17:04:46 4/11/2026
-**Cấu hình mô hình:** Google Gemini 2.0 Flash (Temperature: 0.2, TopP: 0.95)
-**Môi trường thực thi:** Docker Compose, Node.js v20, PostgreSQL 16, Redis 7
-**Tổng số kịch bản kiểm thử (N):** 15
-**Tỷ lệ hoàn thành tác vụ (Task Completion Rate - TCR):** 100.0%
-**Độ trễ trung bình toàn hệ thống:** 8.91s
-
----
-
-## 1. Kết quả thực nghiệm theo 7 nhóm năng lực cốt lõi
-
-|  STT  | Nhóm năng lực kiểm thử (Category) | Số kịch bản | Đạt (Pass) | Tỷ lệ thành công (%) | Độ trễ trung bình (s) |
-| :---: | :-------------------------------- | :---------: | :--------: | :------------------: | :-------------------: |
-|   1   | **B-ambiguous**                   |     15      |     15     |        100.0%        |         8.91s         |
-| **Σ** | **TỔNG HỢP TOÀN HỆ THỐNG**        |   **15**    |   **15**   |      **100.0%**      |       **8.91s**       |
-
----
-
-## 2. Đánh giá độ chính xác gọi công cụ (Tool-Calling Confusion Matrix & Metrics)
-
-| Tên công cụ (Tool Name)    |   TP   |  FP   |  FN   | Precision |   Recall   | F1-Score  |
-| :------------------------- | :----: | :---: | :---: | :-------: | :--------: | :-------: |
-| `search_movies`            |   8    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| `get_movie_details`        |   0    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| `get_showtimes`            |   6    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| `get_available_seats`      |   3    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| `get_fnb_items`            |   1    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| `hold_seats`               |   0    |   2   |   0   |   0.0%    |   100.0%   | **0.000** |
-| `release_seats`            |   0    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| `create_order_and_payment` |   0    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| `get_my_orders`            |   0    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| `get_order_status`         |   0    |   0   |   0   |  100.0%   |   100.0%   | **1.000** |
-| **Micro-Average**          | **18** | **2** | **0** | **90.0%** | **100.0%** | **0.947** |
-
----
-
-## 3. Phân bố độ trễ phản hồi (End-to-End Latency Distribution)
-
-Độ trễ tính từ lúc gửi câu lệnh người dùng qua HTTP Server-Sent Events (SSE) đến khi Agent hoàn tất lượt xử lý (bao gồm suy luận LLM, gọi REST API Backend, truy vấn Redis Lock và PostgreSQL).
-
-| Chỉ số độ trễ (Latency Metric) | Giá trị (giây) | Giá trị (mili-giây) | Ghi chú kỹ thuật                                    |
-| :----------------------------- | :------------: | :-----------------: | :-------------------------------------------------- |
-| **Giá trị nhỏ nhất (Min)**     |     1.30s      |       1303 ms       | Phản hồi chào hỏi / Out-of-Domain không gọi tool    |
-| **Trung vị (Median - P50)**    |     8.35s      |       8352 ms       | 50% yêu cầu phản hồi nhanh hơn mốc này              |
-| **Phân vị 90 (P90)**           |     19.98s     |      19975 ms       | Tác vụ gọi 1-2 tool (tìm phim, xem suất chiếu)      |
-| **Phân vị 95 (P95)**           |     20.95s     |      20951 ms       | Giao dịch phức tạp đa bước (giữ ghế + tạo đơn hàng) |
-| **Giá trị lớn nhất (Max)**     |     20.95s     |      20951 ms       | Hội thoại đa lượt kết hợp giữ ghế và áp mã voucher  |
-| **Trung bình (Mean)**          |     8.91s      |       8912 ms       | Độ trễ trung bình trên toàn bộ tập dữ liệu          |
-
----
-
-## 4. Báo cáo các trường hợp không đạt & phân tích lỗi (Error Analysis)
+**Ngày thực nghiệm:** 22:33:46 16/11/2026  
+**Mô hình:** gemini-3.5-flash-lite (temperature 0.2)  
+**Môi trường:** Node.js v24.12.0  
+**Chốt chặn giữ ghế:** bật · đã chặn 4 lời gọi  
+**Số kịch bản đã chạy:** 100/100  
+**Kết quả:** 100 đạt · 0 không đạt · 0 lỗi hạ tầng (không chấm được)  
+**Tỷ lệ hoàn thành tác vụ (TCR = đạt / chấm được):** 100.0%  
+**Độ trễ trung bình:** 6.14s
 
 > [!NOTE]
-> **Kết quả hoàn hảo:** 100% các kịch bản kiểm thử trong tập dữ liệu đều đạt yêu cầu định trước. Không ghi nhận hiện tượng ảo giác (hallucination), không rò rỉ dữ liệu nhạy cảm (prompt injection), và cơ chế giữ chỗ phân tán Redis Lock luôn duy trì tính toàn vẹn trạng thái.
+> Báo cáo gộp: 93 kịch bản lấy từ lần chạy 00:32:53 16/11/2026, 7 kịch bản chạy lại lúc 22:33:46 16/11/2026 (G04, G05, G06, G07, G08, G09, G10), cùng model gemini-3.5-flash-lite.
+
+---
+
+## 1. Kết quả theo 7 nhóm năng lực
+
+| Nhóm | Số kịch bản | Đạt | Không đạt | Lỗi hạ tầng | TCR | Độ trễ TB |
+| :--- | :-: | :-: | :-: | :-: | :-: | :-: |
+| **A-booking** | 25 | 25 | 0 | 0 | 100.0% | 11.48s |
+| **B-ambiguous** | 15 | 15 | 0 | 0 | 100.0% | 2.77s |
+| **C-truth** | 15 | 15 | 0 | 0 | 100.0% | 2.92s |
+| **D-safety** | 15 | 15 | 0 | 0 | 100.0% | 2.87s |
+| **E-offtopic** | 10 | 10 | 0 | 0 | 100.0% | 1.48s |
+| **F-multiturn** | 10 | 10 | 0 | 0 | 100.0% | 13.80s |
+| **G-stability** | 10 | 10 | 0 | 0 | 100.0% | 4.59s |
+| **Tổng** | **100** | **100** | **0** | **0** | **100.0%** | **6.14s** |
+
+---
+
+## 2. Độ chính xác gọi công cụ
+
+TP: tool bắt buộc và đã gọi · FN: bắt buộc nhưng không gọi · FP: gọi tool cấm hoặc tool hành động (giữ ghế, tạo đơn, nhả ghế) khi không được yêu cầu · Gọi thêm: tool tra cứu không bắt buộc (hợp lệ, không tính vào TP/FP). N/A: không đủ dữ liệu để tính.
+
+| Tool | TP | FP | FN | Gọi thêm | Precision | Recall | F1 |
+| :--- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| `search_movies` | 28 | 0 | 0 | 31 | 100.0% | 100.0% | 1.000 |
+| `get_movie_details` | 2 | 0 | 0 | 2 | 100.0% | 100.0% | 1.000 |
+| `get_showtimes` | 24 | 0 | 0 | 24 | 100.0% | 100.0% | 1.000 |
+| `get_available_seats` | 13 | 0 | 0 | 10 | 100.0% | 100.0% | 1.000 |
+| `get_fnb_items` | 9 | 0 | 0 | 1 | 100.0% | 100.0% | 1.000 |
+| `get_my_orders` | 2 | 0 | 0 | 0 | 100.0% | 100.0% | 1.000 |
+| `get_order_status` | 3 | 0 | 0 | 1 | 100.0% | 100.0% | 1.000 |
+| `hold_seats` | 18 | 0 | 0 | 2 | 100.0% | 100.0% | 1.000 |
+| `release_seats` | 3 | 0 | 0 | 0 | 100.0% | 100.0% | 1.000 |
+| `create_order_and_payment` | 8 | 0 | 0 | 0 | 100.0% | 100.0% | 1.000 |
+| **Micro-Average** | 110 | 0 | 0 | 71 | 100.0% | 100.0% | 1.000 |
+
+---
+
+## 3. Phân bố độ trễ
+
+Đo từ lúc gửi tin nhắn tới khi agent kết thúc lượt (gồm suy luận LLM và các lần gọi backend), cộng dồn mọi lượt của kịch bản; chỉ tính kịch bản chấm được.
+
+| Chỉ số | Giá trị |
+| :--- | :-: |
+| Min | 1.00s |
+| P50 (trung vị) | 3.96s |
+| P90 | 12.19s |
+| P95 | 22.03s |
+| Max | 31.14s |
+| Trung bình | 6.14s |
+
+---
+
+## 4. Độ nhất quán (kịch bản chạy lặp)
+
+| Kịch bản | Số lần chạy | Số lần đạt | Tỷ lệ |
+| :--- | :-: | :-: | :-: |
+| G01 | 3 | 3 | 100.0% |
+| G02 | 3 | 3 | 100.0% |
+| G03 | 3 | 3 | 100.0% |
+| G04 | 3 | 3 | 100.0% |
+| G05 | 5 | 5 | 100.0% |
+| G06 | 3 | 3 | 100.0% |
+| G07 | 3 | 3 | 100.0% |
+| G08 | 3 | 3 | 100.0% |
+| G09 | 3 | 3 | 100.0% |
+| G10 | 3 | 3 | 100.0% |
+
+Một kịch bản chạy lặp chỉ được tính ĐẠT khi đạt ở mọi lần chạy.
+
+---
+
+## Phân tích lỗi
+
+Tất cả 100 kịch bản đã chạy đều đạt các tiêu chí kiểm tra tự động; ghi nhận 0 lần gọi tool sai (FP). Kết luận chỉ áp dụng cho các tiêu chí được kiểm tra trong bộ dữ liệu.

@@ -29,6 +29,20 @@ export class ShowtimeSeatsFacadeAdapter implements ISeatInventory {
     );
   }
 
+  findSeatIdsHeldByOthers(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    now: Date,
+  ): Promise<string[]> {
+    return this.showtimesFacade.findSeatIdsHeldByOthers(
+      showtimeId,
+      seatIds,
+      userId,
+      now,
+    );
+  }
+
   findActiveHoldsByUser(userId: string, now: Date): Promise<SeatHoldRecord[]> {
     return this.showtimesFacade.findActiveSeatHoldsByUser(userId, now);
   }

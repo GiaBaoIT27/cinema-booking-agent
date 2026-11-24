@@ -1,4 +1,4 @@
-import { vnDate, vnWeekday } from "../lib/time.js";
+import { vnDate, vnTime, vnWeekday } from "../lib/time.js";
 import type { BookingSession } from "../types/session.js";
 
 export function buildSystemPrompt(
@@ -44,7 +44,7 @@ export function buildSystemPrompt(
     known.push(`Suất chiếu đang chọn: showtimeId ${session.showtimeId}`);
   if (session.selectedSeats.length > 0) {
     known.push(
-      `Ghế đang giữ: ${session.selectedSeats.map((s) => s.label).join(", ")} (hết hạn ${session.holdExpiresAt ?? "không rõ"})`,
+      `Ghế đang giữ: ${session.selectedSeats.map((s) => s.label).join(", ")} (hết hạn lúc ${session.holdExpiresAt ? `${vnTime(session.holdExpiresAt)} giờ Việt Nam` : "không rõ"})`,
     );
   }
   if (session.orderId) known.push(`Đơn gần nhất: orderId ${session.orderId}`);

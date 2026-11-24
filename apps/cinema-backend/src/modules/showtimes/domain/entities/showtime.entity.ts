@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
   Check,
+  Exclusion,
   ManyToOne,
   JoinColumn,
   OneToMany,
@@ -21,7 +22,12 @@ import { ShowtimeStatus } from '../enums/showtime-status.enum.js';
 @Entity('showtimes')
 @Check(`"end_time" > "start_time"`)
 @Check(`"cleaning_minutes" >= 0`)
-@Index('idx_showtimes_auditorium_schedule_exclusion', { synchronize: false })
+// Hai suất chưa hủy cùng phòng không được giao nhau về thời gian [start_time, end_time).
+// int8range(a, a, '[]') giao nhau <=> cùng auditorium_id – dùng GiST không cần btree_gist.
+@Exclusion(
+  'EXCL_showtimes_auditorium_schedule',
+  `USING gist (int8range("auditorium_id", "auditorium_id", '[]') WITH &&, tsrange("start_time", "end_time", '[)') WITH &&) WHERE ("status" <> 'CANCELLED')`,
+)
 export class Showtime {
   @PrimaryGeneratedColumn({
     type: 'bigint',

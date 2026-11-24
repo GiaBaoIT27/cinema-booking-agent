@@ -14,6 +14,14 @@ export interface IShowtimeSeatRepository {
     now: Date,
   ): Promise<ShowtimeSeat[]>;
 
+  /** Trong `seatIds`, những ghế đang HOLDING còn hạn bởi một user KHÁC `userId`. */
+  findSeatIdsHeldByOthers(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    now: Date,
+  ): Promise<string[]>;
+
   /** Mọi ghế HOLDING còn hạn của user (mọi suất chiếu), mới nhất trước. */
   findActiveHoldsByUser(userId: string, now: Date): Promise<ShowtimeSeat[]>;
 

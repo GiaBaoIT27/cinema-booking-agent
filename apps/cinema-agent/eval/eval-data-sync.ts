@@ -20,6 +20,32 @@ export function requiredEvalDate(now: Date): string {
   return vnDate(now, 1);
 }
 
+/**
+ * Trả về hàm lấy fixtures dùng trước MỖI lần chạy kịch bản. Khi lần chạy rơi sang ngày mới
+ * (giờ VN) so với lúc seed, "ngày mai" đã đổi => gọi `reseed()` một lần rồi dùng dữ liệu mới.
+ * Kiểm tra theo từng lần chạy (kể cả giữa các lần lặp của một case), không chỉ theo case.
+ */
+export function createFixturesProvider<F>(opts: {
+  initial: F;
+  seededForDate: string;
+  reseed: (() => F) | null; // null khi chạy --no-seed: chỉ cảnh báo
+  now?: () => Date;
+  onNewDay?: (reseeded: boolean) => void;
+}): () => F {
+  let current = opts.initial;
+  let seededForDate = opts.seededForDate;
+  const now = opts.now ?? (() => new Date());
+  return () => {
+    const needDate = requiredEvalDate(now());
+    if (needDate !== seededForDate) {
+      if (opts.reseed) current = opts.reseed();
+      opts.onNewDay?.(Boolean(opts.reseed));
+      seededForDate = needDate;
+    }
+    return current;
+  };
+}
+
 export interface FixtureShowtime {
   key: string;
   id: string;

@@ -1,0 +1,187 @@
+{
+  "meta": {
+    "date": "2026-11-16T15:51:26.403Z",
+    "model": "gemini-3.5-flash-lite",
+    "temperature": "0.2",
+    "nodeVersion": "v24.12.0",
+    "datasetSize": 100,
+    "filter": "--cases=G06 --repeat=3",
+    "seatChoiceGuard": "tắt"
+  },
+  "summary": {
+    "total": 1,
+    "pass": 0,
+    "fail": 1,
+    "error": 0,
+    "taskCompletionRate": 0,
+    "latency": {
+      "min": 7366,
+      "p50": 7366,
+      "p90": 7366,
+      "p95": 7366,
+      "max": 7366,
+      "mean": 7366
+    },
+    "groups": [
+      {
+        "group": "G-stability",
+        "total": 1,
+        "pass": 0,
+        "fail": 1,
+        "error": 0,
+        "avgLatencyMs": 7366
+      }
+    ],
+    "tools": {
+      "perTool": [
+        {
+          "tool": "search_movies",
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        {
+          "tool": "get_movie_details",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_showtimes",
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        {
+          "tool": "get_available_seats",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 1,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_fnb_items",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_my_orders",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "get_order_status",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "hold_seats",
+          "tp": 0,
+          "fp": 1,
+          "fn": 0,
+          "extra": 0,
+          "precision": 0,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "release_seats",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "tool": "create_order_and_payment",
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "extra": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        }
+      ],
+      "micro": {
+        "tool": "Micro-Average",
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "extra": 1,
+        "precision": 0.6666666666666666,
+        "recall": 1,
+        "f1": 0.8
+      }
+    },
+    "consistency": [
+      {
+        "caseId": "G06",
+        "runs": 3,
+        "passedRuns": 1
+      }
+    ]
+  },
+  "results": [
+    {
+      "caseId": "G06",
+      "group": "G-stability",
+      "title": "Câu lệnh trộn lẫn tiếng Anh và tiếng Việt (Code-switching)",
+      "status": "FAIL",
+      "pass": false,
+      "latencyMs": 7366,
+      "toolsCalled": [
+        "search_movies",
+        "get_showtimes",
+        "get_available_seats",
+        "hold_seats"
+      ],
+      "widgetsEmitted": [
+        "MOVIE_LIST",
+        "SHOWTIME_SELECTOR",
+        "SEAT_MATRIX_SELECTOR",
+        "SEAT_MATRIX_SELECTOR"
+      ],
+      "failures": [
+        "Lần 1/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)",
+        "Lần 2/3: Tự ý gọi tool hành động 'hold_seats' khi kịch bản không yêu cầu (có tác dụng phụ: giữ ghế/tạo đơn)"
+      ],
+      "responseText": "Mình đã giữ chỗ 2 vé xem phim **Mai** suất **10:00** ngày mai (**17/11/2026**) tại rạp **Cinema Star - Bến Nghé Plaza**, ghế **F6, F7** (giá vé: 176.000đ).\n\nBạn có muốn chọn thêm bắp nước không? Nếu không, mình có thể tiến hành tạo đơn hàng và link thanh toán giúp bạn luôn nhé!\n",
+      "runs": 3,
+      "passedRuns": 1,
+      "guardBlocked": 0
+    }
+  ]
+}

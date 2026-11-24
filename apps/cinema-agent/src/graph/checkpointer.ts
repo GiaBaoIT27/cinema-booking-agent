@@ -3,26 +3,28 @@ export interface CheckpointerHandle {
   kind: "memory" | "postgres";
 }
 
+/** Schema riêng cho bảng hội thoại – không lẫn với bảng nghiệp vụ của backend (schema public). */
+export const DEFAULT_CHECKPOINT_SCHEMA = "agent_memory";
+
 /**
- * Nơi lưu hội thoại theo từng phiên.
- * - Có AGENT_DATABASE_URL: Postgres, còn nguyên sau khi khởi động lại.
- * - Không có: RAM (mất khi tắt server).
+ * Nơi lưu hội thoại theo từng phiên (thread_id).
+ * - Có AGENT_DATABASE_URL: Postgres (schema `agent_memory`), còn nguyên sau khi khởi động lại
+ *   và dùng chung được giữa nhiều instance agent.
+ * - Không có: RAM (mất khi tắt server) – dùng cho test.
  */
-export async function createCheckpointer(databaseUrl?: string): Promise<CheckpointerHandle> {
+export async function createCheckpointer(
+  databaseUrl?: string,
+  schema: string = DEFAULT_CHECKPOINT_SCHEMA,
+): Promise<CheckpointerHandle> {
   if (!databaseUrl) {
     const { MemorySaver } = await import("@langchain/langgraph");
     return { checkpointer: new MemorySaver(), kind: "memory" };
   }
 
-  // Tên module nằm trong biến để TypeScript không đòi cài gói khi không dùng Postgres
-  const pkg = "@langchain/langgraph-checkpoint-postgres";
-  let mod: any;
-  try {
-    mod = await import(pkg);
-  } catch {
-    throw new Error(`AGENT_DATABASE_URL đã đặt nhưng chưa cài gói lưu hội thoại. Chạy: npm i ${pkg}`);
-  }
-  const saver = mod.PostgresSaver.fromConnString(databaseUrl);
+  // Import động: chỉ nạp driver Postgres khi thực sự dùng
+  const { PostgresSaver } = await import("@langchain/langgraph-checkpoint-postgres");
+  const saver = PostgresSaver.fromConnString(databaseUrl, { schema });
+  // Tạo schema + bảng nếu chưa có (lũy đẳng)
   await saver.setup();
   return { checkpointer: saver, kind: "postgres" };
 }
