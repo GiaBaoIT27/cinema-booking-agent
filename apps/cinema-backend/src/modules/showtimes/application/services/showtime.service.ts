@@ -102,8 +102,9 @@ export class ShowtimeService {
     );
 
     // 4. Kiểm tra trùng lịch và Lưu suất chiếu trong Transaction
-    const createdShowtime = await this.dataSource.transaction(
-      async (transactionalEntityManager) => {
+    //    (ràng buộc EXCLUDE trong DB chặn trường hợp 2 request cùng qua bước kiểm tra)
+    const createdShowtime = await this.dataSource
+      .transaction(async (transactionalEntityManager) => {
         await this.schedulingService.assertNoOverlapping(
           createDto.auditoriumId.toString(),
           startTimeDate,
@@ -123,8 +124,10 @@ export class ShowtimeService {
         });
 
         return await transactionalEntityManager.save(Showtime, showtime);
-      },
-    );
+      })
+      .catch((error: unknown) =>
+        this.schedulingService.rethrowOverlapViolation(error),
+      );
 
     // 5. Xóa Cache danh sách
     await this.redisService.delByPattern(SHOWTIME_REDIS_KEYS.PATTERN_LIST);
@@ -161,8 +164,8 @@ export class ShowtimeService {
 
     const cleaningMinutes = updateDto.cleaningMinutes ?? 15;
 
-    const updatedShowtime = await this.dataSource.transaction(
-      async (transactionalEntityManager) => {
+    const updatedShowtime = await this.dataSource
+      .transaction(async (transactionalEntityManager) => {
         // 1. Kiểm tra tồn tại suất chiếu
         const showtime = await transactionalEntityManager.findOne(Showtime, {
           where: { id: id.toString() },
@@ -211,11 +214,12 @@ export class ShowtimeService {
           cleaningMinutes,
         );
 
-        // 6. Kiểm tra trùng lịch chiếu
+        // 6. Kiểm tra trùng lịch chiếu (bỏ qua chính suất đang sửa)
         await this.schedulingService.assertNoOverlapping(
           updateDto.auditoriumId.toString(),
           startTimeDate,
           endTimeDate,
+          id.toString(),
         );
 
         // 7. Cập nhật Entity
@@ -231,8 +235,10 @@ export class ShowtimeService {
         });
 
         return await transactionalEntityManager.save(Showtime, showtime);
-      },
-    );
+      })
+      .catch((error: unknown) =>
+        this.schedulingService.rethrowOverlapViolation(error),
+      );
 
     // 8. Evict Cache
     await Promise.all([

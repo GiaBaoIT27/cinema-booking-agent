@@ -38,6 +38,28 @@ export class ShowtimeSchedulingService {
     return new Date(startTime.getTime() + totalMinutes * 60 * 1000);
   }
 
+  /** Lỗi 409 dùng chung cho kiểm tra trước khi ghi và cho ràng buộc trong database. */
+  overlapError(): BusinessException {
+    return new BusinessException(
+      ErrorCode.SHOWTIME_SCHEDULE_OVERLAP,
+      'Khung thời gian suất chiếu bị trùng lấp với một suất chiếu khác tại cùng phòng chiếu',
+      HttpStatus.CONFLICT,
+    );
+  }
+
+  /**
+   * Hai request tạo/sửa suất chiếu cùng lúc có thể cùng qua bước kiểm tra trước khi ghi;
+   * ràng buộc EXCLUDE của bảng showtimes chặn bản ghi thứ hai (mã lỗi Postgres 23P01).
+   * Hàm này đổi lỗi đó thành 409 giống bước kiểm tra, các lỗi khác ném lại nguyên vẹn.
+   */
+  rethrowOverlapViolation(error: unknown): never {
+    const code =
+      (error as { code?: string })?.code ??
+      (error as { driverError?: { code?: string } })?.driverError?.code;
+    if (code === '23P01') throw this.overlapError();
+    throw error;
+  }
+
   /**
    * Kiểm tra trùng lịch chiếu tại phòng chiếu [S1, E1] và [S2, E2]
    */
@@ -56,11 +78,7 @@ export class ShowtimeSchedulingService {
 
     if (overlapping) {
       // Giữ nguyên contract HTTP 409 Conflict của API trùng lịch chiếu
-      throw new BusinessException(
-        ErrorCode.SHOWTIME_SCHEDULE_OVERLAP,
-        'Khung thời gian suất chiếu bị trùng lấp với một suất chiếu khác tại cùng phòng chiếu',
-        HttpStatus.CONFLICT,
-      );
+      throw this.overlapError();
     }
   }
 }

@@ -164,12 +164,14 @@ export class EvalSeeder {
         where: { auditoriumId: aud.id, startTime: start },
       });
       if (!st) {
-        const clash = await stRepo
+        // Xóa MỌI suất chồng giờ (không chỉ một) – bảng showtimes có ràng buộc EXCLUDE
+        const clashes = await stRepo
           .createQueryBuilder('s')
           .where('s.auditoriumId = :a', { a: aud.id })
+          .andWhere("s.status <> 'CANCELLED'")
           .andWhere('s.startTime < :end AND s.endTime > :start', { start, end })
-          .getOne();
-        if (clash) {
+          .getMany();
+        for (const clash of clashes) {
           console.log(
             `~ [EVAL] Xóa suất cũ ${clash.id} để nhường chỗ cho suất eval ${p.key}`,
           );
