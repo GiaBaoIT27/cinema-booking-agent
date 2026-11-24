@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { orderService } from "@/features/orders/services/order.service";
-import { PAYMENT_RETURN_URL } from "@/features/payments/config";
+import { PAYMENT_CLIENT_RETURN_URL } from "@/features/payments/config";
 import { paymentService } from "@/features/payments/services/payment.service";
 import { openPaymentPage } from "@/features/payments/utils/open-payment";
 import { useBookingStore, type SelectedCombo } from "@/store/booking.store";
@@ -42,7 +42,7 @@ export function useCheckout() {
           voucherCode: st.voucher?.code,
           seatLabels: Object.fromEntries(st.seats.map((s) => [s.seatId, s.label])),
           uiPaymentMethod: paymentMethod,
-          returnUrl: PAYMENT_RETURN_URL,
+          returnUrl: PAYMENT_CLIENT_RETURN_URL,
         },
         {
           orders: orderService,

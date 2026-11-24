@@ -314,5 +314,52 @@ describe('PaymentsService – IPN idempotent & không bao giờ "mất tiền m�
         expect.objectContaining({ expiresAt }),
       );
     });
+
+    const pendingOrder = () =>
+      vi.mocked(orders.getOrderSummary).mockResolvedValue({
+        id: 10,
+        orderCode: 'ORD-1',
+        userId: 'u1',
+        status: 'PENDING',
+        finalAmount: 50000,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      } as any);
+
+    it('VNPay luôn quay về backend; địa chỉ của client được lưu để chuyển tiếp sau khi chốt', async () => {
+      const paymentReturn = {
+        isAllowed: vi.fn().mockReturnValue(true),
+        remember: vi.fn().mockResolvedValue(undefined),
+      };
+      service = new PaymentsService(repo, gatewayRegistry, orders, events, refunds, paymentReturn as any);
+      pendingOrder();
+
+      await service.initiate('u1', {
+        orderId: 10,
+        method: PaymentMethod.VNPAY,
+        returnUrl: 'cinemamobile://booking/result',
+      } as any);
+
+      const params = gateway.createPaymentUrl.mock.calls[0][0];
+      expect(params.returnUrl).toBeUndefined();
+      expect(paymentReturn.remember).toHaveBeenCalledWith(
+        expect.stringMatching(/^ORD-1/),
+        'cinemamobile://booking/result',
+      );
+    });
+
+    it('địa chỉ trả về không nằm trong danh sách cho phép => 400, không tạo giao dịch', async () => {
+      const paymentReturn = { isAllowed: vi.fn().mockReturnValue(false), remember: vi.fn() };
+      service = new PaymentsService(repo, gatewayRegistry, orders, events, refunds, paymentReturn as any);
+      pendingOrder();
+
+      await expect(
+        service.initiate('u1', {
+          orderId: 10,
+          method: PaymentMethod.VNPAY,
+          returnUrl: 'https://evil.example/steal',
+        } as any),
+      ).rejects.toMatchObject({ status: 400 });
+      expect(repo.createTransaction).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,4 +1,5 @@
 import {
+  Optional,
   Injectable,
   Inject,
   NotFoundException,
@@ -17,6 +18,7 @@ import { PaymentSucceededEvent } from '../../domain/events/payment-succeeded.eve
 import { PaymentFailedEvent } from '../../domain/events/payment-failed.event.js';
 import { PaymentGatewayRegistry } from '../../infrastructure/gateways/payment-gateway.registry.js';
 import { OrdersFacade } from '#modules/orders/public-api/orders.facade.js';
+import { PaymentReturnService } from './payment-return.service.js';
 import { PaymentMethod as OrderPaymentMethod } from '#modules/orders/domain/enums/payment-method.enum.js';
 import { ErrorCode } from '#src/common/constants/error-codes.enum.js';
 import { InitiatePaymentDto } from '../dto/initiate-payment.dto.js';
@@ -74,6 +76,8 @@ export class PaymentsService {
     private readonly ordersFacade: OrdersFacade,
     private readonly eventEmitter: EventEmitter2,
     private readonly refundService: RefundService,
+    @Optional()
+    private readonly paymentReturn?: PaymentReturnService,
   ) {}
 
   /**
@@ -84,6 +88,15 @@ export class PaymentsService {
     dto: InitiatePaymentDto,
     ipAddress?: string,
   ): Promise<PaymentResponseDto> {
+    // Địa chỉ client muốn quay về sau khi backend chốt thanh toán – chỉ nhận địa chỉ
+    // trong danh sách cho phép (chống open redirect)
+    if (dto.returnUrl && !this.paymentReturn?.isAllowed(dto.returnUrl)) {
+      throw new BadRequestException({
+        errorCode: 'PAYMENT_RETURN_URL_NOT_ALLOWED',
+        message: 'Địa chỉ trả về sau thanh toán không được phép',
+      });
+    }
+
     const orderSummary = await this.ordersFacade.getOrderSummary(dto.orderId);
 
     if (!orderSummary || String(orderSummary.userId) !== String(userId)) {
@@ -147,9 +160,12 @@ export class PaymentsService {
       amount,
       orderInfo: `Thanh toan don hang ${orderSummary.orderCode}`,
       ipAddress,
-      returnUrl: dto.returnUrl,
+      // VNPay LUÔN quay về backend (VNPAY_RETURN_URL) để chốt thanh toán trước;
+      // sau đó backend mới chuyển trình duyệt tới dto.returnUrl (PaymentReturnService)
       expiresAt,
     });
+    if (dto.returnUrl)
+      await this.paymentReturn?.remember(gatewayTxnRef, dto.returnUrl);
 
     return {
       orderId: Number(orderSummary.id),
@@ -258,7 +274,8 @@ export class PaymentsService {
 
     if (!won) {
       // Đã ghi nhận trước đó. Nếu lần trước chốt sổ dở dang (lỗi tạm thời) thì chốt lại.
-      const latest = await this.paymentRepository.findTransactionByTxnRef(txnRef);
+      const latest =
+        await this.paymentRepository.findTransactionByTxnRef(txnRef);
       if (
         latest?.paymentStatus === PaymentStatus.SUCCESS &&
         !latest.settledAt
@@ -323,7 +340,10 @@ export class PaymentsService {
           // Chính giao dịch này đã chốt đơn (request lặp / lần trước chưa kịp đánh dấu).
           // paidTxnRef = null: đơn PAID từ TRƯỚC khi có cột này – không đủ dữ kiện để kết luận
           // trả trùng, tuyệt đối không tự hoàn tiền (để đối soát thủ công nếu cần).
-          await this.paymentRepository.markTransactionSettled(txnRef, new Date());
+          await this.paymentRepository.markTransactionSettled(
+            txnRef,
+            new Date(),
+          );
           return 'ALREADY_SETTLED';
         }
         if (order?.status === 'PENDING') {
