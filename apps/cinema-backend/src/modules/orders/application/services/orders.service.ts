@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Inject, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Inject, Logger, Optional } from '@nestjs/common';
 
 import { Order } from '../../domain/entities/order.entity.js';
 import { OrderStatus } from '../../domain/enums/order-status.enum.js';
@@ -24,6 +24,8 @@ import { FNB_CATALOG } from '../ports/fnb-catalog.port.js';
 import type { IFnbCatalog } from '../ports/fnb-catalog.port.js';
 import { VOUCHER_CALCULATOR } from '../ports/voucher-calculator.port.js';
 import type { IVoucherCalculator } from '../ports/voucher-calculator.port.js';
+import { ORDER_PAID_PUBLISHER } from './order-paid.publisher.js';
+import type { IOrderPaidPublisher } from './order-paid.publisher.js';
 
 import { CreateOrderDto } from '../dto/create-order.dto.js';
 import { FnbOrderItemDto } from '../dto/fnb-order-item.dto.js';
@@ -58,12 +60,16 @@ export class OrdersService {
     private readonly voucherCalculator: IVoucherCalculator,
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
+    @Optional()
+    @Inject(ORDER_PAID_PUBLISHER)
+    private readonly orderPaidPublisher?: IOrderPaidPublisher,
   ) {}
 
   private orderNotFound(orderId: string): BusinessException {
     return new BusinessException(
       ErrorCode.ORDER_NOT_FOUND,
       `Đơn hàng với ID ${orderId} không tồn tại`,
+      HttpStatus.NOT_FOUND,
     );
   }
 
@@ -421,6 +427,9 @@ export class OrdersService {
     this.logger.log(
       `[Order] Đã chốt ${orderSeats.seatIds.length} ghế sang BOOKED cho đơn hàng ${order.orderCode}`,
     );
+    // Email vé: phát `order.paid` SAU khi đơn đã PAID và vé đã ghi. Chạy nền, không chờ –
+    // lỗi gửi thông báo không được làm hỏng kết quả thanh toán.
+    void this.orderPaidPublisher?.publish(order.id);
     return toOrderSnapshot(order);
   }
 

@@ -46,12 +46,38 @@ export class TicketDisplayAdapter implements ITicketDisplayLookup {
       nameByAuditoriumId.set(id, auditoriums[index]?.name ?? null),
     );
 
-    return showtimes.map((showtime) => ({
-      showtimeId: String(showtime.id),
-      movieTitle: titleByMovieId.get(showtime.movieId) ?? null,
-      auditoriumName: nameByAuditoriumId.get(showtime.auditoriumId) ?? null,
-      startTime: showtime.startTime,
-    }));
+    const cineplexIds = [
+      ...new Set(
+        auditoriums
+          .map((a) => a?.cineplexId)
+          .filter((id): id is number => id !== undefined && id !== null),
+      ),
+    ];
+    const cineplexes = await Promise.all(
+      cineplexIds.map((id) => this.cinemasFacade.getCineplexById(id)),
+    );
+    const cineplexNameById = new Map<number, string | null>();
+    cineplexIds.forEach((id, index) =>
+      cineplexNameById.set(id, cineplexes[index]?.name ?? null),
+    );
+    const cineplexIdByAuditoriumId = new Map<number, number | undefined>();
+    auditoriumIds.forEach((id, index) =>
+      cineplexIdByAuditoriumId.set(id, auditoriums[index]?.cineplexId),
+    );
+
+    return showtimes.map((showtime) => {
+      const cineplexId = cineplexIdByAuditoriumId.get(showtime.auditoriumId);
+      return {
+        showtimeId: String(showtime.id),
+        movieTitle: titleByMovieId.get(showtime.movieId) ?? null,
+        auditoriumName: nameByAuditoriumId.get(showtime.auditoriumId) ?? null,
+        cineplexName:
+          cineplexId === undefined
+            ? null
+            : (cineplexNameById.get(cineplexId) ?? null),
+        startTime: showtime.startTime,
+      };
+    });
   }
 
   async getSeatLabels(seatIds: string[]): Promise<SeatLabelRef[]> {

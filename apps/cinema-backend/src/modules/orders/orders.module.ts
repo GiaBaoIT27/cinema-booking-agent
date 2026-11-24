@@ -7,6 +7,7 @@ import { FnbModule } from '#modules/fnb/fnb.module.js';
 import { ShowtimesModule } from '#modules/showtimes/showtimes.module.js';
 import { MoviesModule } from '#modules/movies/movies.module.js';
 import { CinemasModule } from '#modules/cinemas/cinemas.module.js';
+import { UsersModule } from '#modules/users/users.module.js';
 
 import { Order } from './domain/entities/order.entity.js';
 import { OrderSeatDetail } from './domain/entities/order-seat-details.entity.js';
@@ -20,6 +21,7 @@ import { SEAT_RESERVATION } from './application/ports/seat-reservation.port.js';
 import { FNB_CATALOG } from './application/ports/fnb-catalog.port.js';
 import { VOUCHER_CALCULATOR } from './application/ports/voucher-calculator.port.js';
 import { TICKET_DISPLAY_LOOKUP } from './application/ports/ticket-display-lookup.port.js';
+import { CUSTOMER_LOOKUP } from './application/ports/customer-lookup.port.js';
 
 import { TypeOrmOrderRepository } from './infrastructure/persistence/typeorm-order.repository.js';
 import { TypeOrmTicketRepository } from './infrastructure/persistence/typeorm-ticket.repository.js';
@@ -28,11 +30,16 @@ import { BookingsFacadeAdapter } from './infrastructure/adapters/bookings-facade
 import { FnbFacadeAdapter } from './infrastructure/adapters/fnb-facade.adapter.js';
 import { PromotionsServiceAdapter } from './infrastructure/adapters/promotions-service.adapter.js';
 import { TicketDisplayAdapter } from './infrastructure/adapters/ticket-display.adapter.js';
+import { UsersFacadeAdapter } from './infrastructure/adapters/users-facade.adapter.js';
 
 import { OrdersController } from './presentation/controllers/orders.controller.js';
 import { TicketsController } from './presentation/controllers/tickets.controller.js';
 import { OrdersService } from './application/services/orders.service.js';
 import { TicketsService } from './application/services/tickets.service.js';
+import {
+  ORDER_PAID_PUBLISHER,
+  OrderPaidPublisher,
+} from './application/services/order-paid.publisher.js';
 import { OrdersFacade } from './public-api/orders.facade.js';
 
 @Module({
@@ -44,6 +51,7 @@ import { OrdersFacade } from './public-api/orders.facade.js';
     ShowtimesModule,
     MoviesModule,
     CinemasModule,
+    UsersModule,
   ],
   controllers: [OrdersController, TicketsController],
   providers: [
@@ -56,6 +64,8 @@ import { OrdersFacade } from './public-api/orders.facade.js';
     { provide: FNB_CATALOG, useClass: FnbFacadeAdapter },
     { provide: VOUCHER_CALCULATOR, useClass: PromotionsServiceAdapter },
     { provide: TICKET_DISPLAY_LOOKUP, useClass: TicketDisplayAdapter },
+    { provide: CUSTOMER_LOOKUP, useClass: UsersFacadeAdapter },
+    { provide: ORDER_PAID_PUBLISHER, useClass: OrderPaidPublisher },
     // Application
     OrdersService,
     TicketsService,

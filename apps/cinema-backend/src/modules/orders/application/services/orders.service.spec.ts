@@ -23,6 +23,7 @@ describe('OrdersService – chống bán trùng ghế', () => {
   let ticketRepo: ITicketRepository;
   let seats: ISeatReservation;
   let unitOfWork: IUnitOfWork;
+  let orderPaid: { publish: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     orderRepo = {
@@ -56,6 +57,7 @@ describe('OrdersService – chống bán trùng ghế', () => {
       { findByIds: vi.fn() } as unknown as IFnbCatalog,
       { calculateDiscount: vi.fn() } as unknown as IVoucherCalculator,
       unitOfWork,
+      (orderPaid = { publish: vi.fn().mockResolvedValue(undefined) }),
     );
   });
 
@@ -150,6 +152,27 @@ describe('OrdersService – chống bán trùng ghế', () => {
         vi.mocked(ticketRepo.createMany).mock.invocationCallOrder[0],
       );
       expect(snapshot.status).toBe(OrderStatus.PAID);
+    });
+
+    it('phát order.paid (email vé) sau khi đơn PAID và vé đã ghi', async () => {
+      vi.mocked(orderRepo.findByIdWithSeatDetails).mockResolvedValue(pendingOrder());
+      vi.mocked(seats.markBooked).mockResolvedValue(true);
+
+      await service.fulfillOrder('10', PaymentMethod.VNPAY);
+
+      expect(orderPaid.publish).toHaveBeenCalledWith('10');
+      expect(vi.mocked(ticketRepo.createMany).mock.invocationCallOrder[0]).toBeLessThan(
+        orderPaid.publish.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('KHÔNG phát order.paid khi không chốt được đơn', async () => {
+      vi.mocked(orderRepo.findByIdWithSeatDetails).mockResolvedValue(pendingOrder());
+      vi.mocked(orderRepo.findById).mockResolvedValue(pendingOrder());
+      vi.mocked(seats.markBooked).mockResolvedValue(false);
+
+      await expect(service.fulfillOrder('10', PaymentMethod.VNPAY)).rejects.toBeDefined();
+      expect(orderPaid.publish).not.toHaveBeenCalled();
     });
 
     it('KHÔNG sinh vé khi ghế không còn thuộc đơn (đã bị người khác lấy)', async () => {
