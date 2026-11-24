@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { TicketQr } from "@/features/booking/components/ticket-qr";
 import { useOrderStatus } from "@/features/orders/hooks/use-order-status";
 import { orderService } from "@/features/orders/services/order.service";
-import { PAYMENT_RETURN_URL } from "@/features/payments/config";
+import { PAYMENT_CLIENT_RETURN_URL } from "@/features/payments/config";
 import { paymentService } from "@/features/payments/services/payment.service";
 import { openPaymentPage } from "@/features/payments/utils/open-payment";
 import { useSeatLabels } from "@/features/seats/hooks/use-seat-labels";
@@ -74,7 +74,7 @@ export default function BookingResultScreen() {
       const session = await paymentService.initiate({
         orderId,
         method: "VNPAY",
-        ...(PAYMENT_RETURN_URL ? { returnUrl: PAYMENT_RETURN_URL } : {}),
+        returnUrl: PAYMENT_CLIENT_RETURN_URL,
       });
       await openPaymentPage(session.paymentUrl);
       checkAgain();

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PaymentReturnService } from './application/services/payment-return.service.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Payment } from './domain/entities/payment.entity.js';
@@ -35,6 +36,7 @@ import { OrdersModule } from '#modules/orders/orders.module.js';
     // Services
     PaymentsService,
     RefundService,
+    PaymentReturnService,
 
     // Public Facade
     PaymentsFacade,
