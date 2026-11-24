@@ -1,294 +1,216 @@
-# Cinema Booking Agent (Smart Cinema Platform)
+# Cinema Booking Agent
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Architecture-Turborepo%20Monorepo-ef4444?style=for-the-badge&logo=turborepo" alt="Turborepo" />
-  <img src="https://img.shields.io/badge/Backend-NestJS%2011%20%7C%20DDD-e0234e?style=for-the-badge&logo=nestjs" alt="NestJS" />
-  <img src="https://img.shields.io/badge/Frontend-Next.js%2016%20%7C%20React%2019-000000?style=for-the-badge&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Monorepo-4%20apps-ef4444?style=for-the-badge" alt="Monorepo" />
+  <img src="https://img.shields.io/badge/Backend-NestJS%2012%20%7C%20DDD-e0234e?style=for-the-badge&logo=nestjs" alt="NestJS" />
+  <img src="https://img.shields.io/badge/Web-Next.js%2016%20%7C%20React%2019-000000?style=for-the-badge&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/Mobile-React%20Native%20%7C%20Expo-000020?style=for-the-badge&logo=expo" alt="Expo" />
   <img src="https://img.shields.io/badge/AI%20Agent-LangGraph%20%7C%20Gemini-4285f4?style=for-the-badge&logo=google" alt="AI Agent" />
-  <img src="https://img.shields.io/badge/Cache%20%26%20Lock-Redis%20%7C%20SET%20NX-dc382d?style=for-the-badge&logo=redis" alt="Redis" />
-  <img src="https://img.shields.io/badge/Database-PostgreSQL-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Lock-Redis%20SET%20NX-dc382d?style=for-the-badge&logo=redis" alt="Redis" />
+  <img src="https://img.shields.io/badge/Database-PostgreSQL%2016-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" />
 </p>
-
----
 
 <p align="center">
-  <img src="docs/assets/banner-showcase.png" alt="Cinema Booking Agent Banner Showcase" width="100%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <img src="docs/assets/banner-showcase.png" alt="Cinema Booking Agent" width="100%" />
 </p>
 
-> **Cinema Booking Agent** là nền tảng quản trị rạp và đặt vé xem phim trực tuyến đa kênh (Web, Mobile) ứng dụng kiến trúc **Monorepo (Turborepo)**, tích hợp **Trợ lý ảo AI (LangGraph + Google Gemini)** hỗ trợ tìm kiếm phim và đặt vé thông minh qua ngôn ngữ tự nhiên.
+> **Cinema Booking Agent** là hệ thống đặt vé xem phim trực tuyến cho khách hàng trên **Web** và **Mobile**, kèm một **trợ lý AI** (LangGraph + Google Gemini) giúp tìm phim, xem suất chiếu, giữ ghế và tạo link thanh toán bằng cách chat tiếng Việt.
 >
-> Hệ thống xử lý bài toán **High-Concurrency Seat Booking** (tránh trùng ghế đồng thời) bằng **khóa ghế 2 lớp**: khóa nhanh trên Redis (`SET NX PX`) và ràng buộc nguyên tử trong PostgreSQL (upsert có điều kiện, gắn ghế theo mã đơn, unique index vé) – được kiểm chứng bằng integration test tranh chấp đồng thời; hàng đợi bất đồng bộ với **BullMQ**.
+> Trọng tâm kỹ thuật: **không bán trùng ghế** khi nhiều khách đặt cùng lúc, **thanh toán VNPay an toàn** (chữ ký, thông báo lặp), và **giới hạn quyền của trợ lý AI** – được kiểm chứng bằng integration test trên PostgreSQL thật và 100 kịch bản hội thoại chấm tự động.
 
 ---
 
-## 📑 Mục Lục
+## Mục lục
 
-- [Cinema Booking Agent (Smart Cinema Platform)](#cinema-booking-agent-smart-cinema-platform)
-  - [📑 Mục Lục](#-mục-lục)
-  - [Điểm Nổi Bật Hệ Thống](#điểm-nổi-bật-hệ-thống)
-  - [Kiến Trúc Tổng Thể](#kiến-trúc-tổng-thể)
-  - [Hệ Sinh Thái Ứng Dụng (Monorepo Apps)](#hệ-sinh-thái-ứng-dụng-monorepo-apps)
-    - [1. Backend API (`apps/cinema-backend`)](#1-backend-api-appscinema-backend)
-    - [2. Web Customer Portal (`apps/cinema-frontend-v1`)](#2-web-customer-portal-appscinema-frontend-v1)
-    - [3. Mobile Application (`apps/cinema-mobile`)](#3-mobile-application-appscinema-mobile)
-    - [4. Conversational AI Agent (`apps/cinema-agent`)](#4-conversational-ai-agent-appscinema-agent)
-  - [📸 Hình Ảnh Giao Diện \& Demo](#-hình-ảnh-giao-diện--demo)
-    - [1. Giao Diện Web Portal (Next.js 16)](#1-giao-diện-web-portal-nextjs-16)
-    - [2. Giao Diện Mobile App (React Native / Expo)](#2-giao-diện-mobile-app-react-native--expo)
-  - [Hướng Dẫn Khởi Chạy (Quick Start)](#hướng-dẫn-khởi-chạy-quick-start)
-    - [Cách 1: Khởi chạy toàn bộ bằng Docker Compose (Khuyên dùng)](#cách-1-khởi-chạy-toàn-bộ-bằng-docker-compose-khuyên-dùng)
-    - [Cách 2: Khởi chạy từng ứng dụng ở môi trường Local Development](#cách-2-khởi-chạy-từng-ứng-dụng-ở-môi-trường-local-development)
-      - [1. Khởi động PostgreSQL \& Redis (qua Docker)](#1-khởi-động-postgresql--redis-qua-docker)
-      - [2. Khởi động Backend (`apps/cinema-backend`)](#2-khởi-động-backend-appscinema-backend)
-      - [3. Khởi động Frontend Web (`apps/cinema-frontend-v1`)](#3-khởi-động-frontend-web-appscinema-frontend-v1)
-      - [4. Khởi động Mobile App (`apps/cinema-mobile`)](#4-khởi-động-mobile-app-appscinema-mobile)
-      - [5. Khởi động AI Agent (`apps/cinema-agent`)](#5-khởi-động-ai-agent-appscinema-agent)
-  - [Kiểm Thử \& CI/CD](#kiểm-thử--cicd)
-    - [Chạy Unit Test Backend (Vitest)](#chạy-unit-test-backend-vitest)
-    - [GitHub Actions CI Workflow](#github-actions-ci-workflow)
-  - [Tác Giả \& Bản Quyền](#tác-giả--bản-quyền)
+- [Điểm nổi bật](#điểm-nổi-bật)
+- [Kiến trúc](#kiến-trúc)
+- [Các ứng dụng trong monorepo](#các-ứng-dụng-trong-monorepo)
+- [Hình ảnh giao diện](#hình-ảnh-giao-diện)
+- [Khởi chạy](#khởi-chạy)
+- [Kiểm thử và CI](#kiểm-thử-và-ci)
+- [Tác giả](#tác-giả)
 
 ---
 
-## Điểm Nổi Bật Hệ Thống
+## Điểm nổi bật
 
-1. **Chống đặt trùng ghế 2 lớp (Redis lock + PostgreSQL là nguồn sự thật):**
-   - Redis `SET NX PX` chặn nhanh; PostgreSQL quyết định cuối cùng bằng upsert có điều kiện (all-or-nothing, khóa dòng theo thứ tự cố định để tránh deadlock).
-   - Khi tạo đơn, ghế được **gắn với mã đơn** và gia hạn giữ quá hạn thanh toán → không thể bị người khác lấy hay dùng cho đơn thứ hai; chỉ đúng đơn đó mới chốt (BOOKED) được ghế.
-   - Lớp bảo vệ cuối: unique index `(showtime_id, seat_id)` cho vé còn hiệu lực.
-   - Kiểm chứng: integration test trên Postgres thật (50 request cùng giữ 1 ghế → đúng 1 thành công; IPN lặp → chỉ chốt 1 lần) – `npm run test:int`.
-   - Cơ chế tự động giải phóng ghế (Auto-release Hold) sau 5 phút nếu khách hàng không hoàn tất bước thanh toán.
-2. **Hàng đợi tác vụ bất đồng bộ (BullMQ + Redis):**
-   - Tự động hủy đơn hàng quá hạn thanh toán mà không làm block luồng HTTP chính.
-   - Gửi email xác nhận đặt vé kèm mã QR-Code tự động thông qua worker chạy nền.
-3. **Trợ lý AI Đàm thoại thông minh (Stateful Graph Agent):**
-   - Xây dựng bằng **LangGraph** (State Machine Agent) kết hợp mô hình ngôn ngữ lớn **Google Gemini**.
-   - Phản hồi thời gian thực qua giao thức **Server-Sent Events (SSE)** kèm hiệu ứng gõ phím mượt mà.
-   - Tự động gọi API nội bộ (Tool Calling) để tra cứu lịch chiếu, giá vé và đề xuất phim theo sở thích.
-4. **Kiến trúc Domain-Driven Design (DDD):**
-   - Backend phân tách 4 tầng nghiêm ngặt: _Domain, Application, Infrastructure, Presentation_.
-   - Giao tiếp liên-module thông qua **Facade Pattern**, loại bỏ triệt để phụ thuộc chéo (Circular Dependency).
+1. **Chống bán trùng ghế hai lớp**
+   - Redis `SET NX PX` loại nhanh các yêu cầu tranh chấp; PostgreSQL quyết định cuối cùng bằng một câu upsert có điều kiện (all-or-nothing, ghi theo thứ tự `seat_id` để không deadlock).
+   - Ghế giữ **11 phút**; khi tạo đơn, ghế được gắn với mã đơn và giữ tới hết hạn thanh toán (10 phút) + 5 phút. Job BullMQ mỗi phút hủy đơn quá hạn và nhả ghế.
+   - Lớp cuối: unique index cho vé còn hiệu lực `(showtime_id, seat_id)`; ràng buộc `EXCLUDE` chặn hai suất chiếu trùng giờ trong cùng phòng.
+   - Kiểm chứng: 50 request cùng giữ 1 ghế → đúng 1 thành công (`npm run test:int`).
+2. **Thanh toán VNPay an toàn**
+   - Kiểm tra chữ ký HMAC-SHA512 và số tiền; chuyển trạng thái bằng compare-and-set nên IPN gửi lặp không tạo vé trùng.
+   - Thanh toán cho đơn đã hết hạn được đánh dấu chờ hoàn tiền thay vì nhận tiền im lặng; job đối soát xử lý giao dịch bị gián đoạn.
+   - Sau khi thanh toán, email vé kèm **mã QR** được gửi qua hàng đợi BullMQ.
+3. **Trợ lý AI có giới hạn quyền**
+   - Đồ thị LangGraph 2 node, **10 tool** gọi REST API của backend bằng token của chính khách – không truy cập database trực tiếp, không có tool thanh toán.
+   - Hỏi xác nhận trước khi tạo đơn; **chốt chặn bằng code** chỉ cho giữ ghế khách đã chọn.
+   - Trả lời dạng stream qua **Server-Sent Events**, kèm widget (danh sách phim, sơ đồ ghế, tóm tắt thanh toán); hội thoại lưu trong PostgreSQL.
+   - Bộ đánh giá **100 kịch bản** kiểm tra cả tool được gọi lẫn trạng thái database (`npm run eval`).
+4. **Backend theo Domain-Driven Design**
+   - Mỗi module tách 4 tầng _Domain, Application, Infrastructure, Presentation_; module gọi nhau qua facade/port, không dùng chung repository.
+   - Schema quản lý bằng TypeORM migration; CI kiểm tra entity và migration luôn khớp.
 
 ---
 
-## Kiến Trúc Tổng Thể
-
-Hệ thống được tổ chức theo mô hình **Turborepo Monorepo** với kiến trúc đa tầng (Multi-tier Architecture):
+## Kiến trúc
 
 <p align="center">
-  <img src="docs/assets/system-architecture.png" alt="System Architecture Diagram" width="100%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <img src="docs/assets/system-architecture.png" alt="Kiến trúc hệ thống" width="100%" />
 </p>
 
 ```mermaid
-graph TD
-    ClientWeb["🌐 Next.js 16 Web Client<br/>(Port 3001)"]
-    ClientMobile["📱 Expo / React Native App<br/>(iOS & Android)"]
-    AIAgent["🤖 AI Agent Service<br/>(LangGraph + Gemini | Port 3002)"]
-    Backend["⚡ NestJS Core Backend<br/>(DDD Architecture | Port 3000)"]
+flowchart TB
+  Web["Web – Next.js 16 (:3001)"]
+  Mobile["Mobile – React Native / Expo"]
+  Backend["Backend – NestJS (:3000/api/v1)"]
+  Agent["AI Agent – LangGraph (:3002)"]
+  PG[("PostgreSQL 16")]
+  Redis[("Redis 7 – khóa ghế, BullMQ")]
+  Gemini["Gemini API"]
+  VNPay["VNPay sandbox"]
 
-    Postgres[("🐘 PostgreSQL DB<br/>(Port 5432)")]
-    RedisCache[("🔴 Redis Engine<br/>Cache + Seat Lock + BullMQ (Port 6379)")]
-    Cloudinary["☁️ Cloudinary Media Storage"]
-
-    ClientWeb -->|REST API / SSE| Backend
-    ClientMobile -->|REST API / SSE| Backend
-    ClientWeb -->|SSE Streaming| AIAgent
-    ClientMobile -->|SSE Streaming| AIAgent
-
-    AIAgent -->|Internal Tool Calling| Backend
-    Backend --> Postgres
-    Backend --> RedisCache
-    Backend --> Cloudinary
+  Web -->|REST + JWT| Backend
+  Mobile -->|REST + JWT| Backend
+  Web -->|chat: SSE| Agent
+  Mobile -->|chat: SSE| Agent
+  Agent -->|REST bằng JWT của khách| Backend
+  Agent -->|tool calling| Gemini
+  Agent -->|lưu hội thoại| PG
+  Backend --> PG
+  Backend --> Redis
+  Web -.->|khách thanh toán| VNPay
+  VNPay -->|IPN / return có chữ ký| Backend
 ```
 
 ---
 
-## Hệ Sinh Thái Ứng Dụng (Monorepo Apps)
+## Các ứng dụng trong monorepo
 
-### 1. Backend API (`apps/cinema-backend`)
+Mỗi ứng dụng có `package.json` và workflow CI riêng trong `apps/`.
 
-- **Framework:** NestJS 11, TypeScript, TypeORM, Passport.js, Winston Logger.
-- **Tính năng cốt lõi:**
-  - Xác thực **JWT với Access Token & Refresh Token Rotation**.
-  - Phân quyền theo vai trò **RBAC (Admin, Staff, Customer)**.
-  - Quản lý rạp (Cineplex, Cinema, Hall, Seat Matrix VIP/Regular/Sweetbox).
-  - Quản lý phim, lịch chiếu, giá vé linh hoạt theo khung giờ và ngày lễ.
-  - Thanh toán tích hợp cổng **VNPay** với xử lý IPN Idempotency.
-  - Endpoint kiểm tra sức khỏe hệ thống: `/api/v1/health` (Postgres, Redis, Memory RAM).
-  - Kiểm thử bằng **Vitest**: unit test (`npm test`) cho domain rules, đặt ghế, đơn hàng, thanh toán; integration test trên PostgreSQL thật cho tranh chấp ghế đồng thời (`npm run test:int`).
+### 1. Backend API – `apps/cinema-backend`
 
-### 2. Web Customer Portal (`apps/cinema-frontend-v1`)
+- **Công nghệ:** NestJS 12, TypeScript, TypeORM, PostgreSQL, Redis, BullMQ, Passport JWT, Winston.
+- **Chức năng:** đăng ký/đăng nhập JWT, phân quyền theo vai trò (RBAC); phim, cụm rạp, phòng, sơ đồ ghế (thường/VIP/đôi), suất chiếu, giá vé; giữ ghế, đơn hàng, bắp nước, voucher; thanh toán VNPay; email vé.
+- **Bảo mật production:** kiểm tra biến môi trường khi khởi động (từ chối secret mặc định), helmet, CORS theo danh sách, rate limit theo IP.
+- **Health check:** `GET /api/v1/health` (PostgreSQL, Redis, bộ nhớ).
 
-- **Framework:** Next.js 16 (App Router, Server Components), React 19, Tailwind CSS.
-- **Tính năng cốt lõi:**
-  - Quản lý Server State với **TanStack Query v5** (Optimistic updates, Stale-while-revalidate, Pagination).
-  - Quản lý Client State bằng **Zustand**.
-  - Hero Slider tùy biến 100% (Progress bar, Auto-advance, không phụ thuộc thư viện bên ngoài).
-  - Định vị rạp chiếu trực quan trên bản đồ tương tác với **React Leaflet**.
-  - Widget chat AI đặt vé xem phim thời gian thực (SSE Streaming).
-  - Xử lý lỗi toàn diện với **Global Error Boundary (`error.tsx`)** và trang **404 (`not-found.tsx`)**.
+### 2. Web – `apps/cinema-frontend-v1`
 
-### 3. Mobile Application (`apps/cinema-mobile`)
+- **Công nghệ:** Next.js 16 (App Router), React 19, Tailwind CSS 4, TanStack Query 5, Zustand, React Leaflet.
+- **Chức năng:** trang chủ, chi tiết phim, suất chiếu theo rạp, bản đồ cụm rạp, sơ đồ ghế, bắp nước và voucher, thanh toán VNPay, vé QR, đăng ký/đăng nhập, khung chat với trợ lý AI.
 
-- **Framework:** React Native, Expo SDK, Expo Router v3 (File-based Navigation).
-- **Tính năng cốt lõi:**
-  - Hỗ trợ đa nền tảng **iOS & Android** với giao diện Dark Mode cao cấp.
-  - Lưu trữ Token bảo mật bằng **Expo SecureStore**.
-  - Xem trailer trực tiếp trong ứng dụng qua YouTube Player.
-  - Hiển thị vé điện tử kèm **mã QR-Code** dùng để check-in tại quầy rạp.
-  - Màn hình chat chuyên biệt với AI Agent phản hồi dạng stream thời gian thực.
+### 3. Mobile – `apps/cinema-mobile`
 
-### 4. Conversational AI Agent (`apps/cinema-agent`)
+- **Công nghệ:** React Native 0.88, Expo SDK 58, expo-router, Expo SecureStore.
+- **Chức năng:** luồng đặt vé như web, trailer YouTube, vé điện tử QR, màn hình chat với trợ lý AI.
 
-- **Framework:** LangGraph (Stateful Graph), LangChain, Express.js, Google Gemini API.
-- **Tính năng cốt lõi:**
-  - Nhận diện ý định người dùng (Intent Recognition): tìm phim, xem lịch chiếu theo rạp, hỏi giá vé.
-  - Duy trì ngữ cảnh hội thoại theo từng Session ID.
-  - Gọi công cụ an toàn (Safe Tool Calling) vào Backend để lấy dữ liệu thực tế.
+### 4. AI Agent – `apps/cinema-agent`
+
+- **Công nghệ:** LangGraph JS, LangChain, Express, Google Gemini (`gemini-3.5-flash-lite`), Zod.
+- **Chức năng:** tìm phim, xem suất chiếu và ghế trống, giữ/nhả ghế, gợi ý bắp nước, tạo đơn và link VNPay, tra cứu đơn – qua 10 tool có schema; hội thoại theo session, lưu trong PostgreSQL (schema `agent_memory`).
 
 ---
 
-## 📸 Hình Ảnh Giao Diện & Demo
+## Hình ảnh giao diện
 
-### 1. Giao Diện Web Portal (Next.js 16)
+### Web (Next.js 16)
 
-|                         Trang chủ & Hero Banner                         |                          Sơ đồ chọn ghế thời gian thực                          |
-| :---------------------------------------------------------------------: | :-----------------------------------------------------------------------------: |
-| <img src="docs/assets/web-home.png" alt="Trang chủ Web" width="100%" /> | <img src="docs/assets/web-seat-matrix.png" alt="Sơ đồ chọn ghế" width="100%" /> |
+|                              Trang chủ                              |                               Sơ đồ chọn ghế                               |
+| :-----------------------------------------------------------------: | :------------------------------------------------------------------------: |
+| <img src="docs/assets/web-home.png" alt="Trang chủ" width="100%" /> | <img src="docs/assets/web-seat-matrix.png" alt="Sơ đồ ghế" width="100%" /> |
 
-|                           Bản đồ cụm rạp GIS (React Leaflet)                           |                      Trợ lý ảo AI Chatbot (SSE Streaming)                      |
-| :------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------: |
-| <img src="docs/assets/web-cinema-map.png" alt="Bản đồ cụm rạp Leaflet" width="100%" /> | <img src="docs/assets/web-ai-agent.png" alt="Chatbot AI Agent" width="100%" /> |
+|                                 Bản đồ cụm rạp                                 |                                Trợ lý AI                                |
+| :----------------------------------------------------------------------------: | :---------------------------------------------------------------------: |
+| <img src="docs/assets/web-cinema-map.png" alt="Bản đồ cụm rạp" width="100%" /> | <img src="docs/assets/web-ai-agent.png" alt="Trợ lý AI" width="100%" /> |
 
----
+### Mobile (React Native / Expo)
 
-### 2. Giao Diện Mobile App (React Native / Expo)
-
-|                              🏠 Trang chủ Mobile                              |                             🎟️ Chi tiết đặt vé                             |                            📱 Vé điện tử QR Check-in                            |                              🤖 Chatbot AI Assistant                              |
-| :---------------------------------------------------------------------------: | :------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: | :-------------------------------------------------------------------------------: |
-| <img src="docs/assets/mobile-home.jpg" alt="Trang chủ Mobile" width="100%" /> | <img src="docs/assets/mobile-ticket.jpg" alt="Chi tiết vé" width="100%" /> | <img src="docs/assets/mobile-ticket-qr.jpg" alt="Vé điện tử QR" width="100%" /> | <img src="docs/assets/mobile-ai-chat.jpg" alt="Chatbot AI Mobile" width="100%" /> |
+|                               Trang chủ                                |                                Chi tiết vé                                 |                                  Vé QR                                  |                                 Trợ lý AI                                 |
+| :--------------------------------------------------------------------: | :------------------------------------------------------------------------: | :---------------------------------------------------------------------: | :-----------------------------------------------------------------------: |
+| <img src="docs/assets/mobile-home.jpg" alt="Trang chủ" width="100%" /> | <img src="docs/assets/mobile-ticket.jpg" alt="Chi tiết vé" width="100%" /> | <img src="docs/assets/mobile-ticket-qr.jpg" alt="Vé QR" width="100%" /> | <img src="docs/assets/mobile-ai-chat.jpg" alt="Trợ lý AI" width="100%" /> |
 
 ---
 
-## Hướng Dẫn Khởi Chạy (Quick Start)
+## Khởi chạy
 
-### Cách 1: Khởi chạy toàn bộ bằng Docker Compose (Khuyên dùng)
+### Cách 1: Docker Compose (khuyên dùng)
 
-Yêu cầu: Đã cài đặt **Docker Desktop** (Engine ≥ 24) và **Docker Compose v2**.
+Yêu cầu: **Docker Desktop** (Engine ≥ 24, Compose v2). Chi tiết thêm trong [DOCKER.md](DOCKER.md).
 
 ```bash
-# 1. Clone repository
 git clone https://github.com/GiaBaoIT27/cinema-booking-agent.git
 cd cinema-booking-agent
 
-# 2. (Tùy chọn) Khởi tạo biến môi trường cho AI Agent
-# Tạo file .env ở thư mục gốc:
+# Khóa Gemini cho AI Agent (file .env ở thư mục gốc)
 echo "GOOGLE_API_KEY=your_gemini_api_key_here" > .env
+# Cấu hình backend (VNPay sandbox, SMTP...)
+cp apps/cinema-backend/.env.example apps/cinema-backend/.env
 
-# 3. Khởi chạy toàn bộ hệ thống
 docker compose up -d --build
+docker compose ps    # chờ các container ở trạng thái healthy
 
-# 4. Kiểm tra trạng thái các container (chờ healthy)
-docker compose ps
-```
-
-**Các cổng dịch vụ mặc định:**
-
-- **Web Frontend:** [http://localhost:3001](http://localhost:3001)
-- **Backend API:** [http://localhost:3000/api/v1](http://localhost:3000/api/v1)
-- **AI Agent Service:** [http://localhost:3002/health](http://localhost:3002/health)
-- **RedisInsight (Quản lý Redis):** [http://localhost:5540](http://localhost:5540)
-
-**Seed dữ liệu mẫu ban đầu:**
-
-```bash
+# Seed dữ liệu mẫu (sau khi backend healthy)
 docker compose run --rm backend node -r dotenv/config dist/database/seeds/run-seed.js
 ```
 
----
+| Dịch vụ      | Địa chỉ                                                      |
+| :----------- | :----------------------------------------------------------- |
+| Web          | [http://localhost:3001](http://localhost:3001)               |
+| Backend API  | [http://localhost:3000/api/v1](http://localhost:3000/api/v1) |
+| AI Agent     | [http://localhost:3002/health](http://localhost:3002/health) |
+| RedisInsight | [http://localhost:5540](http://localhost:5540)               |
 
-### Cách 2: Khởi chạy từng ứng dụng ở môi trường Local Development
+> **Email vé:** điền `MAIL_USER`, `MAIL_PASSWORD` trong `apps/cinema-backend/.env`. Với Gmail phải dùng **App Password** (tài khoản bật xác minh 2 bước). Sửa `.env` xong chạy `docker compose up -d backend` để container nhận cấu hình mới.
 
-#### 1. Khởi động PostgreSQL & Redis (qua Docker)
+### Cách 2: Chạy từng ứng dụng
 
 ```bash
+# 1. PostgreSQL + Redis
 docker compose up -d postgres redis
+
+# 2. Backend – http://localhost:3000
+cd apps/cinema-backend && cp .env.example .env && npm install && npm run start:dev
+
+# 3. Web – http://localhost:3001
+cd apps/cinema-frontend-v1 && cp .env.example .env.local && npm install && npm run dev
+
+# 4. AI Agent – http://localhost:3002 (điền GOOGLE_API_KEY trong .env)
+cd apps/cinema-agent && cp .env.example .env && npm install && npm run dev
+
+# 5. Mobile – quét QR bằng Expo Go
+cd apps/cinema-mobile && cp .env.example .env && npm install && npx expo start -c
 ```
 
-#### 2. Khởi động Backend (`apps/cinema-backend`)
-
-```bash
-cd apps/cinema-backend
-cp .env.example .env
-npm install
-npm run start:dev
-# Backend chạy tại http://localhost:3000
-```
-
-#### 3. Khởi động Frontend Web (`apps/cinema-frontend-v1`)
-
-```bash
-cd apps/cinema-frontend-v1
-cp .env.example .env.local
-npm install
-npm run dev
-# Web chạy tại http://localhost:3001
-```
-
-#### 4. Khởi động Mobile App (`apps/cinema-mobile`)
-
-```bash
-cd apps/cinema-mobile
-npm install
-npx expo start
-# Quét mã QR bằng ứng dụng Expo Go trên điện thoại iOS / Android
-```
-
-#### 5. Khởi động AI Agent (`apps/cinema-agent`)
-
-```bash
-cd apps/cinema-agent
-cp .env.example .env # Điền GOOGLE_API_KEY
-npm install
-npm run dev
-# Agent chạy tại http://localhost:3002
-```
+> **Mobile:** điện thoại không truy cập được `localhost` của máy tính. Trong `apps/cinema-mobile/.env`, đặt `EXPO_PUBLIC_API_URL` và `EXPO_PUBLIC_AGENT_URL` theo **IP LAN** của máy chạy backend; để thanh toán VNPay quay về được, đặt `VNPAY_RETURN_URL` của backend cũng theo IP đó.
 
 ---
 
-## Kiểm Thử & CI/CD
+## Kiểm thử và CI
 
-### Chạy kiểm thử
+| Ứng dụng | Lệnh               | Nội dung                                                                                                                       |
+| :------- | :----------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| Backend  | `npm test`         | Unit test (Vitest): giữ/nhả ghế, đơn hàng, email vé, thanh toán/IPN, hoàn tiền, lịch chiếu, cấu hình, rate limit               |
+| Backend  | `npm run test:int` | Integration test trên **PostgreSQL thật** (DB `cinema_test`): tranh chấp ghế, IPN lặp, compare-and-set, chống trùng suất chiếu |
+| Agent    | `npm test`         | Tool, đồ thị, chat handler, chốt chặn giữ ghế, chấm điểm eval (model và backend giả, không gọi LLM thật)                       |
+| Agent    | `npm run eval`     | 100 kịch bản hội thoại với Gemini thật, chấm theo tool và trạng thái database (cần `GOOGLE_API_KEY`)                           |
+| Web      | `npm test`         | Luồng giữ ghế, checkout, đăng ký (Vitest)                                                                                      |
 
-| App | Lệnh | Nội dung |
-| :-- | :-- | :-- |
-| Backend | `npm test` | Unit test (Vitest): domain rules, giữ ghế, đơn hàng, thanh toán/IPN, hoàn tiền |
-| Backend | `npm run test:int` | Integration test trên **PostgreSQL thật** (DB riêng `cinema_test`): tranh chấp ghế đồng thời, IPN lặp, compare-and-set trạng thái đơn/giao dịch |
-| Agent | `npm test` | Tool, luồng graph, chat handler (model + backend giả, không gọi LLM thật) |
-| Frontend | `npm test` | Luồng giữ ghế và checkout (Vitest) |
+Mỗi Pull Request và mỗi commit lên `main` chạy workflow GitHub Actions của ứng dụng có thay đổi:
 
-### GitHub Actions CI
-
-Mỗi Pull Request và commit lên `main` chạy workflow của app có thay đổi (lọc theo `paths`):
-
-- **Backend CI**: lint (oxlint), TypeScript, unit test, build; job riêng chạy integration test với service PostgreSQL 16.
-- **Agent CI**: TypeScript, test, build. Bộ eval (`npm run eval`) cần Gemini key nên không chạy trong CI.
-- **Frontend CI**: ESLint, TypeScript, unit test, Next.js production build.
-- **Mobile CI**: Expo lint, TypeScript.
+- **Backend CI:** oxlint, TypeScript, unit test, build; job riêng chạy integration test với PostgreSQL 16, áp dụng migration lên DB trống và kiểm tra migration khớp entity.
+- **Agent CI:** TypeScript (gồm cả thư mục test), test, build. Bộ eval cần Gemini key nên không chạy trong CI.
+- **Frontend CI:** ESLint, TypeScript, unit test, Next.js build.
+- **Mobile CI:** Expo lint, TypeScript.
 
 ---
 
-## Tác Giả & Bản Quyền
+## Tác giả
 
 - **Họ và tên:** Nguyễn Gia Bảo (Nguyen Gia Bao)
 - **Email:** [bbao270205@gmail.com](mailto:bbao270205@gmail.com)
 - **GitHub:** [@GiaBaoIT27](https://github.com/GiaBaoIT27)
 - **LinkedIn:** [Bảo Nguyễn](https://www.linkedin.com/in/bao-nguyen-881939301)
-- **Trường:** Đại học Tôn Đức Thắng (Ton Duc Thang University - TDTU)
-
----
-
-<p align="center">
-  <i>Được phát triển với niềm đam mê dành cho Software Engineering & Modern Fullstack Architectures 🚀</i>
-</p>
+- **Trường:** Đại học Tôn Đức Thắng (Ton Duc Thang University – TDTU)
