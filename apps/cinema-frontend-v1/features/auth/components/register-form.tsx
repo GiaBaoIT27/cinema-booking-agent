@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar, Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { AlertCircle, Calendar, Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { registerSchema, type RegisterInput } from "../schemas/auth.schema";
+import { useRegister } from "../hooks/use-register";
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register: registerAccount, isLoading, errorMessage, clearError } =
+    useRegister();
 
   const {
     register,
@@ -29,17 +32,29 @@ export function RegisterForm() {
     },
   });
 
+  const isBusy = isSubmitting || isLoading;
+
   const onSubmit: SubmitHandler<RegisterInput> = async (data) => {
-    try {
-      // TODO: Gọi API Đăng ký tại đây
-      console.log("Register Payload:", data);
-    } catch {
-      // Handle error
-    }
+    clearError();
+    await registerAccount(data);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* Lỗi từ server (VD: email / số điện thoại đã được đăng ký) */}
+      {errorMessage && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-950/40 p-3.5 text-red-200 backdrop-blur-sm animate-in fade-in"
+        >
+          <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
+          <div className="flex-1 text-[13px] leading-relaxed">
+            <p className="font-medium text-red-300">Đăng ký không thành công</p>
+            <p className="mt-0.5 text-red-200/90">{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
       {/* Họ và tên */}
       <div className="space-y-1.5">
         <label
@@ -126,7 +141,7 @@ export function RegisterForm() {
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
-            placeholder="Tối thiểu 8 ký tự, có 1 chữ hoa"
+            placeholder="Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số"
             className="pr-11"
             error={errors.password?.message}
             {...register("password")}
@@ -192,10 +207,10 @@ export function RegisterForm() {
       {/* Nút Submit */}
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isBusy}
         className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#EF4444] text-[15px] font-bold tracking-wide text-white transition hover:bg-[#F87171] active:scale-[0.99] disabled:opacity-60"
       >
-        {isSubmitting ? (
+        {isBusy ? (
           <>
             <LoaderCircle size={16} className="animate-spin" />
             Đang xử lý...

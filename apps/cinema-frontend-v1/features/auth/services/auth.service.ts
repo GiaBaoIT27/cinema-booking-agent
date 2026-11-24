@@ -1,5 +1,10 @@
 import { apiClient } from "@/lib/api-client";
-import type { LoginPayload, LoginResponseData } from "../types/auth.type";
+import type {
+  LoginPayload,
+  LoginResponseData,
+  RegisterPayload,
+  RegisteredUser,
+} from "../types/auth.type";
 
 export const authService = {
   /**
@@ -8,6 +13,14 @@ export const authService = {
    */
   async login(payload: LoginPayload): Promise<LoginResponseData> {
     return apiClient.post<LoginResponseData>("/auth/login", payload);
+  },
+
+  /**
+   * Đăng ký tài khoản khách hàng
+   * POST /api/v1/auth/register
+   */
+  async register(payload: RegisterPayload): Promise<RegisteredUser> {
+    return apiClient.post<RegisteredUser>("/auth/register", payload);
   },
 
   /**
