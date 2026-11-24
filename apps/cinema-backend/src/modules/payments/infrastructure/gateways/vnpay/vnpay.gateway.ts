@@ -121,15 +121,19 @@ export class VnPayGateway implements IPaymentGateway {
     };
   }
 
+  /**
+   * CHƯA tích hợp API hoàn tiền của VNPay (POST .../merchant_webapi/api/transaction).
+   * Trả về thất bại để giao dịch nằm lại ở REFUND_PENDING – không được báo "đã hoàn" khi
+   * tiền chưa thực sự trả về cho khách. Hoàn tiền thủ công rồi cập nhật trạng thái.
+   */
   async refund(params: RefundParams): Promise<RefundResult> {
-    // VNPay refund API yêu cầu gọi POST sang https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
-    this.logger.log(
-      `[VNPay] Yêu cầu refund cho mã txn: ${params.gatewayTxnRef}`,
+    this.logger.warn(
+      `[VNPay] Chưa tích hợp API hoàn tiền – cần hoàn tiền thủ công cho mã txn: ${params.gatewayTxnRef} (${params.amount} VND)`,
     );
     return {
-      success: true,
-      responseCode: '00',
-      message: 'Hoàn tiền thành công',
+      success: false,
+      responseCode: 'NOT_IMPLEMENTED',
+      message: 'Chưa tích hợp API hoàn tiền VNPay – cần hoàn tiền thủ công',
     };
   }
 }
