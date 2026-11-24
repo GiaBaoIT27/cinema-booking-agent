@@ -1,4 +1,10 @@
 {
   "extends": "../tsconfig.json", // Kế thừa cấu hình từ file chính ngoài thư mục gốc
+  "compilerOptions": {
+    // Test import cả src/ lẫn eval/ => gốc là thư mục app, không phải src/
+    "rootDir": "..",
+    // Test chạy bằng tsx, chỉ cần kiểm tra kiểu, không xuất file
+    "noEmit": true
+  },
   "include": ["**/*.ts"] // Quét tất cả file ts trong thư mục test này
 }
