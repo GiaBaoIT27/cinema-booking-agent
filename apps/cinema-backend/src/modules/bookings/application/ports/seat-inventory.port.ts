@@ -13,6 +13,14 @@ export interface ISeatInventory {
   /** Trong danh sách ghế truyền vào, những ghế đã BOOKED. */
   findBookedSeatIds(showtimeId: string, seatIds: string[]): Promise<string[]>;
 
+  /** Trong `seatIds`, những ghế đang HOLDING còn hạn bởi một user KHÁC `userId`. */
+  findSeatIdsHeldByOthers(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    now: Date,
+  ): Promise<string[]>;
+
   /** Ghế đang HOLDING còn hạn của đúng `userId`. */
   findActiveHolds(
     showtimeId: string,

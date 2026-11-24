@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { HttpStatus, Injectable, Inject } from '@nestjs/common';
 
 import {
   MAX_SEATS_PER_USER_PER_SHOWTIME,
@@ -164,13 +164,32 @@ export class BookingsService {
     const showtimeId = String(dto.showtimeId);
     const seatIds = [...new Set(dto.seatIds.map(String))];
 
+    const now = new Date();
     const holds = await this.seatInventory.findActiveHolds(
       showtimeId,
       seatIds,
       userId,
-      new Date(),
+      now,
     );
     const releasableSeatIds = holds.map((hold) => hold.seatId);
+
+    // Ghế đang do người khác giữ: báo lỗi rõ ràng thay vì trả 200 "không có gì xảy ra".
+    // Ghế của chính user đã hết hạn / đã trống vẫn trả 200 (bỏ chọn ghế trên client).
+    if (releasableSeatIds.length === 0) {
+      const heldByOthers = await this.seatInventory.findSeatIdsHeldByOthers(
+        showtimeId,
+        seatIds,
+        userId,
+        now,
+      );
+      if (heldByOthers.length > 0) {
+        throw new BusinessException(
+          ErrorCode.BOOKING_NOT_HELD,
+          'Bạn không giữ các ghế này nên không thể nhả ghế.',
+          HttpStatus.FORBIDDEN,
+        );
+      }
+    }
 
     if (releasableSeatIds.length > 0) {
       await this.seatHoldStore.release(showtimeId, releasableSeatIds, userId);

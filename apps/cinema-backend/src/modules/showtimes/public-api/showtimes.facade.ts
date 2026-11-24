@@ -93,6 +93,21 @@ export class ShowtimesFacade {
     return this.showtimeSeatRepository.findBookedSeatIds(showtimeId, seatIds);
   }
 
+  /** Trong `seatIds`, những ghế đang HOLDING còn hạn bởi một user KHÁC `userId`. */
+  findSeatIdsHeldByOthers(
+    showtimeId: string,
+    seatIds: string[],
+    userId: string,
+    now: Date,
+  ): Promise<string[]> {
+    return this.showtimeSeatRepository.findSeatIdsHeldByOthers(
+      showtimeId,
+      seatIds,
+      userId,
+      now,
+    );
+  }
+
   /** Ghế đang HOLDING còn hạn của đúng `userId` */
   async findActiveSeatHolds(
     showtimeId: string,
