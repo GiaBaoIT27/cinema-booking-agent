@@ -1,4 +1,4 @@
-import type { AgentEvent } from "../types/agent.type";
+import type { AgentEvent, OrderAction } from "../types/agent.type";
 import { parseSse } from "../utils/sse-parser";
 
 /** Địa chỉ cinema-agent. Đặt NEXT_PUBLIC_AGENT_URL trong .env.local khi triển khai */
@@ -16,6 +16,8 @@ export class AgentHttpError extends Error {
 
 export interface StreamChatParams {
   message: string;
+  /** Nút Xác nhận / Hủy trên thẻ xác nhận đơn */
+  action?: OrderAction;
   sessionId?: string;
   token?: string;
   signal?: AbortSignal;
@@ -33,7 +35,11 @@ export async function* streamAgentChat(params: StreamChatParams, fetchImpl: type
     res = await fetchImpl(`${AGENT_URL}/api/v1/agent/chat/stream`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ message: params.message, sessionId: params.sessionId }),
+      body: JSON.stringify({
+        message: params.message,
+        sessionId: params.sessionId,
+        ...(params.action ? { action: params.action } : {}),
+      }),
       signal: params.signal,
     });
   } catch (e) {

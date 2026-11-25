@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { openPaymentPage } from "@/features/payments/utils/open-payment";
 import { colors, radius } from "@/theme/colors";
-import type { AgentWidget } from "../types/agent.types";
+import type { AgentWidget, OrderAction } from "../types/agent.types";
 import { isSafeUrl } from "../utils/chat-reducer";
 
 const vnd = (n: number) => `${Number(n).toLocaleString("vi-VN")} đ`;
@@ -109,13 +109,98 @@ interface Props {
   widget: AgentWidget;
   /** Gửi một câu thay khách (khách chạm vào lựa chọn) */
   onSend: (text: string) => void;
+  /** Nút trên thẻ xác nhận đơn (agent xử lý bằng code, không qua mô hình) */
+  onAction?: (text: string, action: OrderAction) => void;
   disabled?: boolean;
 }
 
-export function AgentWidgetView({ widget, onSend, disabled }: Props) {
+function OrderConfirmationCard({
+  widget,
+  onAction,
+  disabled,
+}: {
+  widget: Extract<AgentWidget, { type: "ORDER_CONFIRMATION" }>;
+  onAction?: Props["onAction"];
+  disabled?: boolean;
+}) {
+  const p = widget.payload;
+  const left = useSecondsLeft(p.expiresAt);
+  // Mỗi thẻ chỉ bấm được một lần (agent cũng từ chối thẻ đã dùng)
+  const [used, setUsed] = useState(false);
+  const locked = Boolean(disabled) || used || left === 0 || !onAction;
+  const act = (type: OrderAction["type"], text: string) => {
+    setUsed(true);
+    onAction?.(text, { type, confirmationId: p.confirmationId });
+  };
+  return (
+    <Card icon="ticket-outline" title={widget.title}>
+      {p.movieTitle ? (
+        <Text style={styles.itemTitle}>{p.movieTitle}</Text>
+      ) : null}
+      <Text style={styles.small}>Ghế: {p.seats.join(", ")}</Text>
+      <View style={styles.gap}>
+        <Line label="Tiền vé" value={vnd(p.pricing.subtotalTickets)} />
+        {p.fnbItems.map((f) => (
+          <Line
+            key={f.name}
+            label={`${f.name} x${f.quantity}`}
+            value={vnd(f.subtotal)}
+          />
+        ))}
+        {p.pricing.discountAmount > 0 ? (
+          <Line
+            label={`Giảm giá${p.voucherCode ? ` (${p.voucherCode})` : ""}`}
+            value={`-${vnd(p.pricing.discountAmount)}`}
+            danger
+          />
+        ) : null}
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Tổng</Text>
+          <Text style={styles.totalValue}>{vnd(p.pricing.finalAmount)}</Text>
+        </View>
+      </View>
+      <Countdown iso={p.expiresAt} prefix="Xác nhận trong" />
+      <View style={styles.actionRow}>
+        <Pressable
+          disabled={locked}
+          onPress={() => act("cancel_order", "Hủy, tôi muốn thay đổi")}
+          style={[styles.ghostBtn, styles.flex, locked && styles.off]}
+          accessibilityRole="button"
+        >
+          <Ionicons name="close-circle-outline" size={14} color={colors.text} />
+          <Text style={styles.payText}>Hủy</Text>
+        </Pressable>
+        <Pressable
+          disabled={locked}
+          onPress={() => act("confirm_order", "Xác nhận đặt vé")}
+          style={[styles.payBtn, styles.flex, locked && styles.off]}
+          accessibilityRole="button"
+        >
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={14}
+            color={colors.text}
+          />
+          <Text style={styles.payText}>Xác nhận</Text>
+        </Pressable>
+      </View>
+    </Card>
+  );
+}
+
+export function AgentWidgetView({ widget, onSend, onAction, disabled }: Props) {
   const router = useRouter();
 
   switch (widget.type) {
+    case "ORDER_CONFIRMATION":
+      return (
+        <OrderConfirmationCard
+          widget={widget}
+          onAction={onAction}
+          disabled={disabled}
+        />
+      );
+
     case "MOVIE_LIST":
       return (
         <Card icon="film-outline" title={widget.title}>
@@ -392,5 +477,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   payText: { color: colors.text, fontSize: 13, fontWeight: "800" },
+  actionRow: { flexDirection: "row", gap: 8 },
+  ghostBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   off: { opacity: 0.45 },
 });

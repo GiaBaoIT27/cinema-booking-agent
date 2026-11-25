@@ -13,6 +13,7 @@ import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AgentWidgetView } from "@/features/ai-agent/components/agent-widgets";
+import type { OrderAction } from "@/features/ai-agent/types/agent.types";
 import { ChatText } from "@/features/ai-agent/components/chat-text";
 import { useAgentChat } from "@/features/ai-agent/hooks/use-agent-chat";
 import type { ChatMessage } from "@/features/ai-agent/types/agent.types";
@@ -77,7 +78,12 @@ export default function AgentScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         renderItem={({ item }) => (
-          <Bubble message={item} onSend={send} disabled={isStreaming} />
+          <Bubble
+            message={item}
+            onSend={send}
+            onAction={(t, a) => void send(t, a)}
+            disabled={isStreaming}
+          />
         )}
         ListFooterComponent={
           onlyGreeting ? (
@@ -143,10 +149,12 @@ export default function AgentScreen() {
 function Bubble({
   message,
   onSend,
+  onAction,
   disabled,
 }: {
   message: ChatMessage;
   onSend: (t: string) => void;
+  onAction: (t: string, a: OrderAction) => void;
   disabled: boolean;
 }) {
   const user = message.sender === "user";
@@ -183,6 +191,7 @@ function Bubble({
             key={i}
             widget={w}
             onSend={onSend}
+            onAction={onAction}
             disabled={disabled}
           />
         ))}

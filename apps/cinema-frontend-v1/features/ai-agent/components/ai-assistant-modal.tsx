@@ -190,6 +190,7 @@ export function AIAssistantModal({
                     key={`${msg.id}-w${i}`}
                     widget={w}
                     onSend={(t) => void send(t)}
+                    onAction={(t, a) => void send(t, a)}
                     onNavigate={onClose}
                     disabled={isStreaming}
                   />

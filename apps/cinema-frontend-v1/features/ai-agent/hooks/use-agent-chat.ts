@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChatMessage } from "../types/agent.type";
+import type { ChatMessage, OrderAction } from "../types/agent.type";
 import { AgentHttpError, streamAgentChat } from "../services/agent.service";
 import { getAgentAuthToken } from "../utils/auth-token";
 import { applyAgentEvent, newAgentMessage, newUserMessage, nowLabel } from "../utils/chat-reducer";
@@ -62,7 +62,7 @@ export function useAgentChat() {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  const send = useCallback(async (raw: string) => {
+  const send = useCallback(async (raw: string, action?: OrderAction) => {
     const text = raw.trim();
     if (!text || streamingRef.current) return;
     streamingRef.current = true;
@@ -78,6 +78,7 @@ export function useAgentChat() {
     try {
       for await (const ev of streamAgentChat({
         message: text,
+        action,
         sessionId: sessionIdRef.current,
         token: getAgentAuthToken(),
         signal: controller.signal,
