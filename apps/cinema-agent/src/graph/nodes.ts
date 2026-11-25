@@ -1,7 +1,18 @@
+import { randomUUID } from "node:crypto";
 import { AIMessage, SystemMessage, ToolMessage } from "@langchain/core/messages";
 import type { BackendClient } from "../lib/backend-client.js";
-import { runTool, type ToolResult } from "../tools/definitions.js";
-import { effectsFor } from "../tools/tool-effects.js";
+import {
+  createOrderAndPayment,
+  previewOrder,
+  runTool,
+  type ToolResult,
+} from "../tools/definitions.js";
+import { effectsFor, orderConfirmationWidget } from "../tools/tool-effects.js";
+import {
+  decideOrderCall,
+  PENDING_ORDER_TTL_MS,
+  type PendingOrder,
+} from "./order-confirmation.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { windowMessages } from "./messages.js";
 import {
@@ -32,9 +43,16 @@ export interface NodeDeps {
   maxHistory?: number;
   /** Mặc định bật. */
   seatChoiceGuard?: boolean;
+  /** Đồng hồ (thay được trong test) */
+  now?: () => Date;
 }
 
-type NodeState = BookingSession & { messages: any[] };
+type NodeState = BookingSession & {
+  messages: any[];
+  pendingOrder?: PendingOrder | null;
+};
+
+const CREATE_ORDER = createOrderAndPayment.name;
 
 const MAX_TOOL_CONTENT = 12_000;
 
@@ -108,24 +126,59 @@ export function createToolsNode(deps: NodeDeps) {
     };
 
     const messages: ToolMessage[] = [];
-    let patch: SessionPatch = {};
+    let patch: SessionPatch & { pendingOrder?: PendingOrder | null } = {};
     let widget: GenerativeUIWidget | null = null;
 
     for (const call of calls) {
+      const push = (result: ToolResult) =>
+        messages.push(
+          new ToolMessage({
+            content: serializeToolResult(result),
+            tool_call_id: call.id ?? call.name,
+            name: call.name,
+          }),
+        );
+
+      // Xác nhận trước khi tạo đơn (order-confirmation.ts): chưa đủ điều kiện thì CHỈ xem
+      // trước giá và hiện thẻ xác nhận – không tạo đơn, không gắn ghế.
+      if (call.name === CREATE_ORDER && ctx.token) {
+        const parsed = createOrderAndPayment.schema.safeParse(call.args ?? {});
+        if (parsed.success) {
+          const now = deps.now?.() ?? new Date();
+          const decision = decideOrderCall(
+            state.pendingOrder,
+            parsed.data,
+            state.messages,
+            now,
+          );
+          if (decision === "preview") {
+            const result = await previewOrder(parsed.data, ctx);
+            push(result);
+            if (result.ok) {
+              const pending: PendingOrder = {
+                confirmationId: randomUUID(),
+                args: parsed.data,
+                summary: result.data as Record<string, unknown>,
+                shownAt: state.messages.length,
+                expiresAt: new Date(now.getTime() + PENDING_ORDER_TTL_MS).toISOString(),
+              };
+              patch = { ...patch, pendingOrder: pending };
+              widget = orderConfirmationWidget(pending, state.movieTitle ?? null);
+            }
+            continue;
+          }
+        }
+      }
+
       const result = await runTool(call.name, call.args, ctx);
-      messages.push(
-        new ToolMessage({
-          content: serializeToolResult(result),
-          tool_call_id: call.id ?? call.name,
-          name: call.name,
-        }),
-      );
+      push(result);
       const fx = effectsFor(
         call.name,
         (call.args ?? {}) as Record<string, unknown>,
         result,
       );
       patch = { ...patch, ...fx.patch };
+      if (call.name === CREATE_ORDER && result.ok) patch.pendingOrder = null;
       if (fx.widget) widget = fx.widget;
     }
 

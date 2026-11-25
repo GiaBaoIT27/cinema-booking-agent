@@ -10,10 +10,12 @@ import { createCheckpointer } from "./graph/checkpointer.js";
 import { buildAgentGraph } from "./graph/agent-graph.js";
 import type { ModelLike } from "./graph/nodes.js";
 import { handleChat } from "./chat-handler.js";
+import { installProcessGuard } from "./lib/process-guard.js";
 
 const LLM_TEMPERATURE = 0.2;
 
 async function main() {
+  installProcessGuard();
   const config = loadConfig(process.env);
   const backend = createBackendClient({
     baseUrl: config.backendApiUrl,
@@ -65,6 +67,7 @@ async function main() {
       {
         config,
         graph: graph as any,
+        backend,
         limiter,
         log: (m, e) => console.error(m, e),
       },

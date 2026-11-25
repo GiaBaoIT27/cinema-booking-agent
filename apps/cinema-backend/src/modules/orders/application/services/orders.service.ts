@@ -1,4 +1,10 @@
-import { HttpStatus, Injectable, Inject, Logger, Optional } from '@nestjs/common';
+import {
+  HttpStatus,
+  Injectable,
+  Inject,
+  Logger,
+  Optional,
+} from '@nestjs/common';
 
 import { Order } from '../../domain/entities/order.entity.js';
 import { OrderStatus } from '../../domain/enums/order-status.enum.js';
@@ -77,6 +83,7 @@ export class OrdersService {
   private async buildFnbLines(fnbItems: FnbOrderItemDto[] | undefined) {
     const lines: {
       fnbItemId: string;
+      name: string;
       quantity: number;
       unitPrice: number;
       subtotal: number;
@@ -107,6 +114,7 @@ export class OrdersService {
       subtotal += lineSubtotal;
       lines.push({
         fnbItemId: fnbItem.id,
+        name: fnbItem.name,
         quantity: item.quantity,
         unitPrice: fnbItem.basePrice,
         subtotal: lineSubtotal,
@@ -123,7 +131,11 @@ export class OrdersService {
    *  4. Transaction: tạo Order + OrderSeatDetail + OrderFnbDetail
    * Vé (Ticket) chỉ được sinh khi thanh toán thành công (xem fulfillOrder).
    */
-  async createOrder(userId: string, dto: CreateOrderDto) {
+  /**
+   * Bước 1–3 dùng chung cho tạo đơn và xem trước: ghế đang giữ (giá vé snapshot), F&B,
+   * voucher. CHỈ ĐỌC – không ghi gì vào DB.
+   */
+  private async priceOrder(userId: string, dto: CreateOrderDto) {
     const showtimeId = String(dto.showtimeId);
     const seatIds = [...new Set(dto.seatIds.map(String))];
 
@@ -151,6 +163,45 @@ export class OrdersService {
         holding.subtotalTickets + fnb.subtotal,
       );
     }
+
+    return { showtimeId, seatIds, holding, fnb, discountAmount };
+  }
+
+  /**
+   * POST /api/v1/orders/preview – tính tổng tiền đúng như khi tạo đơn (ghế đang giữ,
+   * F&B, voucher) nhưng KHÔNG tạo đơn và không gắn ghế. Trợ lý AI dùng để hiện thẻ xác
+   * nhận cho khách trước khi tạo đơn thật.
+   */
+  async previewOrder(userId: string, dto: CreateOrderDto) {
+    const { showtimeId, seatIds, holding, fnb, discountAmount } =
+      await this.priceOrder(userId, dto);
+    return {
+      showtimeId: Number(showtimeId),
+      seatIds: seatIds.map(Number),
+      fnbItems: fnb.lines.map((line) => ({
+        fnbItemId: Number(line.fnbItemId),
+        name: line.name,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        subtotal: line.subtotal,
+      })),
+      voucherCode: dto.voucherCode?.trim() ? dto.voucherCode.trim() : null,
+      pricing: {
+        subtotalTickets: holding.subtotalTickets,
+        subtotalFnb: fnb.subtotal,
+        discountAmount,
+        finalAmount: calculateFinalAmount(
+          holding.subtotalTickets,
+          fnb.subtotal,
+          discountAmount,
+        ),
+      },
+    };
+  }
+
+  async createOrder(userId: string, dto: CreateOrderDto) {
+    const { showtimeId, seatIds, holding, fnb, discountAmount } =
+      await this.priceOrder(userId, dto);
 
     // 4. Gắn ghế vào đơn (nguyên tử) + gia hạn giữ ghế quá hạn thanh toán của đơn.
     //    Chặn: dùng một lượt giữ ghế cho 2 đơn, và ghế tự nhả khi đơn còn PENDING.
@@ -196,7 +247,8 @@ export class OrdersService {
               seatId: seat.seatId,
               price: seat.price,
             })),
-            fnbItems: fnb.lines,
+            // `name` chỉ dùng cho xem trước, không phải cột của order_fnb_details
+            fnbItems: fnb.lines.map(({ name: _name, ...line }) => line),
           },
           tx,
         ),

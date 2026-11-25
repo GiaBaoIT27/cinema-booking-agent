@@ -10,8 +10,10 @@ import {
   Popcorn,
   Ticket,
   CreditCard,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
-import type { AgentWidget } from "../types/agent.type";
+import type { AgentWidget, OrderAction } from "../types/agent.type";
 import { isSafeUrl } from "../utils/chat-reducer";
 
 /** Trang đăng nhập */
@@ -41,6 +43,8 @@ interface Props {
   widget: AgentWidget;
   /** Gửi một câu thay khách (khách bấm vào lựa chọn) */
   onSend: (text: string) => void;
+  /** Nút trên thẻ xác nhận đơn (agent xử lý bằng code, không qua mô hình) */
+  onAction?: (text: string, action: OrderAction) => void;
   /** Gọi khi khách rời khỏi khung chat để đi tới trang khác */
   onNavigate: () => void;
   disabled?: boolean;
@@ -74,13 +78,92 @@ function PaymentButton({ url, expiresAt }: { url: string; expiresAt: string }) {
   );
 }
 
+function OrderConfirmationCard({
+  widget,
+  onAction,
+  disabled,
+}: {
+  widget: Extract<AgentWidget, { type: "ORDER_CONFIRMATION" }>;
+  onAction?: Props["onAction"];
+  disabled?: boolean;
+}) {
+  const p = widget.payload;
+  const left = useSecondsLeft(p.expiresAt);
+  // Mỗi thẻ chỉ bấm được một lần (agent cũng từ chối thẻ đã dùng)
+  const [used, setUsed] = useState(false);
+  const locked = disabled || used || left === 0 || !onAction;
+  const act = (type: OrderAction["type"], text: string) => {
+    setUsed(true);
+    onAction?.(text, { type, confirmationId: p.confirmationId });
+  };
+  return (
+    <div className={card}>
+      <div className={label}>
+        <Ticket size={12} />
+        <span>{widget.title}</span>
+      </div>
+      {p.movieTitle && <p className="text-xs font-semibold text-white">{p.movieTitle}</p>}
+      <p className="text-[11px] text-slate-300">Ghế: {p.seats.join(", ")}</p>
+      <div className="space-y-0.5 text-[11px] text-[#9CA3AF]">
+        <div className="flex justify-between">
+          <span>Tiền vé</span>
+          <span className="text-white">{vnd(p.pricing.subtotalTickets)}</span>
+        </div>
+        {p.fnbItems.map((f) => (
+          <div key={f.name} className="flex justify-between">
+            <span>
+              {f.name} x{f.quantity}
+            </span>
+            <span className="text-white">{vnd(f.subtotal)}</span>
+          </div>
+        ))}
+        {p.pricing.discountAmount > 0 && (
+          <div className="flex justify-between text-[#EF4444]">
+            <span>Giảm giá{p.voucherCode ? ` (${p.voucherCode})` : ""}</span>
+            <span>-{vnd(p.pricing.discountAmount)}</span>
+          </div>
+        )}
+        <div className="flex justify-between border-t border-[#1F2937] pt-1 text-xs font-bold">
+          <span className="text-white">Tổng</span>
+          <span className="text-[#F59E0B]">{vnd(p.pricing.finalAmount)}</span>
+        </div>
+      </div>
+      <Countdown iso={p.expiresAt} prefix="Xác nhận trong" />
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={locked}
+          onClick={() => act("cancel_order", "Hủy, tôi muốn thay đổi")}
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-[#374151] px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-[#1F2937] disabled:opacity-40"
+        >
+          <XCircle size={14} />
+          Hủy
+        </button>
+        <button
+          type="button"
+          disabled={locked}
+          onClick={() => act("confirm_order", "Xác nhận đặt vé")}
+          className="flex items-center justify-center gap-1.5 rounded-lg bg-[#EF4444] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#F87171] active:scale-[0.98] disabled:opacity-40"
+        >
+          <CheckCircle2 size={14} />
+          Xác nhận
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AgentWidgetView({
   widget,
   onSend,
+  onAction,
   onNavigate,
   disabled,
 }: Props) {
   switch (widget.type) {
+    case "ORDER_CONFIRMATION":
+      return <OrderConfirmationCard widget={widget} onAction={onAction} disabled={disabled} />;
+
     case "MOVIE_LIST":
       return (
         <div className={card}>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { OrderAction } from "../types/agent.types";
 import { tokenStorage } from "@/lib/token-storage";
 import { useAgentChatStore } from "@/store/agent-chat.store";
 import { useAuthStore } from "@/store/auth.store";
@@ -27,7 +28,7 @@ export function useAgentChat() {
     if (authStatus === "unauthenticated") useAgentChatStore.getState().reset();
   }, [authStatus]);
 
-  const send = useCallback(async (raw: string) => {
+  const send = useCallback(async (raw: string, action?: OrderAction) => {
     const text = raw.trim();
     if (!text || streamingRef.current) return;
     streamingRef.current = true;
@@ -54,6 +55,7 @@ export function useAgentChat() {
       const token = await tokenStorage.getAccess();
       for await (const ev of streamAgentChat({
         message: text,
+        action,
         sessionId: useAgentChatStore.getState().sessionId,
         token,
         signal: controller.signal,

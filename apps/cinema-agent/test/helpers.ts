@@ -42,6 +42,14 @@ export async function startFakeBackend() {
       if (p === "/fnb-items") return ok([{ id: 2, name: "Combo Solo", category: "COMBO", basePrice: 75000, imageUrl: "https://img/x.png", description: "1 bắp 1 nước" }, { id: 3, name: "Coca", category: "BEVERAGE", basePrice: 35000, imageUrl: null }]);
       if (p === "/bookings/hold") { if (!needAuth()) return; return ok({ showtimeId: 897, heldSeats: rec.body.seatIds.map((id: number) => ({ seatId: id, rowLabel: "H", seatNumber: "?" })), holdExpiresAt: "2026-10-11T13:00:00.000Z", holdDurationMs: 660000, message: "ok" }); }
       if (p === "/bookings/release") { if (!needAuth()) return; return ok({ showtimeId: 897, releasedSeatIds: rec.body.seatIds, message: "ok" }); }
+      if (p === "/orders/preview" && req.method === "POST") {
+        if (!needAuth()) return;
+        if (rec.body.voucherCode === "BAD") return err(400, "VOUCHER_INVALID", "Mã giảm giá không hợp lệ");
+        const fnbItems = (rec.body.fnbItems ?? []).map((f: any) => ({ fnbItemId: f.fnbItemId, name: "Combo Solo", quantity: f.quantity, unitPrice: 75000, subtotal: 75000 * f.quantity }));
+        const subtotalFnb = fnbItems.reduce((a: number, f: any) => a + f.subtotal, 0);
+        const subtotalTickets = 65000 * rec.body.seatIds.length;
+        return ok({ showtimeId: 897, seatIds: rec.body.seatIds, fnbItems, voucherCode: rec.body.voucherCode ?? null, pricing: { subtotalTickets, subtotalFnb, discountAmount: 0, finalAmount: subtotalTickets + subtotalFnb } });
+      }
       if (p === "/orders" && req.method === "POST") {
         if (!needAuth()) return;
         if (rec.body.voucherCode === "BAD") return err(400, "VOUCHER_INVALID", "Mã giảm giá không hợp lệ");

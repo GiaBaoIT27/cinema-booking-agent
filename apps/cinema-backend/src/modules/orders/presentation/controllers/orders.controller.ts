@@ -32,6 +32,14 @@ export class OrdersController {
     return this.ordersService.createOrder(userId, dto);
   }
 
+  // 1b. POST api/v1/orders/preview - Xem trước tổng tiền (không tạo đơn, không gắn ghế)
+  @Post('preview')
+  @HttpCode(HttpStatus.OK)
+  @ApiSuccessMessage('Xem trước đơn hàng thành công')
+  preview(@CurrentUser('userId') userId: string, @Body() dto: CreateOrderDto) {
+    return this.ordersService.previewOrder(userId, dto);
+  }
+
   // 2. GET api/v1/orders/my - Danh sách đơn hàng của user hiện tại
   @Get('my')
   @HttpCode(HttpStatus.OK)

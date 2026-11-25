@@ -1,4 +1,5 @@
 import { Annotation } from "@langchain/langgraph";
+import type { PendingOrder } from "../graph/order-confirmation.js";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { GenerativeUIWidget, HeldSeatRef } from "./session.js";
 
@@ -26,6 +27,8 @@ export const MovieAgentState = Annotation.Root({
   activeWidget: latest<GenerativeUIWidget | null>(null),
   /** Lời gọi giữ ghế bị chốt chặn bỏ ở bước agent gần nhất (để báo ra SSE và đo đếm). */
   guardBlocked: latest<Array<{ seats: string[] }> | null>(null),
+  /** Đơn đang chờ khách xác nhận (thẻ ORDER_CONFIRMATION) – xem graph/order-confirmation.ts */
+  pendingOrder: latest<PendingOrder | null>(null),
 });
 
 export type MovieAgentStateType = typeof MovieAgentState.State;

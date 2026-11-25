@@ -86,7 +86,26 @@ export type AgentWidget =
         paymentUrl: string;
       };
     }
+  | {
+      type: "ORDER_CONFIRMATION";
+      title: string;
+      payload: {
+        confirmationId: string;
+        movieTitle: string | null;
+        seats: string[];
+        fnbItems: Array<{ name: string; quantity: number; subtotal: number }>;
+        voucherCode: string | null;
+        pricing: OrderPricing;
+        expiresAt: string;
+      };
+    }
   | { type: "LOGIN_REQUIRED"; title: string; payload: { message: string } };
+
+/** Nút trên thẻ xác nhận đơn – agent xử lý bằng code, không qua mô hình */
+export interface OrderAction {
+  type: "confirm_order" | "cancel_order";
+  confirmationId: string;
+}
 
 export interface AgentStateSync {
   sessionId: string;

@@ -24,6 +24,8 @@ describe('OrdersService – chống bán trùng ghế', () => {
   let seats: ISeatReservation;
   let unitOfWork: IUnitOfWork;
   let orderPaid: { publish: ReturnType<typeof vi.fn> };
+  let fnbCatalog: IFnbCatalog;
+  let voucher: IVoucherCalculator;
 
   beforeEach(() => {
     orderRepo = {
@@ -54,11 +56,57 @@ describe('OrdersService – chống bán trùng ghế', () => {
       orderRepo,
       ticketRepo,
       seats,
-      { findByIds: vi.fn() } as unknown as IFnbCatalog,
-      { calculateDiscount: vi.fn() } as unknown as IVoucherCalculator,
+      (fnbCatalog = {
+        findByIds: vi.fn().mockResolvedValue([
+          { id: '5', name: 'Combo Solo', basePrice: 65000, isActive: true },
+        ]),
+      } as unknown as IFnbCatalog),
+      (voucher = { calculateDiscount: vi.fn().mockResolvedValue(26500) } as unknown as IVoucherCalculator),
       unitOfWork,
       (orderPaid = { publish: vi.fn().mockResolvedValue(undefined) }),
     );
+  });
+
+  describe('previewOrder', () => {
+    it('tính tổng tiền như khi tạo đơn (vé + F&B - voucher) nhưng không ghi gì', async () => {
+      vi.mocked(seats.validateHolding).mockResolvedValue({
+        isValid: true,
+        subtotalTickets: 200000,
+        seats: [
+          { seatId: '1', seatTypeId: 'std', price: 100000, ticketCode: 'T1' },
+          { seatId: '2', seatTypeId: 'std', price: 100000, ticketCode: 'T2' },
+        ],
+      });
+
+      const res = await service.previewOrder('u1', {
+        showtimeId: 7,
+        seatIds: [1, 2],
+        fnbItems: [{ fnbItemId: 5, quantity: 1 }],
+        voucherCode: ' VOUCHER10 ',
+        channel: 'ONLINE_WEB',
+      } as any);
+
+      expect(res.pricing).toEqual({
+        subtotalTickets: 200000,
+        subtotalFnb: 65000,
+        discountAmount: 26500,
+        finalAmount: 238500,
+      });
+      expect(res.fnbItems).toEqual([
+        { fnbItemId: 5, name: 'Combo Solo', quantity: 1, unitPrice: 65000, subtotal: 65000 },
+      ]);
+      expect(res.voucherCode).toBe('VOUCHER10');
+      expect(vi.mocked(voucher.calculateDiscount)).toHaveBeenCalledWith(' VOUCHER10 ', 265000);
+      expect(seats.reserveForOrder).not.toHaveBeenCalled();
+      expect(orderRepo.createPending).not.toHaveBeenCalled();
+    });
+
+    it('ghế không còn được giữ => lỗi như khi tạo đơn', async () => {
+      vi.mocked(seats.validateHolding).mockResolvedValue({ isValid: false } as any);
+      await expect(
+        service.previewOrder('u1', { showtimeId: 7, seatIds: [1], channel: 'ONLINE_WEB' } as any),
+      ).rejects.toMatchObject({ errorCode: ErrorCode.SEATS_HOLD_EXPIRED_OR_INVALID });
+    });
   });
 
   describe('createOrder', () => {

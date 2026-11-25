@@ -1,7 +1,7 @@
 // `expo/fetch` hỗ trợ đọc phản hồi dạng stream (fetch mặc định của React Native thì không).
 import { fetch as expoFetch } from "expo/fetch";
 import { AGENT_URL } from "../config";
-import type { AgentEvent } from "../types/agent.types";
+import type { AgentEvent, OrderAction } from "../types/agent.types";
 import { parseSse } from "../utils/sse-parser";
 
 export class AgentHttpError extends Error {
@@ -16,6 +16,8 @@ export class AgentHttpError extends Error {
 
 export interface StreamChatParams {
   message: string;
+  /** Nút Xác nhận / Hủy trên thẻ xác nhận đơn */
+  action?: OrderAction;
   sessionId?: string;
   token?: string | null;
   signal?: AbortSignal;
@@ -50,6 +52,7 @@ export async function* streamAgentChat(
       body: JSON.stringify({
         message: params.message,
         sessionId: params.sessionId,
+        ...(params.action ? { action: params.action } : {}),
       }),
       signal: params.signal,
     });
