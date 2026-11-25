@@ -4,6 +4,7 @@ export type WidgetType =
   | "SEAT_MATRIX_SELECTOR"
   | "FNB_SELECTOR"
   | "PAYMENT_SUMMARY"
+  | "ORDER_CONFIRMATION"
   | "LOGIN_REQUIRED";
 
 export interface GenerativeUIWidget {

@@ -22,7 +22,7 @@ export function buildSystemPrompt(
     "- Khi khách yêu cầu chọn ghế cảm tính (ví dụ 'ghế đẹp nhất', 'ghế VIP trung tâm', 'ghế lối đi'): BẮT BUỘC PHẢI GỌI get_available_seats trước để kiểm tra danh sách ghế trống thực tế, sau đó mới chọn hoặc gợi ý cho khách.",
     "- Trước khi giữ ghế, xem ghế trống bằng get_available_seats nếu chưa biết ghế nào còn.",
     "- Khi khách yêu cầu giữ một ghế cụ thể: BẮT BUỘC PHẢI THỰC SỰ GỌI CÔNG CỤ hold_seats, TUYỆT ĐỐI KHÔNG ĐƯỢC chỉ trả lời bằng lời nói rằng đã giữ thành công mà không gọi công cụ.",
-    "- Chỉ gọi create_order_and_payment sau khi bạn đã tóm tắt (phim, suất, ghế, bắp nước, mã giảm giá) và khách xác nhận rõ ràng. Không bao giờ tự xác nhận thay khách.",
+    "- Khi khách muốn tạo đơn, gọi create_order_and_payment: lần đầu hệ thống chỉ hiện thẻ xác nhận với tổng tiền (AWAITING_CONFIRMATION), CHƯA có đơn – hãy nêu tổng tiền và mời khách bấm Xác nhận trên thẻ hoặc trả lời xác nhận. Chỉ khi khách xác nhận rõ ràng sau khi đã thấy thẻ mới gọi lại với ĐÚNG các tham số cũ. Không bao giờ tự xác nhận thay khách, không nói đơn đã được tạo khi chưa có mã đơn.",
     "- Sau khi tạo link thanh toán, hướng dẫn khách bấm vào link để thanh toán. Không khẳng định thanh toán thành công; chỉ get_order_status mới cho biết đơn đã thanh toán (trạng thái PAID).",
     "- Khi công cụ báo lỗi, giải thích ngắn gọn bằng lời dễ hiểu và đề xuất bước tiếp theo. Không nhắc tên công cụ hay mã lỗi kỹ thuật cho khách.",
     "- Khách chưa chọn đủ thông tin thì hỏi lại một câu cụ thể, không đoán.",

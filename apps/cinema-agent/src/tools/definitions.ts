@@ -450,7 +450,7 @@ export const releaseSeats: ToolDefinition = {
 export const createOrderAndPayment: ToolDefinition = {
   name: "create_order_and_payment",
   description:
-    "Tạo đơn hàng từ ghế ĐÃ GIỮ (kèm bắp nước/voucher nếu có) và tạo link thanh toán VNPay. Chỉ gọi sau khi khách xác nhận rõ ràng tổng tiền. Khách phải tự bấm link để thanh toán; kết quả cuối cùng do hệ thống xác nhận.",
+    "Tạo đơn hàng từ ghế ĐÃ GIỮ (kèm bắp nước/voucher nếu có) và link thanh toán VNPay. Gọi khi khách muốn tạo đơn: lần gọi đầu hệ thống CHƯA tạo đơn mà hiện thẻ xác nhận với tổng tiền do hệ thống tính (status AWAITING_CONFIRMATION). Đơn chỉ được tạo khi khách bấm nút Xác nhận trên thẻ, hoặc khi khách trả lời xác nhận rõ ràng SAU khi đã thấy thẻ – lúc đó gọi lại với ĐÚNG các tham số cũ. Khách phải tự bấm link để thanh toán; kết quả cuối cùng do hệ thống xác nhận.",
   requiresAuth: true,
   schema: z.object({
     showtimeId: z.number().int().min(1, "showtimeId phải từ 1 trở lên"),
@@ -537,6 +537,55 @@ export const createOrderAndPayment: ToolDefinition = {
     }
   },
 };
+
+/**
+ * Xem trước đơn (KHÔNG tạo đơn, không gắn ghế): backend tính tổng tiền đúng như khi tạo đơn
+ * (giá vé snapshot, bắp nước, voucher) – dữ liệu cho thẻ xác nhận ORDER_CONFIRMATION.
+ */
+export async function previewOrder(
+  input: z.infer<typeof createOrderAndPayment.schema>,
+  ctx: ToolContext,
+): Promise<ToolResult> {
+  if (!ctx.token) return AUTH_REQUIRED;
+  try {
+    const resolved = await seatsFromLabels(ctx, input.showtimeId, input.seatLabels, false);
+    if (resolved.error) return resolved.error;
+
+    const preview = await ctx.backend.post<{
+      pricing: {
+        subtotalTickets: number;
+        subtotalFnb: number;
+        discountAmount: number;
+        finalAmount: number;
+      };
+      fnbItems: Array<{ fnbItemId: number; name: string; quantity: number; unitPrice: number; subtotal: number }>;
+      voucherCode: string | null;
+    }>("/orders/preview", {
+      token: ctx.token,
+      body: {
+        showtimeId: input.showtimeId,
+        seatIds: resolved.seats.map((s) => s.seatId),
+        ...(input.fnbItems && input.fnbItems.length > 0 ? { fnbItems: input.fnbItems } : {}),
+        ...(input.voucherCode ? { voucherCode: input.voucherCode.trim().toUpperCase() } : {}),
+        channel: "ONLINE_WEB",
+      },
+      signal: ctx.signal,
+    });
+
+    const data = {
+      status: "AWAITING_CONFIRMATION",
+      note: "CHƯA tạo đơn. Thẻ xác nhận với tổng tiền dưới đây đã hiện cho khách. Hãy nêu tổng tiền và mời khách bấm nút Xác nhận trên thẻ hoặc trả lời xác nhận.",
+      showtimeId: input.showtimeId,
+      seats: resolved.seats.map((s) => s.seatNumber),
+      fnbItems: preview.fnbItems,
+      voucherCode: preview.voucherCode,
+      pricing: preview.pricing,
+    };
+    return { ok: true, data };
+  } catch (e) {
+    return toToolError(e);
+  }
+}
 
 export const getMyOrders: ToolDefinition = {
   name: "get_my_orders",

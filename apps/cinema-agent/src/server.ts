@@ -67,6 +67,7 @@ async function main() {
       {
         config,
         graph: graph as any,
+        backend,
         limiter,
         log: (m, e) => console.error(m, e),
       },

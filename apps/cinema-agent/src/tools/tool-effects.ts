@@ -1,5 +1,6 @@
 import type { ToolResult } from "./definitions.js";
 import type { GenerativeUIWidget, SessionPatch } from "../types/session.js";
+import type { PendingOrder } from "../graph/order-confirmation.js";
 
 type Args = Record<string, unknown>;
 type Obj = Record<string, any>;
@@ -135,4 +136,26 @@ export function effectsFor(
     default:
       return { widget: null, patch: {} };
   }
+}
+
+/** Thẻ xác nhận đơn: tổng tiền do backend tính, nút Xác nhận / Hủy gửi lại confirmationId */
+export function orderConfirmationWidget(
+  pending: PendingOrder,
+  movieTitle: string | null,
+): GenerativeUIWidget {
+  const s = pending.summary as Obj;
+  return {
+    type: "ORDER_CONFIRMATION",
+    title: "Xác nhận đơn hàng",
+    payload: {
+      confirmationId: pending.confirmationId,
+      movieTitle,
+      showtimeId: s.showtimeId,
+      seats: s.seats ?? [],
+      fnbItems: s.fnbItems ?? [],
+      voucherCode: s.voucherCode ?? null,
+      pricing: s.pricing,
+      expiresAt: pending.expiresAt,
+    },
+  };
 }

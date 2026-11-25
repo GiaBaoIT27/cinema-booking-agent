@@ -4,6 +4,8 @@ import type { AgentConfig } from "./config.js";
 import { extractBearer, readAuth } from "./lib/jwt.js";
 import type { RateLimiter } from "./lib/rate-limit.js";
 import { pipeAgentStream, type SendEvent } from "./stream/pipe-stream.js";
+import type { BackendClient } from "./lib/backend-client.js";
+import { parseOrderAction, runOrderAction } from "./graph/order-actions.js";
 
 /** Phần của Express Response mà handler cần (giúp kiểm thử không cần Express) */
 export interface ChatResponse {
@@ -26,11 +28,14 @@ export interface ChatRequest {
 export interface GraphLike {
   stream(input: unknown, options: unknown): Promise<AsyncIterable<unknown>>;
   getState(options: unknown): Promise<{ values?: Record<string, any> }>;
+  updateState?(config: unknown, values: Record<string, unknown>, asNode?: string): Promise<unknown>;
 }
 
 export interface ChatDeps {
   config: AgentConfig;
   graph: GraphLike;
+  /** Cần cho nút xác nhận đơn (tạo đơn không qua mô hình) */
+  backend?: BackendClient;
   limiter: RateLimiter;
   log?: (msg: string, err?: unknown) => void;
 }
@@ -98,7 +103,12 @@ export async function handleChat(
   const body = (
     req.body && typeof req.body === "object" ? req.body : {}
   ) as Record<string, unknown>;
-  const message = typeof body.message === "string" ? body.message.trim() : "";
+  // Nút trên thẻ xác nhận đơn: { action: { type: "confirm_order" | "cancel_order", confirmationId } }
+  const action = parseOrderAction(body.action);
+  const rawMessage = typeof body.message === "string" ? body.message.trim() : "";
+  const message =
+    rawMessage ||
+    (action?.type === "confirm_order" ? "Xác nhận đặt vé" : action ? "Hủy xác nhận đơn" : "");
   if (!message) {
     res.status(400).json({ error: "Trường message là bắt buộc." });
     return;
@@ -153,16 +163,29 @@ export async function handleChat(
   try {
     send("session", { sessionId });
 
-    const stream = await deps.graph.stream(
-      { messages: [new HumanMessage(message)] },
-      {
-        configurable: { thread_id: threadId, authToken: token },
-        streamMode: ["messages", "updates"],
+    if (action && deps.backend && deps.graph.updateState) {
+      await runOrderAction({
+        graph: deps.graph as Required<GraphLike>,
+        backend: deps.backend,
+        threadId,
+        token: token ?? undefined,
+        action,
+        messageText: message,
+        send,
         signal: abort.signal,
-        recursionLimit: RECURSION_LIMIT,
-      },
-    );
-    await pipeAgentStream(stream, send);
+      });
+    } else {
+      const stream = await deps.graph.stream(
+        { messages: [new HumanMessage(message)] },
+        {
+          configurable: { thread_id: threadId, authToken: token },
+          streamMode: ["messages", "updates"],
+          signal: abort.signal,
+          recursionLimit: RECURSION_LIMIT,
+        },
+      );
+      await pipeAgentStream(stream, send);
+    }
 
     const snapshot = await deps.graph.getState({
       configurable: { thread_id: threadId },
