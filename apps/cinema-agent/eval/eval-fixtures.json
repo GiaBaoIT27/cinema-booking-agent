@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-16T15:50:08.585Z",
+  "generatedAt": "2026-11-25T14:51:43.615Z",
   "timezone": "Asia/Ho_Chi_Minh",
-  "evalDate": "2026-11-17",
+  "evalDate": "2026-11-26",
   "password": "Eval123@Password",
   "users": [
     {
@@ -18,10 +18,10 @@
   "showtimes": [
     {
       "key": "mai-morning",
-      "id": "694",
+      "id": "709",
       "movieId": "1",
       "movieTitle": "Mai",
-      "startTime": "2026-11-17T03:00:00.000Z",
+      "startTime": "2026-11-26T03:00:00.000Z",
       "localStart": "10:00",
       "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
@@ -29,10 +29,10 @@
     },
     {
       "key": "quatmo-afternoon",
-      "id": "695",
+      "id": "710",
       "movieId": "3",
       "movieTitle": "Quật Mộ Trùng Phùng",
-      "startTime": "2026-11-17T07:00:00.000Z",
+      "startTime": "2026-11-26T07:00:00.000Z",
       "localStart": "14:00",
       "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
@@ -40,10 +40,10 @@
     },
     {
       "key": "mai-evening",
-      "id": "696",
+      "id": "711",
       "movieId": "1",
       "movieTitle": "Mai",
-      "startTime": "2026-11-17T12:30:00.000Z",
+      "startTime": "2026-11-26T12:30:00.000Z",
       "localStart": "19:30",
       "auditoriumId": "7",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-01",
@@ -51,10 +51,10 @@
     },
     {
       "key": "dune-afternoon",
-      "id": "697",
+      "id": "712",
       "movieId": "2",
       "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-      "startTime": "2026-11-17T07:00:00.000Z",
+      "startTime": "2026-11-26T07:00:00.000Z",
       "localStart": "14:00",
       "auditoriumId": "8",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-02",
@@ -62,10 +62,10 @@
     },
     {
       "key": "dune-evening",
-      "id": "698",
+      "id": "713",
       "movieId": "2",
       "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-      "startTime": "2026-11-17T13:00:00.000Z",
+      "startTime": "2026-11-26T13:00:00.000Z",
       "localStart": "20:00",
       "auditoriumId": "8",
       "auditoriumCode": "CPX-HCM-BENNGHE-HALL-02",

@@ -1081,6 +1081,9 @@ export const EVAL_DATASET: EvalCase[] = [
       "Giữ ghế H7 suất 10:00 ngày mai phim Mai",
       "Lấy thêm cho tôi 1 phần Combo Solo nữa",
       "Tôi xác nhận thông tin đơn hàng vé và combo, hãy tạo đơn thanh toán tất cả giúp tôi",
+      // Từ khi có xác nhận bằng code: lượt trên chỉ hiện thẻ xác nhận (khách chưa thấy tổng
+      // tiền do hệ thống tính); đơn được tạo khi khách xác nhận SAU khi đã thấy thẻ.
+      "Đúng rồi, tôi xác nhận đặt vé",
     ],
     expectTools: ["hold_seats", "get_fnb_items", "create_order_and_payment"],
     expectState: [
