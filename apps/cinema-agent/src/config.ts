@@ -3,6 +3,8 @@ export interface AgentConfig {
   backendApiUrl: string;
   googleApiKey: string;
   model: string;
+  /** Model Gemini dự phòng khi model chính lỗi (để trống = không dùng). */
+  fallbackModel?: string;
   corsOrigins: string[];
   jwtSecret?: string;
   /** Token gửi kèm mọi request tới backend để không bị rate limit theo IP. */
@@ -42,6 +44,11 @@ export function loadConfig(env: EnvLike): AgentConfig {
     backendApiUrl,
     googleApiKey,
     model: env.GEMINI_MODEL?.trim() || "gemini-2.5-flash",
+    fallbackModel:
+      env.GEMINI_FALLBACK_MODEL?.trim() &&
+      env.GEMINI_FALLBACK_MODEL.trim() !== env.GEMINI_MODEL?.trim()
+        ? env.GEMINI_FALLBACK_MODEL.trim()
+        : undefined,
     corsOrigins: (env.CORS_ORIGINS ?? "http://localhost:3001")
       .split(",")
       .map((s) => s.trim())
