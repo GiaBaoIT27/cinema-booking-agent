@@ -11,6 +11,7 @@ import { buildAgentGraph } from "./graph/agent-graph.js";
 import type { ModelLike } from "./graph/nodes.js";
 import { handleChat } from "./chat-handler.js";
 import { installProcessGuard } from "./lib/process-guard.js";
+import { withModelFallback } from "./lib/model-fallback.js";
 
 const LLM_TEMPERATURE = 0.2;
 
@@ -23,13 +24,20 @@ async function main() {
     internalToken: config.backendInternalToken,
   });
 
-  const llm = new ChatGoogleGenerativeAI({
-    model: config.model,
-    apiKey: config.googleApiKey,
-    temperature: LLM_TEMPERATURE,
-    maxRetries: 2,
-  });
-  const model = llm.bindTools(createLangchainTools(backend));
+  const tools = createLangchainTools(backend);
+  const gemini = (name: string, maxRetries: number) =>
+    new ChatGoogleGenerativeAI({
+      model: name,
+      apiKey: config.googleApiKey,
+      temperature: LLM_TEMPERATURE,
+      maxRetries,
+    }).bindTools(tools);
+  // Có model dự phòng: model chính chỉ thử lại 1 lần rồi chuyển sang dự phòng ngay
+  // (hết quota ngày thì thử lại cũng vô ích, khách phải chờ lâu).
+  const model = withModelFallback<any, any>(
+    gemini(config.model, config.fallbackModel ? 1 : 2),
+    config.fallbackModel ? gemini(config.fallbackModel, 2) : undefined,
+  );
 
   const { checkpointer, kind } = await createCheckpointer(config.databaseUrl);
   const graph = buildAgentGraph({
@@ -56,6 +64,7 @@ async function main() {
       status: "ok",
       service: "cinema-agent-service",
       model: config.model,
+      fallbackModel: config.fallbackModel ?? null,
       temperature: LLM_TEMPERATURE,
       sessionStore: kind,
       seatChoiceGuard: config.seatChoiceGuard,
@@ -82,7 +91,7 @@ async function main() {
 
   app.listen(config.port, () => {
     console.log(
-      `Cinema AI Agent chạy tại cổng ${config.port} (model ${config.model}, lưu phiên: ${kind})`,
+      `Cinema AI Agent chạy tại cổng ${config.port} (model ${config.model}${config.fallbackModel ? `, dự phòng ${config.fallbackModel}` : ""}, lưu phiên: ${kind})`,
     );
     console.log(
       `SSE: POST http://localhost:${config.port}/api/v1/agent/chat/stream`,
