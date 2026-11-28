@@ -61,8 +61,11 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('user:create')
-  createInternalUser(@Body() dto: CreateInternalUserDto) {
-    return this.usersService.createInternalUser(dto);
+  createInternalUser(
+    @Body() dto: CreateInternalUserDto,
+    @CurrentUser() caller: { roles?: string[] },
+  ) {
+    return this.usersService.createInternalUser(dto, caller);
   }
 
   // 5. GET /api/v1/users/{id}

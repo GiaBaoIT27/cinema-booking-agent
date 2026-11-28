@@ -15,6 +15,10 @@ import { QueryUsersDto } from '../dto/query-users.dto.js';
 import { CreateInternalUserDto } from '../dto/create-internal-user.dto.js';
 import { AssignRoleDto } from '../dto/assign-role.dto.js';
 import { UpdateStatusDto } from '../dto/update-status.dto.js';
+import {
+  canGrantRole,
+  canManageUser,
+} from '../../domain/rules/role-hierarchy.rules.js';
 
 import { BusinessException } from '#src/common/exceptions/business.exception.js';
 import { ErrorCode } from '#src/common/constants/error-codes.enum.js';
@@ -213,7 +217,10 @@ export class UsersService {
   }
 
   // POST /api/v1/users (Khởi tạo tài khoản Nội bộ - dùng Transaction)
-  async createInternalUser(dto: CreateInternalUserDto): Promise<any> {
+  async createInternalUser(
+    dto: CreateInternalUserDto,
+    caller?: { roles?: string[] },
+  ): Promise<any> {
     const { fullName, email, phoneNumber, password, roleId, cineplexId } = dto;
 
     const existingEmail = await this.userRepository.findByEmail(email);
@@ -248,6 +255,13 @@ export class UsersService {
         );
       }
       const role = roles[0];
+
+      if (!canGrantRole(caller?.roles, role.code)) {
+        throw new BusinessException(
+          ErrorCode.CANNOT_MODIFY_SUPER_ADMIN_ROLE,
+          'Chỉ quản trị viên tối cao mới được tạo tài khoản có vai trò SUPER_ADMIN.',
+        );
+      }
 
       const internalRoleCodes = ['CINEMA_STAFF', 'CINEMA_MANAGER'];
       if (internalRoleCodes.includes(role.code) && !cineplexId) {
@@ -383,10 +397,13 @@ export class UsersService {
       [targetUserIdStr],
     );
 
-    const hasSuperAdmin = currentRoles.some(
-      (r: any) => r.code === 'SUPER_ADMIN',
-    );
-    if (hasSuperAdmin && caller.role !== 'SUPER_ADMIN') {
+    // JwtStrategy gắn `roles: string[]` (không có `role`) — trước đây so `caller.role` nên luôn sai
+    if (
+      !canManageUser(
+        caller?.roles,
+        currentRoles.map((r: any) => r.code),
+      )
+    ) {
       throw new BusinessException(
         ErrorCode.CANNOT_MODIFY_SUPER_ADMIN_ROLE,
         'Bạn không có quyền hạ cấp hoặc thay đổi vai trò của tài khoản quản trị tối cao.',
@@ -409,6 +426,13 @@ export class UsersService {
         );
       }
       const newRole = roles[0];
+
+      if (!canGrantRole(caller?.roles, newRole.code)) {
+        throw new BusinessException(
+          ErrorCode.CANNOT_MODIFY_SUPER_ADMIN_ROLE,
+          'Chỉ quản trị viên tối cao mới được cấp vai trò SUPER_ADMIN.',
+        );
+      }
 
       if (
         ['CINEMA_STAFF', 'CINEMA_MANAGER'].includes(newRole.code) &&
@@ -471,6 +495,22 @@ export class UsersService {
       throw new BusinessException(
         ErrorCode.USER_NOT_FOUND,
         'Tài khoản người dùng cần thay đổi trạng thái không tồn tại trên hệ thống.',
+      );
+    }
+
+    const targetRoles: { code: string }[] = await this.dataSource.query(
+      'SELECT r.code FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = $1',
+      [targetUserIdStr],
+    );
+    if (
+      !canManageUser(
+        caller?.roles,
+        targetRoles.map((r) => r.code),
+      )
+    ) {
+      throw new BusinessException(
+        ErrorCode.CANNOT_MODIFY_SUPER_ADMIN_ROLE,
+        'Bạn không có quyền thay đổi trạng thái tài khoản quản trị tối cao.',
       );
     }
 
