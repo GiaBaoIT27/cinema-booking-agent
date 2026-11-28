@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LogOut, User as UserIcon, Search } from "lucide-react";
+import { LayoutDashboard, LogOut, User as UserIcon, Search } from "lucide-react";
+import { canAccessAdmin } from "@/features/admin/utils/admin-access";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useMounted } from "@/hooks/use-mounted";
 
@@ -105,6 +106,17 @@ export function HeaderActions() {
                     <UserIcon size={16} />
                     Thông tin cá nhân
                   </Link>
+
+                  {canAccessAdmin(user) && (
+                    <Link
+                      href="/admin/movies"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-[#D1D5DB] hover:bg-[#1F2937] hover:text-white transition"
+                    >
+                      <LayoutDashboard size={16} />
+                      Trang quản trị
+                    </Link>
+                  )}
 
                   <button
                     type="button"

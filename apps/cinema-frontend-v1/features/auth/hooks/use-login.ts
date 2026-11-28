@@ -6,6 +6,7 @@ import { authService } from "../services/auth.service";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { ApiError } from "@/lib/api-client";
 import type { LoginInput } from "../schemas/auth.schema";
+import { resolvePostLoginRedirect } from "@/features/admin/utils/admin-access";
 
 export function useLogin() {
   const router = useRouter();
@@ -33,8 +34,11 @@ export function useLogin() {
         data.remember,
       );
 
-      // Chuyển hướng người dùng (nếu có callback URL từ query params hoặc về trang chủ)
-      const redirectUrl = searchParams.get("redirect") || "/";
+      // Chuyển hướng: callback URL trong query params, nếu không thì admin → /admin/movies, khách → trang chủ
+      const redirectUrl = resolvePostLoginRedirect(
+        searchParams.get("redirect"),
+        response.user,
+      );
       router.push(redirectUrl);
       router.refresh();
 
