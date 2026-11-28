@@ -70,14 +70,26 @@ export function AdminMovieForm({ movieId }: Props) {
           setInitialGenres(form.genreIds);
           setStatus(movie.status);
           // Nhà phát hành hiện tại có thể đã bị tạm ngưng → vẫn hiện để không mất giá trị
-          if (movie.distributor && !options.some((d) => d.id === String(movie.distributor!.id))) {
-            options = [{ id: String(movie.distributor.id), name: `${movie.distributor.name} (ngưng hoạt động)` }, ...options];
+          if (
+            movie.distributor &&
+            !options.some((d) => d.id === String(movie.distributor!.id))
+          ) {
+            options = [
+              {
+                id: String(movie.distributor.id),
+                name: `${movie.distributor.name} (ngưng hoạt động)`,
+              },
+              ...options,
+            ];
           }
         }
         setDistributors(options);
       })
       .catch((err: unknown) => {
-        if (!cancelled) setFormError(err instanceof Error ? err.message : "Không tải được dữ liệu");
+        if (!cancelled)
+          setFormError(
+            err instanceof Error ? err.message : "Không tải được dữ liệu",
+          );
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -87,7 +99,10 @@ export function AdminMovieForm({ movieId }: Props) {
     };
   }, [movieId]);
 
-  const set = <K extends keyof MovieFormValues>(key: K, value: MovieFormValues[K]) => {
+  const set = <K extends keyof MovieFormValues>(
+    key: K,
+    value: MovieFormValues[K],
+  ) => {
     setValues((v) => ({ ...v, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
@@ -137,10 +152,17 @@ export function AdminMovieForm({ movieId }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mx-auto max-w-5xl space-y-6">
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      className="mx-auto max-w-5xl space-y-6"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href="/admin/movies" className="mb-1 flex items-center gap-1 text-xs text-[#9CA3AF] hover:text-white">
+          <Link
+            href="/admin/movies"
+            className="mb-1 flex items-center gap-1 text-xs text-[#9CA3AF] hover:text-white"
+          >
             <ArrowLeft size={12} /> Danh sách phim
           </Link>
           <h1 className="flex items-center gap-3 font-heading text-2xl font-bold">
@@ -149,7 +171,10 @@ export function AdminMovieForm({ movieId }: Props) {
           </h1>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/movies" className="rounded-lg border border-[#374151] px-4 py-2 text-sm hover:bg-[#1F2937]">
+          <Link
+            href="/admin/movies"
+            className="rounded-lg border border-[#374151] px-4 py-2 text-sm hover:bg-[#1F2937]"
+          >
             Hủy
           </Link>
           <button
@@ -167,40 +192,113 @@ export function AdminMovieForm({ movieId }: Props) {
       <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
         <div className="space-y-6">
           <section className="space-y-4 rounded-xl border border-[#1F2937] bg-[#0B0F19]/60 p-5">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#9CA3AF]">Thông tin chính</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#9CA3AF]">
+              Thông tin chính
+            </h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tên phim" required error={errors.title} className="sm:col-span-2">
-                <input className={inputClass(errors.title)} value={values.title} onChange={(e) => set("title", e.target.value)} />
+              <Field
+                label="Tên phim"
+                required
+                error={errors.title}
+                className="sm:col-span-2"
+              >
+                <input
+                  className={inputClass(errors.title)}
+                  value={values.title}
+                  onChange={(e) => set("title", e.target.value)}
+                />
               </Field>
               <Field label="Tên gốc" error={errors.originalTitle}>
-                <input className={inputClass(errors.originalTitle)} value={values.originalTitle} onChange={(e) => set("originalTitle", e.target.value)} />
+                <input
+                  className={inputClass(errors.originalTitle)}
+                  value={values.originalTitle}
+                  onChange={(e) => set("originalTitle", e.target.value)}
+                />
               </Field>
-              <Field label="Nhà phát hành" required error={errors.distributorId}>
-                <select className={inputClass(errors.distributorId)} value={values.distributorId} onChange={(e) => set("distributorId", e.target.value)}>
+              <Field
+                label="Nhà phát hành"
+                required
+                error={errors.distributorId}
+              >
+                <select
+                  className={inputClass(errors.distributorId)}
+                  value={values.distributorId}
+                  onChange={(e) => set("distributorId", e.target.value)}
+                >
                   <option value="">— Chọn —</option>
                   {distributors.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
                   ))}
                 </select>
               </Field>
-              <Field label="Thời lượng (phút)" required error={errors.durationMinutes}>
-                <input type="number" min={1} className={inputClass(errors.durationMinutes)} value={values.durationMinutes} onChange={(e) => set("durationMinutes", e.target.value)} />
+              <Field
+                label="Thời lượng (phút)"
+                required
+                error={errors.durationMinutes}
+              >
+                <input
+                  type="number"
+                  min={1}
+                  className={inputClass(errors.durationMinutes)}
+                  value={values.durationMinutes}
+                  onChange={(e) => set("durationMinutes", e.target.value)}
+                />
               </Field>
-              <Field label="Phân loại độ tuổi" required error={errors.ageRating}>
-                <select className={inputClass(errors.ageRating)} value={values.ageRating} onChange={(e) => set("ageRating", e.target.value as MovieFormValues["ageRating"])}>
+              <Field
+                label="Phân loại độ tuổi"
+                required
+                error={errors.ageRating}
+              >
+                <select
+                  className={inputClass(errors.ageRating)}
+                  value={values.ageRating}
+                  onChange={(e) =>
+                    set(
+                      "ageRating",
+                      e.target.value as MovieFormValues["ageRating"],
+                    )
+                  }
+                >
                   {AGE_RATINGS.map((a) => (
-                    <option key={a} value={a}>{a}</option>
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
                   ))}
                 </select>
               </Field>
-              <Field label="Ngày khởi chiếu" required error={errors.releaseDate}>
-                <input type="date" className={inputClass(errors.releaseDate)} value={values.releaseDate} onChange={(e) => set("releaseDate", e.target.value)} />
+              <Field
+                label="Ngày khởi chiếu"
+                required
+                error={errors.releaseDate}
+              >
+                <input
+                  type="date"
+                  className={inputClass(errors.releaseDate)}
+                  value={values.releaseDate}
+                  onChange={(e) => set("releaseDate", e.target.value)}
+                />
               </Field>
               <Field label="Ngày kết thúc" required error={errors.endDate}>
-                <input type="date" className={inputClass(errors.endDate)} value={values.endDate} onChange={(e) => set("endDate", e.target.value)} />
+                <input
+                  type="date"
+                  className={inputClass(errors.endDate)}
+                  value={values.endDate}
+                  onChange={(e) => set("endDate", e.target.value)}
+                />
               </Field>
-              <Field label="Tỷ lệ chia doanh thu cho NPH (%)" required error={errors.revenueShareRatio}>
-                <input inputMode="decimal" className={inputClass(errors.revenueShareRatio)} value={values.revenueShareRatio} onChange={(e) => set("revenueShareRatio", e.target.value)} />
+              <Field
+                label="Tỷ lệ chia doanh thu cho NPH (%)"
+                required
+                error={errors.revenueShareRatio}
+              >
+                <input
+                  inputMode="decimal"
+                  className={inputClass(errors.revenueShareRatio)}
+                  value={values.revenueShareRatio}
+                  onChange={(e) => set("revenueShareRatio", e.target.value)}
+                />
               </Field>
             </div>
 
@@ -229,26 +327,52 @@ export function AdminMovieForm({ movieId }: Props) {
                   );
                 })}
               </div>
-              {errors.genreIds && <span className="block text-xs text-red-500">{errors.genreIds}</span>}
+              {errors.genreIds && (
+                <span className="block text-xs text-red-500">
+                  {errors.genreIds}
+                </span>
+              )}
             </div>
           </section>
 
           <section className="space-y-4 rounded-xl border border-[#1F2937] bg-[#0B0F19]/60 p-5">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#9CA3AF]">Chi tiết</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#9CA3AF]">
+              Chi tiết
+            </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Đạo diễn" error={errors.director}>
-                <input className={inputClass(errors.director)} value={values.director} onChange={(e) => set("director", e.target.value)} />
+                <input
+                  className={inputClass(errors.director)}
+                  value={values.director}
+                  onChange={(e) => set("director", e.target.value)}
+                />
               </Field>
               <Field label="Quốc gia" error={errors.country}>
-                <input className={inputClass(errors.country)} value={values.country} onChange={(e) => set("country", e.target.value)} />
+                <input
+                  className={inputClass(errors.country)}
+                  value={values.country}
+                  onChange={(e) => set("country", e.target.value)}
+                />
               </Field>
               <Field label="Diễn viên" error={errors.cast}>
-                <input className={inputClass(errors.cast)} value={values.cast} onChange={(e) => set("cast", e.target.value)} />
+                <input
+                  className={inputClass(errors.cast)}
+                  value={values.cast}
+                  onChange={(e) => set("cast", e.target.value)}
+                />
               </Field>
               <Field label="Ngôn ngữ gốc" error={errors.originalLanguage}>
-                <input className={inputClass(errors.originalLanguage)} value={values.originalLanguage} onChange={(e) => set("originalLanguage", e.target.value)} />
+                <input
+                  className={inputClass(errors.originalLanguage)}
+                  value={values.originalLanguage}
+                  onChange={(e) => set("originalLanguage", e.target.value)}
+                />
               </Field>
-              <Field label="Mô tả" error={errors.description} className="sm:col-span-2">
+              <Field
+                label="Mô tả"
+                error={errors.description}
+                className="sm:col-span-2"
+              >
                 <textarea
                   rows={4}
                   className={`${inputClass(errors.description)} h-auto py-2`}
@@ -261,23 +385,44 @@ export function AdminMovieForm({ movieId }: Props) {
         </div>
 
         <section className="space-y-4 rounded-xl border border-[#1F2937] bg-[#0B0F19]/60 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-[#9CA3AF]">Hình ảnh & trailer</h2>
-          <div className="flex aspect-[2/3] items-center justify-center overflow-hidden rounded-lg bg-[#1F2937] text-xs text-[#6B7280]">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            Hình ảnh & trailer
+          </h2>
+          <div className="flex aspect-2/3 items-center justify-center overflow-hidden rounded-lg bg-[#1F2937] text-xs text-[#6B7280]">
             {values.posterUrl && !errors.posterUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- xem trước URL bất kỳ do admin nhập
-              <img src={values.posterUrl} alt="Poster" className="h-full w-full object-cover" />
+              <img
+                src={values.posterUrl}
+                alt="Poster"
+                className="h-full w-full object-cover"
+              />
             ) : (
               "Chưa có poster"
             )}
           </div>
           <Field label="URL poster" error={errors.posterUrl}>
-            <input className={inputClass(errors.posterUrl)} placeholder="https://..." value={values.posterUrl} onChange={(e) => set("posterUrl", e.target.value)} />
+            <input
+              className={inputClass(errors.posterUrl)}
+              placeholder="https://..."
+              value={values.posterUrl}
+              onChange={(e) => set("posterUrl", e.target.value)}
+            />
           </Field>
           <Field label="URL banner" error={errors.bannerUrl}>
-            <input className={inputClass(errors.bannerUrl)} placeholder="https://..." value={values.bannerUrl} onChange={(e) => set("bannerUrl", e.target.value)} />
+            <input
+              className={inputClass(errors.bannerUrl)}
+              placeholder="https://..."
+              value={values.bannerUrl}
+              onChange={(e) => set("bannerUrl", e.target.value)}
+            />
           </Field>
           <Field label="URL trailer" error={errors.trailerUrl}>
-            <input className={inputClass(errors.trailerUrl)} placeholder="https://youtube.com/..." value={values.trailerUrl} onChange={(e) => set("trailerUrl", e.target.value)} />
+            <input
+              className={inputClass(errors.trailerUrl)}
+              placeholder="https://youtube.com/..."
+              value={values.trailerUrl}
+              onChange={(e) => set("trailerUrl", e.target.value)}
+            />
           </Field>
         </section>
       </div>

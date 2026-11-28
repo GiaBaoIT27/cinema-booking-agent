@@ -66,7 +66,7 @@ export function AdminCineplexPage() {
       .catch(() => setProvinces([]));
   }, []);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch, version } =
+  const { items, totalPages, isLoading, error, refetch, version } =
     usePaged<AdminCineplex>([search, status, provinceId, page].join("|"), () =>
       adminCineplexService.list({
         page,
@@ -96,7 +96,7 @@ export function AdminCineplexPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Rạp chiếu" subtitle={`${totalItems} cụm rạp`} />
+      <PageHeader title="Rạp chiếu" />
 
       <StatCards
         items={[
