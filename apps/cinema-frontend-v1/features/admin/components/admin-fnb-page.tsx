@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { CheckCircle2, Package, PauseCircle, Pencil, Plus, Popcorn } from "lucide-react";
+import { countOf, useStats } from "../hooks/use-stats";
 import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { usePaged } from "../hooks/use-paged";
@@ -36,6 +37,7 @@ import {
   primaryBtn,
   secondaryBtn,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 10;
@@ -53,7 +55,7 @@ export function AdminFnbPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "error" | "success"; text: string } | null>(null);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch } = usePaged<AdminFnbItem>(
+  const { items, totalItems, totalPages, isLoading, error, refetch, version } = usePaged<AdminFnbItem>(
     [keyword, category, active, page].join("|"),
     () =>
       adminFnbService.list({
@@ -79,9 +81,34 @@ export function AdminFnbPage() {
     }
   };
 
+  const stat = useStats(
+    {
+      all: () => countOf("/fnb-items"),
+      on: () => countOf("/fnb-items", { isActive: true }),
+      off: () => countOf("/fnb-items", { isActive: false }),
+      combo: () => countOf("/fnb-items", { type: "COMBO" }),
+    },
+    version,
+  );
+  const quick = (next: { active?: "" | "true" | "false"; category?: string }) => () => {
+    setPage(1);
+    setKeyword("");
+    setActive(next.active ?? "");
+    setCategory(next.category ?? "");
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader title="Bắp nước" subtitle={`${totalItems} món`} />
+
+      <StatCards
+        items={[
+          { label: "Tổng số món", value: stat("all"), tone: "red", icon: Popcorn, onClick: quick({}), active: !active && !category && !keyword },
+          { label: "Đang bán", value: stat("on"), tone: "green", icon: CheckCircle2, onClick: quick({ active: "true" }), active: active === "true" && !category },
+          { label: "Ngừng bán", value: stat("off"), tone: "gray", icon: PauseCircle, onClick: quick({ active: "false" }), active: active === "false" && !category },
+          { label: "Combo", value: stat("combo"), tone: "violet", icon: Package, onClick: quick({ category: "COMBO" }), active: category === "COMBO" && !active },
+        ]}
+      />
 
       <Toolbar
         actions={

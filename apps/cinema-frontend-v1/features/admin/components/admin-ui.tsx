@@ -227,3 +227,69 @@ export function ClearFilters({ show, onClear }: { show: boolean; onClear: () => 
 
 export const toolbarBtn =
   "flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#EF4444] px-3 text-sm font-medium hover:bg-[#DC2626] disabled:opacity-60";
+
+/* ───────────── Thẻ thống kê ───────────── */
+
+export type StatTone = "red" | "green" | "amber" | "blue" | "gray" | "violet";
+
+const STAT_TONE: Record<StatTone, { bar: string; icon: string; ring: string }> = {
+  red: { bar: "bg-[#EF4444]", icon: "bg-[#EF4444]/15 text-[#F87171]", ring: "ring-[#EF4444]/60" },
+  green: { bar: "bg-emerald-500", icon: "bg-emerald-500/15 text-emerald-300", ring: "ring-emerald-500/60" },
+  amber: { bar: "bg-amber-500", icon: "bg-amber-500/15 text-amber-300", ring: "ring-amber-500/60" },
+  blue: { bar: "bg-sky-500", icon: "bg-sky-500/15 text-sky-300", ring: "ring-sky-500/60" },
+  gray: { bar: "bg-gray-500", icon: "bg-gray-500/20 text-gray-300", ring: "ring-gray-500/60" },
+  violet: { bar: "bg-violet-500", icon: "bg-violet-500/15 text-violet-300", ring: "ring-violet-500/60" },
+};
+
+export interface StatItem {
+  label: string;
+  /** undefined = đang tải, null = lỗi */
+  value: number | string | null | undefined;
+  tone: StatTone;
+  icon: React.ComponentType<{ size?: number }>;
+  hint?: string;
+  /** Bấm thẻ để lọc nhanh; `active` khi bộ lọc đang trùng thẻ */
+  onClick?: () => void;
+  active?: boolean;
+}
+
+const fmtStat = (v: StatItem["value"]) =>
+  v === undefined ? "…" : v === null ? "—" : typeof v === "number" ? v.toLocaleString("vi-VN") : v;
+
+export function StatCards({ items }: { items: StatItem[] }) {
+  return (
+    <div className={`grid grid-cols-2 gap-3 ${items.length >= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+      {items.map((s) => {
+        const t = STAT_TONE[s.tone];
+        const Icon = s.icon;
+        const body = (
+          <>
+            <span className={`absolute inset-y-0 left-0 w-1 ${t.bar}`} />
+            <div className="min-w-0">
+              <p className="truncate text-xs text-[#9CA3AF]">{s.label}</p>
+              <p className={`mt-1 font-heading text-2xl font-bold tabular-nums ${s.value === undefined ? "animate-pulse text-[#4B5563]" : ""}`}>
+                {fmtStat(s.value)}
+              </p>
+              {s.hint && <p className="mt-0.5 truncate text-[11px] text-[#6B7280]">{s.hint}</p>}
+            </div>
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${t.icon}`}>
+              <Icon size={18} />
+            </span>
+          </>
+        );
+        const cls = `relative flex items-start justify-between gap-3 overflow-hidden rounded-xl border border-[#1F2937] bg-[#0B0F19]/70 py-3 pl-5 pr-4 text-left transition ${
+          s.active ? `ring-1 ${t.ring}` : ""
+        }`;
+        return s.onClick ? (
+          <button key={s.label} type="button" onClick={s.onClick} aria-pressed={s.active} className={`${cls} hover:border-[#374151] hover:bg-[#111827]`}>
+            {body}
+          </button>
+        ) : (
+          <div key={s.label} className={cls}>
+            {body}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

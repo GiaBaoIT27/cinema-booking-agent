@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Ban, Building2, CheckCircle2, Pencil, Plus, Wrench } from "lucide-react";
+import { countOf, useStats } from "../hooks/use-stats";
 import { ApiError } from "@/lib/api-client";
 import { usePaged } from "../hooks/use-paged";
 import type { Option } from "../services/admin-catalog.service";
@@ -32,6 +33,7 @@ import {
   primaryBtn,
   secondaryBtn,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 10;
@@ -64,7 +66,7 @@ export function AdminCineplexPage() {
       .catch(() => setProvinces([]));
   }, []);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch } =
+  const { items, totalItems, totalPages, isLoading, error, refetch, version } =
     usePaged<AdminCineplex>([search, status, provinceId, page].join("|"), () =>
       adminCineplexService.list({
         page,
@@ -78,9 +80,32 @@ export function AdminCineplexPage() {
   const provinceName = (id: string | number) =>
     provinces.find((p) => p.id === String(id))?.name ?? "";
 
+  const stat = useStats(
+    {
+      ALL: () => countOf("/cineplexes", { status: "ALL" }),
+      ACTIVE: () => countOf("/cineplexes", { status: "ACTIVE" }),
+      MAINTENANCE: () => countOf("/cineplexes", { status: "MAINTENANCE" }),
+      CLOSED: () => countOf("/cineplexes", { status: "CLOSED" }),
+    },
+    version,
+  );
+  const pick = (s: string) => () => {
+    setPage(1);
+    setStatus(s);
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader title="Rạp chiếu" subtitle={`${totalItems} cụm rạp`} />
+
+      <StatCards
+        items={[
+          { label: "Tổng cụm rạp", value: stat("ALL"), tone: "red", icon: Building2, onClick: pick("ALL"), active: status === "ALL" },
+          { label: "Đang hoạt động", value: stat("ACTIVE"), tone: "green", icon: CheckCircle2, onClick: pick("ACTIVE"), active: status === "ACTIVE" },
+          { label: "Bảo trì", value: stat("MAINTENANCE"), tone: "amber", icon: Wrench, onClick: pick("MAINTENANCE"), active: status === "MAINTENANCE" },
+          { label: "Đóng cửa", value: stat("CLOSED"), tone: "gray", icon: Ban, onClick: pick("CLOSED"), active: status === "CLOSED" },
+        ]}
+      />
 
       <Toolbar
         actions={

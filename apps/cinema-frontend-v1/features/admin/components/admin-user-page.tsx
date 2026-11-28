@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UserPlus } from "lucide-react";
+import { MailWarning, UserCheck, UserPlus, UserX, Users } from "lucide-react";
+import { countOf, useStats } from "../hooks/use-stats";
 import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { usePaged } from "../hooks/use-paged";
@@ -41,6 +42,7 @@ import {
   primaryBtn,
   secondaryBtn,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 10;
@@ -67,14 +69,38 @@ export function AdminUserPage() {
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "success"; text: string } | null>(null);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch } = usePaged<AdminUserListItem>(
+  const { items, totalItems, totalPages, isLoading, error, refetch, version } = usePaged<AdminUserListItem>(
     [keyword, status, page].join("|"),
     () => adminUserService.list({ page, limit: PAGE_SIZE, keyword: keyword || undefined, status: status || undefined }),
   );
 
+  const stat = useStats(
+    {
+      all: () => countOf("/users"),
+      ACTIVE: () => countOf("/users", { status: "ACTIVE" }),
+      UNVERIFIED: () => countOf("/users", { status: "UNVERIFIED" }),
+      BLOCKED: () => countOf("/users", { status: "BLOCKED" }),
+    },
+    version,
+  );
+  const pick = (s: string) => () => {
+    setPage(1);
+    setKeyword("");
+    setStatus(s);
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader title="Người dùng" subtitle={`${totalItems} tài khoản`} />
+
+      <StatCards
+        items={[
+          { label: "Tổng tài khoản", value: stat("all"), tone: "red", icon: Users, onClick: pick(""), active: !status && !keyword },
+          { label: "Đang hoạt động", value: stat("ACTIVE"), tone: "green", icon: UserCheck, onClick: pick("ACTIVE"), active: status === "ACTIVE" },
+          { label: "Chưa xác minh", value: stat("UNVERIFIED"), tone: "amber", icon: MailWarning, onClick: pick("UNVERIFIED"), active: status === "UNVERIFIED" },
+          { label: "Đã khóa", value: stat("BLOCKED"), tone: "gray", icon: UserX, onClick: pick("BLOCKED"), active: status === "BLOCKED" },
+        ]}
+      />
 
       <Toolbar
         actions={

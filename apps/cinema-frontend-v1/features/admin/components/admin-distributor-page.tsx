@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Film, Pencil, Plus } from "lucide-react";
+import { CheckCircle2, Film, Handshake, PauseCircle, Pencil, Plus } from "lucide-react";
+import { countOf, useStats } from "../hooks/use-stats";
 import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { usePaged } from "../hooks/use-paged";
@@ -33,6 +34,7 @@ import {
   primaryBtn,
   secondaryBtn,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 10;
@@ -53,7 +55,7 @@ export function AdminDistributorPage() {
     text: string;
   } | null>(null);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch } =
+  const { items, totalItems, totalPages, isLoading, error, refetch, version } =
     usePaged<AdminDistributor>([name, status, page].join("|"), () =>
       adminDistributorService.list({
         page,
@@ -89,11 +91,33 @@ export function AdminDistributorPage() {
     }
   };
 
+  const stat = useStats(
+    {
+      all: () => countOf("/distributors"),
+      ACTIVE: () => countOf("/distributors", { status: "ACTIVE" }),
+      SUSPENDED: () => countOf("/distributors", { status: "SUSPENDED" }),
+    },
+    version,
+  );
+  const pick = (s: string) => () => {
+    setPage(1);
+    setName("");
+    setStatus(s);
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader
         title="Nhà phát hành"
         subtitle={`${totalItems} đối tác phân phối phim`}
+      />
+
+      <StatCards
+        items={[
+          { label: "Tổng nhà phát hành", value: stat("all"), tone: "red", icon: Handshake, onClick: pick(""), active: !status && !name },
+          { label: "Đang hợp tác", value: stat("ACTIVE"), tone: "green", icon: CheckCircle2, onClick: pick("ACTIVE"), active: status === "ACTIVE" },
+          { label: "Tạm ngưng", value: stat("SUSPENDED"), tone: "gray", icon: PauseCircle, onClick: pick("SUSPENDED"), active: status === "SUSPENDED" },
+        ]}
       />
 
       <Toolbar

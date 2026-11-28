@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, TicketPercent, ToggleRight, Users, Zap } from "lucide-react";
+import { countOf, fetchAll, useStats } from "../hooks/use-stats";
 import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { usePaged } from "../hooks/use-paged";
@@ -36,6 +37,7 @@ import {
   primaryBtn,
   secondaryBtn,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 10;
@@ -71,7 +73,7 @@ export function AdminPromotionPage() {
     text: string;
   } | null>(null);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch } =
+  const { items, totalItems, totalPages, isLoading, error, refetch, version } =
     usePaged<AdminPromotion>([code, discountType, active, page].join("|"), () =>
       adminPromotionService.list({
         page,
@@ -99,9 +101,35 @@ export function AdminPromotionPage() {
     }
   };
 
+  const stat = useStats(
+    {
+      all: () => countOf("/promotions"),
+      on: () => countOf("/promotions", { isActive: true }),
+      running: async () =>
+        (await fetchAll<AdminPromotion>("/promotions", { isActive: true })).filter((p) => promotionPhase(p) === "RUNNING").length,
+      used: async () => (await fetchAll<AdminPromotion>("/promotions")).reduce((sum, p) => sum + Number(p.usedCount || 0), 0),
+    },
+    version,
+  );
+  const pickActive = (a: "" | "true") => () => {
+    setPage(1);
+    setCode("");
+    setDiscountType("");
+    setActive(a);
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader title="Khuyến mãi" subtitle={`${totalItems} mã voucher`} />
+
+      <StatCards
+        items={[
+          { label: "Tổng mã voucher", value: stat("all"), tone: "red", icon: TicketPercent, onClick: pickActive(""), active: !active && !code && !discountType },
+          { label: "Đang bật", value: stat("on"), tone: "blue", icon: ToggleRight, onClick: pickActive("true"), active: active === "true" && !code && !discountType },
+          { label: "Đang áp dụng", value: stat("running"), tone: "green", icon: Zap, hint: "đang bật, còn hạn, còn lượt" },
+          { label: "Lượt đã dùng", value: stat("used"), tone: "amber", icon: Users, hint: "cộng dồn mọi mã" },
+        ]}
+      />
 
       <Toolbar
         actions={

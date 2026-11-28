@@ -51,5 +51,7 @@ export function usePaged<T, R extends PageResult<T> = PageResult<T>>(key: string
     /** Toàn bộ kết quả (kể cả trường thêm như summary của đơn hàng) */
     data: current?.data ?? null,
     refetch,
+    /** Tăng sau mỗi lần refetch (thêm/sửa/xóa) — dùng để tải lại thẻ thống kê */
+    version: reload,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { BadgePercent, Pencil, Plus, Sofa, Trash2, Users } from "lucide-react";
 import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { adminSeatTypeService } from "../services/admin-master.service";
@@ -26,6 +26,7 @@ import {
   primaryBtn,
   secondaryBtn,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 /** Giá gốc minh họa để admin thấy ngay hệ số + phụ thu ra giá bao nhiêu. */
@@ -73,11 +74,30 @@ export function AdminSeatTypePage() {
     }
   };
 
+  const multiSeat = items?.filter((t) => t.seatCount > 1).length;
+  const priciest = items?.length
+    ? items.reduce((a, b) => (seatPrice(SAMPLE_BASE, Number(b.priceMultiplier), Number(b.surchargeAmount)) > seatPrice(SAMPLE_BASE, Number(a.priceMultiplier), Number(a.surchargeAmount)) ? b : a))
+    : undefined;
+
   return (
     <div className="space-y-5">
       <PageHeader
         title="Loại ghế"
         subtitle={`${items?.length ?? 0} loại · giá ghế = giá gốc × hệ số + phụ thu`}
+      />
+
+      <StatCards
+        items={[
+          { label: "Số loại ghế", value: items ? items.length : loadError ? null : undefined, tone: "red", icon: Sofa },
+          { label: "Ghế nhiều chỗ", value: items ? multiSeat : loadError ? null : undefined, tone: "violet", icon: Users, hint: "ghế đôi, sofa…" },
+          {
+            label: "Giá cao nhất (ví dụ)",
+            value: priciest ? formatVnd(seatPrice(SAMPLE_BASE, Number(priciest.priceMultiplier), Number(priciest.surchargeAmount))) : items ? "—" : undefined,
+            tone: "amber",
+            icon: BadgePercent,
+            hint: priciest ? `${priciest.name} · giá gốc ${formatVnd(SAMPLE_BASE)}` : undefined,
+          },
+        ]}
       />
 
       <Toolbar
