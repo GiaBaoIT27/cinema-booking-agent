@@ -55,7 +55,7 @@ export function AdminDistributorPage() {
     text: string;
   } | null>(null);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch, version } =
+  const { items, totalPages, isLoading, error, refetch, version } =
     usePaged<AdminDistributor>([name, status, page].join("|"), () =>
       adminDistributorService.list({
         page,
@@ -107,10 +107,7 @@ export function AdminDistributorPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title="Nhà phát hành"
-        subtitle={`${totalItems} đối tác phân phối phim`}
-      />
+      <PageHeader title="Nhà phát hành" />
 
       <StatCards
         items={[

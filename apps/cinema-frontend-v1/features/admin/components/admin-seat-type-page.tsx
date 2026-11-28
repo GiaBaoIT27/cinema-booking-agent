@@ -76,26 +76,59 @@ export function AdminSeatTypePage() {
 
   const multiSeat = items?.filter((t) => t.seatCount > 1).length;
   const priciest = items?.length
-    ? items.reduce((a, b) => (seatPrice(SAMPLE_BASE, Number(b.priceMultiplier), Number(b.surchargeAmount)) > seatPrice(SAMPLE_BASE, Number(a.priceMultiplier), Number(a.surchargeAmount)) ? b : a))
+    ? items.reduce((a, b) =>
+        seatPrice(
+          SAMPLE_BASE,
+          Number(b.priceMultiplier),
+          Number(b.surchargeAmount),
+        ) >
+        seatPrice(
+          SAMPLE_BASE,
+          Number(a.priceMultiplier),
+          Number(a.surchargeAmount),
+        )
+          ? b
+          : a,
+      )
     : undefined;
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title="Loại ghế"
-        subtitle={`${items?.length ?? 0} loại · giá ghế = giá gốc × hệ số + phụ thu`}
-      />
+      <PageHeader title="Loại ghế" />
 
       <StatCards
         items={[
-          { label: "Số loại ghế", value: items ? items.length : loadError ? null : undefined, tone: "red", icon: Sofa },
-          { label: "Ghế nhiều chỗ", value: items ? multiSeat : loadError ? null : undefined, tone: "violet", icon: Users, hint: "ghế đôi, sofa…" },
           {
-            label: "Giá cao nhất (ví dụ)",
-            value: priciest ? formatVnd(seatPrice(SAMPLE_BASE, Number(priciest.priceMultiplier), Number(priciest.surchargeAmount))) : items ? "—" : undefined,
+            label: "Số loại ghế",
+            value: items ? items.length : loadError ? null : undefined,
+            tone: "red",
+            icon: Sofa,
+          },
+          {
+            label: "Ghế nhiều chỗ",
+            value: items ? multiSeat : loadError ? null : undefined,
+            tone: "violet",
+            icon: Users,
+            hint: "ghế đôi, sofa…",
+          },
+          {
+            label: "Giá cao nhất",
+            value: priciest
+              ? formatVnd(
+                  seatPrice(
+                    SAMPLE_BASE,
+                    Number(priciest.priceMultiplier),
+                    Number(priciest.surchargeAmount),
+                  ),
+                )
+              : items
+                ? "—"
+                : undefined,
             tone: "amber",
             icon: BadgePercent,
-            hint: priciest ? `${priciest.name} · giá gốc ${formatVnd(SAMPLE_BASE)}` : undefined,
+            hint: priciest
+              ? `${priciest.name} · giá gốc ${formatVnd(SAMPLE_BASE)}`
+              : undefined,
           },
         ]}
       />
@@ -114,7 +147,8 @@ export function AdminSeatTypePage() {
         }
       >
         <p className="px-2 text-xs text-[#9CA3AF]">
-          Ví dụ giá với suất có giá gốc {formatVnd(SAMPLE_BASE)}
+          Giá ghế = giá gốc × hệ số + phụ thu · cột “Giá ví dụ” tính với giá gốc{" "}
+          {formatVnd(SAMPLE_BASE)}
         </p>
       </Toolbar>
 

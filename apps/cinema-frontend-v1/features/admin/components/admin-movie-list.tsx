@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Archive, CalendarClock, Clapperboard, Film, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Archive,
+  CalendarClock,
+  Clapperboard,
+  Film,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { countOf, useStats } from "../hooks/use-stats";
 import { useMovies } from "@/features/movie/hooks/use-movies";
 import type {
@@ -41,7 +49,10 @@ export function AdminMovieList() {
   const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [statsVersion, setStatsVersion] = useState(0);
-  const [notice, setNotice] = useState<{ kind: "error" | "success"; text: string } | null>(null);
+  const [notice, setNotice] = useState<{
+    kind: "error" | "success";
+    text: string;
+  } | null>(null);
 
   const { rawMovies, isLoading, error, pagination, refetch } = useMovies({
     search: search || undefined,
@@ -51,7 +62,11 @@ export function AdminMovieList() {
     sort: "release_date:desc",
   });
 
-  const run = async (movie: MovieListItem, action: () => Promise<unknown>, ok: string) => {
+  const run = async (
+    movie: MovieListItem,
+    action: () => Promise<unknown>,
+    ok: string,
+  ) => {
     setBusyId(String(movie.id));
     setNotice(null);
     try {
@@ -77,8 +92,17 @@ export function AdminMovieList() {
     );
 
   const remove = (movie: MovieListItem) => {
-    if (!window.confirm(`Xóa phim “${movie.title}”? Thao tác này không hoàn tác được.`)) return;
-    run(movie, () => adminMovieService.remove(movie.id), `Đã xóa phim “${movie.title}”`);
+    if (
+      !window.confirm(
+        `Xóa phim “${movie.title}”? Thao tác này không hoàn tác được.`,
+      )
+    )
+      return;
+    run(
+      movie,
+      () => adminMovieService.remove(movie.id),
+      `Đã xóa phim “${movie.title}”`,
+    );
   };
 
   const stat = useStats(
@@ -97,14 +121,42 @@ export function AdminMovieList() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Quản lý phim" subtitle={`${pagination.totalItems} phim`} />
+      <PageHeader title="Quản lý phim" />
 
       <StatCards
         items={[
-          { label: "Tổng số phim", value: stat("all"), tone: "red", icon: Film, onClick: pick(""), active: status === "" },
-          { label: "Đang chiếu", value: stat("SHOWING"), tone: "green", icon: Clapperboard, onClick: pick("SHOWING"), active: status === "SHOWING" },
-          { label: "Sắp chiếu", value: stat("UPCOMING"), tone: "amber", icon: CalendarClock, onClick: pick("UPCOMING"), active: status === "UPCOMING" },
-          { label: "Đã kết thúc", value: stat("ENDED"), tone: "gray", icon: Archive, onClick: pick("ENDED"), active: status === "ENDED" },
+          {
+            label: "Tổng số phim",
+            value: stat("all"),
+            tone: "red",
+            icon: Film,
+            onClick: pick(""),
+            active: status === "",
+          },
+          {
+            label: "Đang chiếu",
+            value: stat("SHOWING"),
+            tone: "green",
+            icon: Clapperboard,
+            onClick: pick("SHOWING"),
+            active: status === "SHOWING",
+          },
+          {
+            label: "Sắp chiếu",
+            value: stat("UPCOMING"),
+            tone: "amber",
+            icon: CalendarClock,
+            onClick: pick("UPCOMING"),
+            active: status === "UPCOMING",
+          },
+          {
+            label: "Đã kết thúc",
+            value: stat("ENDED"),
+            tone: "gray",
+            icon: Archive,
+            onClick: pick("ENDED"),
+            active: status === "ENDED",
+          },
         ]}
       />
 
@@ -117,7 +169,14 @@ export function AdminMovieList() {
           )
         }
       >
-        <SearchBox value={search} placeholder="Tìm theo tên phim..." onSearch={(v) => { setPage(1); setSearch(v); }} />
+        <SearchBox
+          value={search}
+          placeholder="Tìm theo tên phim..."
+          onSearch={(v) => {
+            setPage(1);
+            setSearch(v);
+          }}
+        />
         <select
           value={status}
           onChange={(e) => {
@@ -134,14 +193,23 @@ export function AdminMovieList() {
             </option>
           ))}
         </select>
-        <ClearFilters show={!!(search || status)} onClear={() => { setPage(1); setSearch(""); setStatus(""); }} />
+        <ClearFilters
+          show={!!(search || status)}
+          onClear={() => {
+            setPage(1);
+            setSearch("");
+            setStatus("");
+          }}
+        />
       </Toolbar>
 
       {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
-      {error && <Notice kind="error">Không tải được danh sách phim: {error}</Notice>}
+      {error && (
+        <Notice kind="error">Không tải được danh sách phim: {error}</Notice>
+      )}
 
       <div className="overflow-x-auto rounded-xl border border-[#1F2937]">
-        <table className="w-full min-w-[760px] text-sm">
+        <table className="w-full min-w-190 text-sm">
           <thead className="bg-[#0B0F19] text-left text-xs uppercase tracking-wide text-[#6B7280]">
             <tr>
               <th className="px-4 py-3">Phim</th>
@@ -155,14 +223,20 @@ export function AdminMovieList() {
           <tbody className="divide-y divide-[#1F2937]">
             {isLoading && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-[#6B7280]">
+                <td
+                  colSpan={6}
+                  className="px-4 py-10 text-center text-[#6B7280]"
+                >
                   Đang tải...
                 </td>
               </tr>
             )}
             {!isLoading && rawMovies.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-[#6B7280]">
+                <td
+                  colSpan={6}
+                  className="px-4 py-10 text-center text-[#6B7280]"
+                >
                   Không có phim nào khớp bộ lọc.
                 </td>
               </tr>
@@ -172,27 +246,41 @@ export function AdminMovieList() {
                 const busy = busyId === String(movie.id);
                 const targets = nextStatuses(movie.status);
                 return (
-                  <tr key={movie.id} className={busy ? "opacity-50" : "hover:bg-[#0B0F19]/60"}>
+                  <tr
+                    key={movie.id}
+                    className={busy ? "opacity-50" : "hover:bg-[#0B0F19]/60"}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {movie.posterUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element -- poster có thể ở domain bất kỳ do admin nhập
-                          <img src={movie.posterUrl} alt="" className="h-14 w-10 rounded object-cover" />
+                          <img
+                            src={movie.posterUrl}
+                            alt=""
+                            className="h-14 w-10 rounded object-cover"
+                          />
                         ) : (
                           <div className="h-14 w-10 rounded bg-[#1F2937]" />
                         )}
                         <div className="min-w-0">
                           <p className="truncate font-medium">{movie.title}</p>
                           {movie.originalTitle && (
-                            <p className="truncate text-xs text-[#6B7280]">{movie.originalTitle}</p>
+                            <p className="truncate text-xs text-[#6B7280]">
+                              {movie.originalTitle}
+                            </p>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[#D1D5DB]">{movie.durationMinutes} phút</td>
-                    <td className="px-4 py-3 text-[#D1D5DB]">{movie.ageRating}</td>
                     <td className="px-4 py-3 text-[#D1D5DB]">
-                      {formatDate(movie.releaseDate)} – {formatDate(movie.endDate)}
+                      {movie.durationMinutes} phút
+                    </td>
+                    <td className="px-4 py-3 text-[#D1D5DB]">
+                      {movie.ageRating}
+                    </td>
+                    <td className="px-4 py-3 text-[#D1D5DB]">
+                      {formatDate(movie.releaseDate)} –{" "}
+                      {formatDate(movie.endDate)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -202,7 +290,11 @@ export function AdminMovieList() {
                             value=""
                             disabled={busy}
                             onChange={(e) => {
-                              if (e.target.value) changeStatus(movie, e.target.value as MovieStatusType);
+                              if (e.target.value)
+                                changeStatus(
+                                  movie,
+                                  e.target.value as MovieStatusType,
+                                );
                             }}
                             className="h-7 rounded border border-[#1F2937] bg-[#0B0F19] px-1 text-xs text-[#9CA3AF]"
                             aria-label={`Đổi trạng thái ${movie.title}`}

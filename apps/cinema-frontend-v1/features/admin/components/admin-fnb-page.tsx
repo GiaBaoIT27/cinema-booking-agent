@@ -55,7 +55,7 @@ export function AdminFnbPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "error" | "success"; text: string } | null>(null);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch, version } = usePaged<AdminFnbItem>(
+  const { items, totalPages, isLoading, error, refetch, version } = usePaged<AdminFnbItem>(
     [keyword, category, active, page].join("|"),
     () =>
       adminFnbService.list({
@@ -99,7 +99,7 @@ export function AdminFnbPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Bắp nước" subtitle={`${totalItems} món`} />
+      <PageHeader title="Bắp nước" />
 
       <StatCards
         items={[

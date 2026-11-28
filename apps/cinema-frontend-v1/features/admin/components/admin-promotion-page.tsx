@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, TicketPercent, ToggleRight, Users, Zap } from "lucide-react";
+import {
+  Pencil,
+  Plus,
+  TicketPercent,
+  ToggleRight,
+  Users,
+  Zap,
+} from "lucide-react";
 import { countOf, fetchAll, useStats } from "../hooks/use-stats";
 import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/use-auth-store";
@@ -73,7 +80,7 @@ export function AdminPromotionPage() {
     text: string;
   } | null>(null);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch, version } =
+  const { items, totalPages, isLoading, error, refetch, version } =
     usePaged<AdminPromotion>([code, discountType, active, page].join("|"), () =>
       adminPromotionService.list({
         page,
@@ -106,8 +113,14 @@ export function AdminPromotionPage() {
       all: () => countOf("/promotions"),
       on: () => countOf("/promotions", { isActive: true }),
       running: async () =>
-        (await fetchAll<AdminPromotion>("/promotions", { isActive: true })).filter((p) => promotionPhase(p) === "RUNNING").length,
-      used: async () => (await fetchAll<AdminPromotion>("/promotions")).reduce((sum, p) => sum + Number(p.usedCount || 0), 0),
+        (
+          await fetchAll<AdminPromotion>("/promotions", { isActive: true })
+        ).filter((p) => promotionPhase(p) === "RUNNING").length,
+      used: async () =>
+        (await fetchAll<AdminPromotion>("/promotions")).reduce(
+          (sum, p) => sum + Number(p.usedCount || 0),
+          0,
+        ),
     },
     version,
   );
@@ -120,14 +133,40 @@ export function AdminPromotionPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Khuyến mãi" subtitle={`${totalItems} mã voucher`} />
+      <PageHeader title="Khuyến mãi" />
 
       <StatCards
         items={[
-          { label: "Tổng mã voucher", value: stat("all"), tone: "red", icon: TicketPercent, onClick: pickActive(""), active: !active && !code && !discountType },
-          { label: "Đang bật", value: stat("on"), tone: "blue", icon: ToggleRight, onClick: pickActive("true"), active: active === "true" && !code && !discountType },
-          { label: "Đang áp dụng", value: stat("running"), tone: "green", icon: Zap, hint: "đang bật, còn hạn, còn lượt" },
-          { label: "Lượt đã dùng", value: stat("used"), tone: "amber", icon: Users, hint: "cộng dồn mọi mã" },
+          {
+            label: "Tổng mã voucher",
+            value: stat("all"),
+            tone: "red",
+            icon: TicketPercent,
+            onClick: pickActive(""),
+            active: !active && !code && !discountType,
+          },
+          {
+            label: "Đang khuyến mãi",
+            value: stat("on"),
+            tone: "blue",
+            icon: ToggleRight,
+            onClick: pickActive("true"),
+            active: active === "true" && !code && !discountType,
+          },
+          {
+            label: "Đang áp dụng",
+            value: stat("running"),
+            tone: "green",
+            icon: Zap,
+            hint: "đang bật, còn hạn, còn lượt",
+          },
+          {
+            label: "Lượt đã dùng",
+            value: stat("used"),
+            tone: "amber",
+            icon: Users,
+            hint: "cộng dồn mọi mã",
+          },
         ]}
       />
 
