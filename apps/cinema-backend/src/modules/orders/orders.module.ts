@@ -22,6 +22,10 @@ import { FNB_CATALOG } from './application/ports/fnb-catalog.port.js';
 import { VOUCHER_CALCULATOR } from './application/ports/voucher-calculator.port.js';
 import { TICKET_DISPLAY_LOOKUP } from './application/ports/ticket-display-lookup.port.js';
 import { CUSTOMER_LOOKUP } from './application/ports/customer-lookup.port.js';
+import { ADMIN_ORDER_QUERY } from './application/ports/admin-order-query.port.js';
+import { TypeOrmAdminOrderQuery } from './infrastructure/queries/typeorm-admin-order.query.js';
+import { AdminOrdersService } from './application/services/admin-orders.service.js';
+import { AdminOrdersController } from './presentation/controllers/admin-orders.controller.js';
 
 import { TypeOrmOrderRepository } from './infrastructure/persistence/typeorm-order.repository.js';
 import { TypeOrmTicketRepository } from './infrastructure/persistence/typeorm-ticket.repository.js';
@@ -53,11 +57,14 @@ import { OrdersFacade } from './public-api/orders.facade.js';
     CinemasModule,
     UsersModule,
   ],
-  controllers: [OrdersController, TicketsController],
+  controllers: [OrdersController, TicketsController, AdminOrdersController],
   providers: [
     // Persistence
     { provide: ORDER_REPOSITORY, useClass: TypeOrmOrderRepository },
     { provide: TICKET_REPOSITORY, useClass: TypeOrmTicketRepository },
+    // Read model cho trang quản trị
+    { provide: ADMIN_ORDER_QUERY, useClass: TypeOrmAdminOrderQuery },
+    AdminOrdersService,
     { provide: UNIT_OF_WORK, useClass: TypeOrmUnitOfWork },
     // Cổng sang module khác
     { provide: SEAT_RESERVATION, useClass: BookingsFacadeAdapter },

@@ -75,6 +75,15 @@ async function runSeed() {
     const cineplexeSeeder = new CineplexSeeder();
     await cineplexeSeeder.run(dataSource);
 
+    // 11b. Vai trò CINEMA_MANAGER/CINEMA_STAFF bắt buộc gắn một cụm rạp (CINEPLEX_SCOPE_REQUIRED).
+    // UserSeeder chạy trước khi có cụm rạp nên gán phạm vi ở đây: cụm rạp có id nhỏ nhất.
+    await dataSource.query(`
+      UPDATE user_roles ur SET cineplex_id = (SELECT MIN(id) FROM cineplexes)
+      FROM roles r
+      WHERE ur.role_id = r.id
+        AND r.code IN ('CINEMA_MANAGER', 'CINEMA_STAFF')
+        AND ur.cineplex_id IS NULL`);
+
     // 12. Thực thi Seeder phòng chiếu
     const auditoriumSeeder = new AuditoriumSeeder();
     await auditoriumSeeder.run(dataSource);
