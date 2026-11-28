@@ -87,16 +87,23 @@ async function request<T>(
 
     if (!response.ok) {
       const errPayload = json as ApiErrorResponse | null;
+      // Một số API trả `errors` là chuỗi mô tả cụ thể (vd. khuyến mãi %) thay vì mảng theo field
+      const rawErrors = errPayload?.errors as unknown;
+      const detail = typeof rawErrors === "string" ? rawErrors : undefined;
+      const fieldErrors = Array.isArray(rawErrors)
+        ? (rawErrors as ApiValidationError[])
+        : undefined;
       const message =
+        detail ||
         errPayload?.message ||
-        (Array.isArray(errPayload?.errors) && errPayload?.errors[0]?.message) ||
+        fieldErrors?.[0]?.message ||
         `Lỗi HTTP ${response.status}: ${response.statusText}`;
 
       throw new ApiError(
         message,
         response.status,
         errPayload?.errorCode,
-        errPayload?.errors,
+        fieldErrors,
       );
     }
 
