@@ -9,15 +9,19 @@ import {
   CalendarClock,
   Clapperboard,
   Film,
+  Handshake,
   LogOut,
   Popcorn,
   ReceiptText,
   ShieldAlert,
+  Sofa,
+  TicketPercent,
   Users,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/use-auth-store";
 import {
   canAccessAdmin,
+  groupSections,
   visibleSections,
   type AdminSection,
 } from "../utils/admin-access";
@@ -25,9 +29,12 @@ import {
 const ICONS: Record<AdminSection["key"], typeof Film> = {
   movies: Film,
   showtimes: CalendarClock,
+  distributors: Handshake,
   cineplexes: Building2,
   auditoriums: Armchair,
+  seatTypes: Sofa,
   fnb: Popcorn,
+  promotions: TicketPercent,
   orders: ReceiptText,
   users: Users,
 };
@@ -78,25 +85,30 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Clapperboard className="text-[#EF4444]" size={22} />
           Cinema Admin
         </Link>
-        <nav className="flex-1 space-y-1 px-3">
-          {visibleSections(user).map(({ key, href, label }) => {
-            const Icon = ICONS[key];
-            const active = pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
-                  active
-                    ? "bg-[#EF4444]/15 font-medium text-[#F87171]"
-                    : "text-[#9CA3AF] hover:bg-[#1F2937] hover:text-white"
-                }`}
-              >
-                <Icon size={16} />
-                {label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 space-y-4 overflow-y-auto px-3 pb-4">
+          {groupSections(visibleSections(user)).map(([group, sections]) => (
+            <div key={group} className="space-y-0.5">
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#4B5563]">{group}</p>
+              {sections.map(({ key, href, label }) => {
+                const Icon = ICONS[key];
+                const active = pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition ${
+                      active
+                        ? "bg-[#EF4444]/15 font-medium text-[#F87171]"
+                        : "text-[#9CA3AF] hover:bg-[#1F2937] hover:text-white"
+                    }`}
+                  >
+                    <Icon size={16} />
+                    {label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
         <div className="border-t border-[#1F2937] p-4 text-xs">
           <p className="truncate font-medium">{user?.fullName}</p>

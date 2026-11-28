@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CheckCircle2, ReceiptText, TrendingUp, Wallet } from "lucide-react";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { usePaged } from "../hooks/use-paged";
 import { adminShowtimeService, type Option } from "../services/admin-catalog.service";
@@ -28,6 +29,7 @@ import {
   Toolbar,
   errorText,
   filterClass,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 15;
@@ -75,11 +77,20 @@ export function AdminOrderPage() {
         subtitle={isSuperAdmin ? "Toàn hệ thống" : "Chỉ đơn thuộc cụm rạp bạn phụ trách"}
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Đơn khớp bộ lọc" value={isLoading ? "…" : String(totalItems)} />
-        <Stat label="Đơn đã thanh toán" value={summary ? String(summary.paidCount) : "…"} />
-        <Stat label="Doanh thu đã thanh toán" value={summary ? formatVnd(summary.paidRevenue) : "…"} accent />
-      </div>
+      <StatCards
+        items={[
+          { label: "Đơn khớp bộ lọc", value: isLoading ? undefined : totalItems, tone: "blue", icon: ReceiptText },
+          { label: "Đã thanh toán", value: summary?.paidCount, tone: "green", icon: CheckCircle2, onClick: () => { setPage(1); setStatus("PAID"); }, active: status === "PAID" },
+          { label: "Doanh thu đã thanh toán", value: summary ? formatVnd(summary.paidRevenue) : undefined, tone: "red", icon: Wallet },
+          {
+            label: "Giá trị TB / đơn",
+            value: summary ? (summary.paidCount ? formatVnd(Math.round(summary.paidRevenue / summary.paidCount)) : "—") : undefined,
+            tone: "amber",
+            icon: TrendingUp,
+            hint: "trên các đơn đã thanh toán",
+          },
+        ]}
+      />
 
       <Toolbar>
         <SearchBox value={keyword} placeholder="Mã đơn, email hoặc SĐT khách..." onSearch={(v) => { setPage(1); setKeyword(v); }} />
@@ -143,15 +154,6 @@ export function AdminOrderPage() {
       <Pager page={page} totalPages={totalPages} onChange={setPage} />
 
       {selected !== null && <OrderDetailModal orderId={selected} onClose={() => setSelected(null)} />}
-    </div>
-  );
-}
-
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className="rounded-xl border border-[#1F2937] bg-[#0B0F19]/60 px-4 py-3">
-      <p className="text-xs text-[#6B7280]">{label}</p>
-      <p className={`mt-1 font-heading text-xl font-bold ${accent ? "text-[#F87171]" : ""}`}>{value}</p>
     </div>
   );
 }

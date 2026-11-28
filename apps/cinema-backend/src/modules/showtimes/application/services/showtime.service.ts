@@ -12,6 +12,7 @@ import {
 import { ShowtimeSchedulingService } from './showtime-scheduling.service.js';
 import { PriceCalculationService } from './price-calculation.service.js';
 import { RedisService } from '#src/core/redis/redis.service.js';
+import { showtimeListQueryKey } from './showtime-list-cache-key.js';
 import { BusinessException } from '#src/common/exceptions/business.exception.js';
 import { ErrorCode } from '#src/common/constants/error-codes.enum.js';
 import {
@@ -50,7 +51,7 @@ export class ShowtimeService {
   async findAll(queryDto: GetShowtimesQueryDto) {
     const targetDate = queryDto.date ?? new Date().toISOString().split('T')[0];
     const cacheKey = SHOWTIME_REDIS_KEYS.LIST(
-      `d=${targetDate}:p=${queryDto.page}:l=${queryDto.limit}`,
+      showtimeListQueryKey({ ...queryDto, date: targetDate }),
     );
 
     return this.redisService.getOrSet(

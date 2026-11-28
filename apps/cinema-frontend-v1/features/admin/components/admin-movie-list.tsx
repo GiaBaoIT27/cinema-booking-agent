@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Archive, CalendarClock, Clapperboard, Film, Pencil, Plus, Trash2 } from "lucide-react";
+import { countOf, useStats } from "../hooks/use-stats";
 import { useMovies } from "@/features/movie/hooks/use-movies";
 import type {
   MovieListItem,
@@ -21,6 +22,7 @@ import {
   Toolbar,
   filterClass,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 10;
@@ -38,6 +40,7 @@ export function AdminMovieList() {
   const [status, setStatus] = useState<MovieStatusType | "">("");
   const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [statsVersion, setStatsVersion] = useState(0);
   const [notice, setNotice] = useState<{ kind: "error" | "success"; text: string } | null>(null);
 
   const { rawMovies, isLoading, error, pagination, refetch } = useMovies({
@@ -55,6 +58,7 @@ export function AdminMovieList() {
       await action();
       setNotice({ kind: "success", text: ok });
       refetch();
+      setStatsVersion((v) => v + 1);
     } catch (err) {
       setNotice({
         kind: "error",
@@ -77,9 +81,32 @@ export function AdminMovieList() {
     run(movie, () => adminMovieService.remove(movie.id), `Đã xóa phim “${movie.title}”`);
   };
 
+  const stat = useStats(
+    {
+      all: () => countOf("/movies"),
+      SHOWING: () => countOf("/movies", { status: "SHOWING" }),
+      UPCOMING: () => countOf("/movies", { status: "UPCOMING" }),
+      ENDED: () => countOf("/movies", { status: "ENDED" }),
+    },
+    statsVersion,
+  );
+  const pick = (s: MovieStatusType | "") => () => {
+    setPage(1);
+    setStatus(s);
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader title="Quản lý phim" subtitle={`${pagination.totalItems} phim`} />
+
+      <StatCards
+        items={[
+          { label: "Tổng số phim", value: stat("all"), tone: "red", icon: Film, onClick: pick(""), active: status === "" },
+          { label: "Đang chiếu", value: stat("SHOWING"), tone: "green", icon: Clapperboard, onClick: pick("SHOWING"), active: status === "SHOWING" },
+          { label: "Sắp chiếu", value: stat("UPCOMING"), tone: "amber", icon: CalendarClock, onClick: pick("UPCOMING"), active: status === "UPCOMING" },
+          { label: "Đã kết thúc", value: stat("ENDED"), tone: "gray", icon: Archive, onClick: pick("ENDED"), active: status === "ENDED" },
+        ]}
+      />
 
       <Toolbar
         actions={

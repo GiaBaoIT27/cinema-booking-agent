@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Grid3x3, Pencil, Plus } from "lucide-react";
+import { Armchair, CheckCircle2, Grid3x3, Pencil, Plus, Users, Wrench } from "lucide-react";
+import { countOf, fetchAll, useStats } from "../hooks/use-stats";
 import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { usePaged } from "../hooks/use-paged";
@@ -39,6 +40,7 @@ import {
   primaryBtn,
   secondaryBtn,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 12;
@@ -67,7 +69,7 @@ export function AdminAuditoriumPage() {
     adminShowtimeService.cineplexes().then(setCineplexes).catch(() => setCineplexes([]));
   }, []);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch } = usePaged<AdminAuditorium>(
+  const { items, totalItems, totalPages, isLoading, error, refetch, version } = usePaged<AdminAuditorium>(
     [cineplexId, screenType, status, page].join("|"),
     () =>
       adminAuditoriumService.list({
@@ -79,9 +81,33 @@ export function AdminAuditoriumPage() {
       }),
   );
 
+  const stat = useStats(
+    {
+      ALL: () => countOf("/auditoriums", { status: "ALL" }),
+      ACTIVE: () => countOf("/auditoriums", { status: "ACTIVE" }),
+      MAINTENANCE: () => countOf("/auditoriums", { status: "MAINTENANCE" }),
+      seats: async () =>
+        (await fetchAll<AdminAuditorium>("/auditoriums", { status: "ACTIVE" })).reduce((sum, a) => sum + Number(a.totalSeats || 0), 0),
+    },
+    version,
+  );
+  const pick = (s: string) => () => {
+    setPage(1);
+    setStatus(s);
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader title="Phòng chiếu" subtitle={`${totalItems} phòng`} />
+
+      <StatCards
+        items={[
+          { label: "Tổng phòng chiếu", value: stat("ALL"), tone: "red", icon: Armchair, onClick: pick("ALL"), active: status === "ALL" },
+          { label: "Đang hoạt động", value: stat("ACTIVE"), tone: "green", icon: CheckCircle2, onClick: pick("ACTIVE"), active: status === "ACTIVE" },
+          { label: "Bảo trì", value: stat("MAINTENANCE"), tone: "amber", icon: Wrench, onClick: pick("MAINTENANCE"), active: status === "MAINTENANCE" },
+          { label: "Sức chứa đang hoạt động", value: stat("seats"), tone: "blue", icon: Users, hint: "tổng số ghế thiết kế" },
+        ]}
+      />
 
       <Toolbar
         actions={

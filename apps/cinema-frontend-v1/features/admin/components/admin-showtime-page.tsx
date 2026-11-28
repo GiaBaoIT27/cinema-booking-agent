@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { CalendarClock, CalendarDays, Plus, Ticket, XCircle } from "lucide-react";
+import { countOf, todayLocal, useStats } from "../hooks/use-stats";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { usePaged } from "../hooks/use-paged";
 import { adminShowtimeService, type Option } from "../services/admin-catalog.service";
@@ -34,6 +35,7 @@ import {
   primaryBtn,
   secondaryBtn,
   toolbarBtn,
+  StatCards,
 } from "./admin-ui";
 
 const PAGE_SIZE = 15;
@@ -52,7 +54,8 @@ export function AdminShowtimePage() {
 
   const [cineplexes, setCineplexes] = useState<Option[]>([]);
   const [cineplexId, setCineplexId] = useState("");
-  const [date, setDate] = useState("");
+  // API suất chiếu luôn trả theo từng ngày (mặc định hôm nay) → hiển thị rõ ngày đang xem
+  const [date, setDate] = useState(() => todayLocal());
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [creating, setCreating] = useState(false);
@@ -63,14 +66,14 @@ export function AdminShowtimePage() {
     adminShowtimeService.cineplexes().then(setCineplexes).catch(() => setCineplexes([]));
   }, []);
 
-  const { items, totalItems, totalPages, isLoading, error, refetch } = usePaged<AdminShowtime>(
+  const { items, totalPages, isLoading, error, refetch, version } = usePaged<AdminShowtime>(
     [cineplexId, date, status, page].join("|"),
     () =>
       adminShowtimeService.list({
         page,
         limit: PAGE_SIZE,
         cineplexId: cineplexId || undefined,
-        date: date || undefined,
+        date,
         status: status || undefined,
       }),
   );
@@ -90,9 +93,36 @@ export function AdminShowtimePage() {
     }
   };
 
+  const today = todayLocal();
+  // Thẻ đếm theo ngày + cụm rạp đang chọn; tải lại khi đổi ngày/rạp hoặc sau khi đổi trạng thái suất
+  const scope = { date, cineplexId: cineplexId || undefined };
+  const stat = useStats(
+    {
+      all: () => countOf("/showtimes", scope),
+      SCHEDULED: () => countOf("/showtimes", { ...scope, status: "SCHEDULED" }),
+      OPEN: () => countOf("/showtimes", { ...scope, status: "OPEN" }),
+      CANCELLED: () => countOf("/showtimes", { ...scope, status: "CANCELLED" }),
+    },
+    `${version}|${date}|${cineplexId}`,
+  );
+  const pick = (s: string) => () => {
+    setPage(1);
+    setStatus(s);
+  };
+  const dayLabel = date === today ? "hôm nay" : new Date(`${date}T00:00`).toLocaleDateString("vi-VN");
+
   return (
     <div className="space-y-5">
-      <PageHeader title="Suất chiếu" subtitle={`${totalItems} suất`} />
+      <PageHeader title="Suất chiếu" subtitle={`Lịch chiếu ${dayLabel}`} />
+
+      <StatCards
+        items={[
+          { label: `Suất ${dayLabel}`, value: stat("all"), tone: "red", icon: CalendarDays, onClick: pick(""), active: !status },
+          { label: "Đã lên lịch", value: stat("SCHEDULED"), tone: "blue", icon: CalendarClock, onClick: pick("SCHEDULED"), active: status === "SCHEDULED" },
+          { label: "Đang mở bán", value: stat("OPEN"), tone: "green", icon: Ticket, onClick: pick("OPEN"), active: status === "OPEN" },
+          { label: "Đã hủy", value: stat("CANCELLED"), tone: "gray", icon: XCircle, onClick: pick("CANCELLED"), active: status === "CANCELLED" },
+        ]}
+      />
 
       <Toolbar
         actions={
@@ -107,14 +137,19 @@ export function AdminShowtimePage() {
           <option value="">Tất cả cụm rạp</option>
           {cineplexes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <input aria-label="Ngày chiếu" type="date" value={date} onChange={(e) => { setPage(1); setDate(e.target.value); }} className={filterClass} />
+        <input aria-label="Ngày chiếu" type="date" required value={date} onChange={(e) => { setPage(1); setDate(e.target.value || today); }} className={filterClass} />
+        {date !== today && (
+          <button type="button" onClick={() => { setPage(1); setDate(today); }} className="shrink-0 px-1 text-xs text-[#9CA3AF] hover:text-white">
+            Hôm nay
+          </button>
+        )}
         <select aria-label="Trạng thái" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }} className={filterClass}>
           <option value="">Tất cả trạng thái</option>
           {(Object.keys(SHOWTIME_STATUS_LABEL) as ShowtimeStatusType[]).map((s) => (
             <option key={s} value={s}>{SHOWTIME_STATUS_LABEL[s]}</option>
           ))}
         </select>
-        <ClearFilters show={!!(cineplexId || date || status)} onClear={() => { setPage(1); setCineplexId(""); setDate(""); setStatus(""); }} />
+        <ClearFilters show={!!(cineplexId || status || date !== today)} onClear={() => { setPage(1); setCineplexId(""); setDate(today); setStatus(""); }} />
       </Toolbar>
 
       {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
